@@ -7,6 +7,9 @@ param(
   [switch]$ForceLock,
 
   [Parameter(Mandatory = $false)]
+  [string]$DeliveryBranch,
+
+  [Parameter(Mandatory = $false)]
   [switch]$AllowControlEqualsDelivery
 )
 
@@ -59,25 +62,51 @@ if (-not $currentBranch) {
   throw "Coordinator control worktree is in detached HEAD: $gitRoot. Check out the coordinator control branch before bootstrapping."
 }
 
-# Resolve the candidate delivery branch in the same order as create-run.ps1 does: there is no
-# explicit -DeliveryBranch here, so it is main, else master, else the current branch.
-$deliveryBranch = $null
+# delivery_branch resolution order, identical to create-run.ps1: an explicit -DeliveryBranch, then
+# origin/HEAD, then init.defaultBranch (when that branch exists), then main, then master, then the
+# current branch. The source is recorded in the shared vocabulary:
+# user | origin-head | init-default | main | master | current.
 $deliveryBranchSource = $null
-foreach ($candidate in @("main", "master")) {
-  # Existence probe: a missing ref exits 1 by design, so this stays a raw call that captures
-  # stderr instead of a throwing Invoke-Git call.
-  $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$candidate" 2>&1
-  if ($LASTEXITCODE -eq 0) { $deliveryBranch = $candidate; $deliveryBranchSource = $candidate; break }
+if ($DeliveryBranch) {
+  $deliveryBranchSource = "user"
+} else {
+  # Every probe below is a raw call that captures stderr instead of a throwing Invoke-Git call: a
+  # missing ref exits 1 by design.
+  # Output is assigned without a pipeline: piping a native call into Select-Object can stop that
+  # process early and clobber $LASTEXITCODE, so the exit code is captured first.
+  $originHead = & git -C $gitRoot symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>&1
+  $originHeadExit = $LASTEXITCODE
+  if ($originHeadExit -eq 0 -and $originHead) {
+    $originHeadBranch = ("$originHead").Trim() -replace "^origin/", ""
+    if ($originHeadBranch) { $DeliveryBranch = $originHeadBranch; $deliveryBranchSource = "origin-head" }
+  }
+  if (-not $deliveryBranchSource) {
+    $initDefault = & git -C $gitRoot config --get init.defaultBranch 2>&1
+    $initDefaultExit = $LASTEXITCODE
+    if ($initDefaultExit -eq 0 -and $initDefault) {
+      $initDefault = ("$initDefault").Trim()
+      if ($initDefault) {
+        $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$initDefault" 2>&1
+        if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $initDefault; $deliveryBranchSource = "init-default" }
+      }
+    }
+  }
+  if (-not $deliveryBranchSource) {
+    foreach ($candidate in @("main", "master")) {
+      $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$candidate" 2>&1
+      if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $candidate; $deliveryBranchSource = $candidate; break }
+    }
+  }
+  if (-not $deliveryBranchSource) { $DeliveryBranch = $currentBranch; $deliveryBranchSource = "current" }
 }
-if (-not $deliveryBranch) { $deliveryBranch = $currentBranch; $deliveryBranchSource = "current" }
 
 # Invariant 3: the coordinator control branch must differ from the delivery branch, otherwise
 # the run bootstrapped from this control worktree is invalid as soon as it is created.
-if ($currentBranch -eq $deliveryBranch) {
+if ($currentBranch -eq $DeliveryBranch) {
   if (-not $AllowControlEqualsDelivery) {
-    throw "Coordinator control branch equals the resolved delivery branch '$deliveryBranch'. Create/checkout a control branch first (for example 'coord/<run-slug>'), or pass -AllowControlEqualsDelivery to accept an invariant 3 violation."
+    throw "Coordinator control branch '$currentBranch' equals the resolved delivery branch '$DeliveryBranch' (source: $deliveryBranchSource). Pass -DeliveryBranch <intended> to name the intended delivery branch (for example -DeliveryBranch develop), or pass -AllowControlEqualsDelivery to accept an invariant 3 violation."
   }
-  Write-Warning "Invariant 3 is knowingly violated for this control worktree: coordinator control branch equals the resolved delivery branch '$deliveryBranch'."
+  Write-Warning "Invariant 3 is knowingly violated for this control worktree: coordinator control branch equals the resolved delivery branch '$DeliveryBranch'."
 }
 
 function Get-CoordinatorLiveness {
@@ -153,12 +182,27 @@ $lockPath = Join-Path $devWork "coordinator-lock.json"
 $lockLiveness = "none"
 if (Test-Path $lockPath) {
   $existing = Get-Content $lockPath -Raw | ConvertFrom-Json
-  $lockLiveness = Get-CoordinatorLiveness $existing.coordinatorTerminalHandle
-  if (-not $ForceLock) {
-    switch ($lockLiveness) {
-      "live" { throw "A live coordinator is bound to $($existing.coordinatorTerminalHandle). Stop it, or run scripts/release-coordinator.ps1, before starting another." }
-      "unknown" { throw "Coordinator lock exists at $lockPath and liveness is unverifiable. Verify the holder manually, then use -ForceLock (archives the old lock) or release-coordinator.ps1." }
-      "dead" { Write-Warning "Stale coordinator lock detected (holder terminal is gone). Taking over; the previous lock is archived." }
+  $existingStatus = if ($existing.PSObject.Properties["status"]) { "$($existing.status)" } else { "" }
+  if ($existingStatus -eq "released") {
+    # A released lock is a deliberate handover (references/coordinator-lock.md, Release step 4),
+    # not a live holder: whoever released it may still own the terminal. Never refuse on liveness;
+    # warn with the release audit trail, archive the old lock like the dead path, then take over.
+    $lockLiveness = "released"
+    $releaseFacts = @()
+    foreach ($field in @("releasedAt", "releaseReason", "activeRun")) {
+      $property = $existing.PSObject.Properties[$field]
+      if ($property -and "$($property.Value)") { $releaseFacts += "$field=$($property.Value)" }
+    }
+    $releaseDetail = if ($releaseFacts.Count) { " (" + ($releaseFacts -join "; ") + ")" } else { "" }
+    Write-Warning "Coordinator lock at $lockPath is released$releaseDetail. Taking over; the previous lock is archived."
+  } else {
+    $lockLiveness = Get-CoordinatorLiveness $existing.coordinatorTerminalHandle
+    if (-not $ForceLock) {
+      switch ($lockLiveness) {
+        "live" { throw "A live coordinator is bound to $($existing.coordinatorTerminalHandle). Stop it, or run scripts/release-coordinator.ps1, before starting another." }
+        "unknown" { throw "Coordinator lock exists at $lockPath and liveness is unverifiable. Verify the holder manually, then use -ForceLock (archives the old lock) or release-coordinator.ps1." }
+        "dead" { Write-Warning "Stale coordinator lock detected (holder terminal is gone). Taking over; the previous lock is archived." }
+      }
     }
   }
   $archiveName = "coordinator-lock-{0}.json" -f ([DateTimeOffset]::UtcNow.ToString("yyyyMMdd-HHmmss"))
@@ -193,7 +237,7 @@ $result = [ordered]@{
   lockPath = $lockPath
   lockLiveness = $lockLiveness
   gitExcludePath = $excludePath
-  deliveryBranch = $deliveryBranch
+  deliveryBranch = $DeliveryBranch
   deliveryBranchSource = $deliveryBranchSource
   controlEqualsDeliveryWaived = [bool]$AllowControlEqualsDelivery
 }

@@ -64,7 +64,7 @@ Role、Skill、模型默认值和通用最佳实践不得覆盖项目规则。
 每一轮开发必须确定一个且仅一个 `delivery_branch`：
 
 - 用户明确指定分支时，使用该分支；
-- 用户未指定时，使用仓库默认分支（`main`，否则 `master`），并记录来源；
+- 用户未指定时，使用仓库默认分支（解析顺序：`origin/HEAD` → `init.defaultBranch` → `main` → `master` → 当前分支），并记录来源；
 - 一旦确定，未经用户明确修改不得自行更换。
 
 `delivery_branch` 是：

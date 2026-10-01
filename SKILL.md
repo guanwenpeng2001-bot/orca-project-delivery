@@ -32,7 +32,7 @@ Never duplicate Orca lifecycle state inside `.dev-work/`; store only identifiers
 1. One coordinator control workspace per project.
 2. One active Coordinator Agent in that workspace.
 3. The coordinator control branch is not a development or integration branch.
-4. Every run has one `delivery_branch`: user-specified; otherwise the repository default branch (`main`, else `master`), recorded in run-state with its source.
+4. Every run has one `delivery_branch`: user-specified (`-DeliveryBranch`); otherwise the repository default branch, resolved as `origin/HEAD` → `init.defaultBranch` → `main` → `master` → the current branch, recorded in run-state with its source. A repository whose default branch is none of these must state it explicitly; the resolution never silently makes the control branch the delivery branch.
 5. Every worker Task uses an isolated branch and worktree.
 6. One task branch has one writer at a time.
 7. All process artifacts end in the coordinator's `.dev-work/`.
@@ -57,11 +57,14 @@ At coordinator start:
    If it already exists, validate and reuse it.
 5. Add `/AGENTS.md` and `/.dev-work/` to the local Git exclude file unless the user explicitly tracks them.
 6. Resolve the run's `delivery_branch`:
-   - explicit user branch;
-   - otherwise the repository default branch (`main`, else `master`), recorded with its source.
-   The control branch must differ from `delivery_branch` (invariant 3). Choose the control branch
-   **before** bootstrapping: `scripts/bootstrap-project.ps1` refuses a worktree whose current
-   branch is the resolved delivery branch unless `-AllowControlEqualsDelivery` is passed
+   - an explicit branch (`-DeliveryBranch`, on bootstrap and on `create-run`);
+   - otherwise `origin/HEAD`, then `init.defaultBranch`, then `main`, then `master`, then the
+     current branch — recorded with the source that produced it.
+   A repository whose default branch is none of these must be given explicitly; if the resolved
+   branch is the one already checked out, stop and pass `-DeliveryBranch` rather than waiving the
+   guard. The control branch must differ from `delivery_branch` (invariant 3). Choose the control
+   branch **before** bootstrapping: `scripts/bootstrap-project.ps1` refuses a worktree whose
+   current branch is the resolved delivery branch unless `-AllowControlEqualsDelivery` is passed
    deliberately.
 7. Create or resume a `.dev-work/runs/<run-slug>/` record.
 8. Create or bind an Orca Run through the global `orchestration` skill.
@@ -69,8 +72,10 @@ At coordinator start:
 10. Record the active coordinator, delivery branch, Orca Run id, and schema versions.
 
 Use `scripts/bootstrap-project.ps1` to initialize the control worktree (it refuses a
-detached HEAD, a second live coordinator, and a control branch equal to the resolved
-delivery branch unless `-AllowControlEqualsDelivery` is passed deliberately), `scripts/probe-agent-capabilities.ps1` to
+detached HEAD, a second live coordinator whose lock is still `active`, and a control branch equal
+to the resolved delivery branch unless `-AllowControlEqualsDelivery` is passed deliberately; an
+existing lock that is already `released` is archived and taken over; pass
+`-DeliveryBranch <branch>` whenever the repository default branch is not `main`/`master`), `scripts/probe-agent-capabilities.ps1` to
 probe agent backends and model/effort evidence, `scripts/create-run.ps1` to create the run
 record (it archives prior state when `-Force` reuses a run), `scripts/assemble-task.ps1`
 to build a worker assignment from a Task Definition, `scripts/validate-run.ps1` to check

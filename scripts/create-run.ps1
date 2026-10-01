@@ -69,17 +69,49 @@ if (-not $currentBranch) {
   throw "Cannot create a run from a detached HEAD: $gitRoot. Check out the coordinator control branch first."
 }
 
-# delivery_branch: an explicit value wins; otherwise the repository default branch
-# (main, else master), else the current branch. The source is recorded in run-state.
-$deliveryBranchSource = "user"
-if (-not $DeliveryBranch) {
-  foreach ($candidate in @("main", "master")) {
-    # Existence probe: a missing ref exits 1 by design, so this stays a raw call that captures
-    # stderr instead of a throwing Invoke-Git call.
-    $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$candidate" 2>&1
-    if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $candidate; $deliveryBranchSource = $candidate; break }
+# delivery_branch resolution order, identical to bootstrap-project.ps1: an explicit -DeliveryBranch,
+# then origin/HEAD, then init.defaultBranch (when that branch exists), then main, then master, then
+# the current branch. The source is recorded in run-state in the shared vocabulary:
+# user | origin-head | init-default | main | master | current.
+$deliveryBranchSource = $null
+if ($DeliveryBranch) {
+  $deliveryBranchSource = "user"
+} else {
+  # Every probe below is a raw call that captures stderr instead of a throwing Invoke-Git call: a
+  # missing ref exits 1 by design.
+  # Output is assigned without a pipeline: piping a native call into Select-Object can stop that
+  # process early and clobber $LASTEXITCODE, so the exit code is captured first.
+  $originHead = & git -C $gitRoot symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>&1
+  $originHeadExit = $LASTEXITCODE
+  if ($originHeadExit -eq 0 -and $originHead) {
+    $originHeadBranch = ("$originHead").Trim() -replace "^origin/", ""
+    if ($originHeadBranch) { $DeliveryBranch = $originHeadBranch; $deliveryBranchSource = "origin-head" }
   }
-  if (-not $DeliveryBranch) { $DeliveryBranch = $currentBranch; $deliveryBranchSource = "current" }
+  if (-not $deliveryBranchSource) {
+    $initDefault = & git -C $gitRoot config --get init.defaultBranch 2>&1
+    $initDefaultExit = $LASTEXITCODE
+    if ($initDefaultExit -eq 0 -and $initDefault) {
+      $initDefault = ("$initDefault").Trim()
+      if ($initDefault) {
+        $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$initDefault" 2>&1
+        if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $initDefault; $deliveryBranchSource = "init-default" }
+      }
+    }
+  }
+  if (-not $deliveryBranchSource) {
+    foreach ($candidate in @("main", "master")) {
+      $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$candidate" 2>&1
+      if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $candidate; $deliveryBranchSource = $candidate; break }
+    }
+  }
+  if (-not $deliveryBranchSource) { $DeliveryBranch = $currentBranch; $deliveryBranchSource = "current" }
+}
+
+# Invariant 3: the control branch must differ from delivery_branch. bootstrap-project.ps1 refuses in
+# this case; create-run only warns, because refusing here would strand an already-bootstrapped
+# worktree. The advice is the same: name the intended delivery branch explicitly.
+if ($DeliveryBranch -eq $currentBranch) {
+  Write-Warning "Coordinator control branch '$currentBranch' equals the resolved delivery branch '$DeliveryBranch' (source: $deliveryBranchSource). Pass -DeliveryBranch <intended> to name the intended delivery branch (for example -DeliveryBranch develop)."
 }
 
 $devWork = Join-Path $gitRoot ".dev-work"
@@ -104,7 +136,19 @@ if (-not $RunSlug) {
   $RunSlug = $candidate.Substring(0, [Math]::Min(64, $candidate.Length))
 }
 
-$runDir = Join-Path (Join-Path $devWork "runs") $RunSlug
+# A run slug is a single directory name: reject separators and traversal outright, then also verify
+# the fully resolved path (defense in depth). Both checks run before anything is created.
+if ($RunSlug -notmatch "^[A-Za-z0-9][A-Za-z0-9._-]*$") {
+  throw "Invalid -RunSlug '$RunSlug'. A run slug must match ^[A-Za-z0-9][A-Za-z0-9._-]*$ and must not contain path separators or traversal."
+}
+
+$runsRoot = Join-Path $devWork "runs"
+$runDir = Join-Path $runsRoot $RunSlug
+$runsRootPrefix = [System.IO.Path]::GetFullPath($runsRoot).TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)) + [System.IO.Path]::DirectorySeparatorChar
+$resolvedRunDir = [System.IO.Path]::GetFullPath($runDir)
+if (-not $resolvedRunDir.StartsWith($runsRootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+  throw "Refusing to create a run outside '$runsRoot': -RunSlug '$RunSlug' resolves to '$resolvedRunDir'."
+}
 $runDirCreated = $false
 $archivedState = $null
 
@@ -142,12 +186,17 @@ try {
       $archiveDir = Join-Path $runDir "archive"
       New-Item -ItemType Directory -Path $archiveDir -Force | Out-Null
       $stamp = [DateTimeOffset]::UtcNow.ToString("yyyyMMdd-HHmmss")
-      foreach ($name in @("run-state", "branch-map", "task-map", "degradation-events")) {
+      foreach ($name in @("run-state", "branch-map", "task-map", "degradation-events", "reconciliation")) {
         $src = Join-Path $runDir "$name.json"
         if (Test-Path $src) { Copy-Item $src (Join-Path $archiveDir "$name.$stamp.json") }
       }
       $archivedState = $archiveDir
-      Write-Warning "Reusing run '$RunSlug' with -Force; the previous run state was archived under $archiveDir."
+      # Nothing under the run directory is deleted: everything that is not the archive itself stays
+      # in place next to the reset run state, so the warning can say how much is preserved. Both
+      # paths are provider-normalized so the prefix comparison cannot be defeated by path spelling.
+      $archivePrefix = (Resolve-Path $archiveDir).Path.TrimEnd([char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)) + [System.IO.Path]::DirectorySeparatorChar
+      $preservedCount = @(Get-ChildItem -Path (Resolve-Path $runDir).Path -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { -not $_.FullName.StartsWith($archivePrefix, [System.StringComparison]::OrdinalIgnoreCase) }).Count
+      Write-Warning "Reusing run '$RunSlug' with -Force; the previous state was archived under $archiveDir ($preservedCount other files preserved)."
     }
   }
 

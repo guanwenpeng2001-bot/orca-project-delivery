@@ -102,6 +102,36 @@ Windows. Every row is a real command run against the shipped files.
 | Metadata coherence | routing vs role-compatibility, referenced profiles, `autoRouteAfterProbe` ordering, role/skill paths, manifest counts | equal / all present / 0 violations; manifest and VERSION both 1.1.0 |
 | Registry keys (F12) | key census of `agents/registry.json` | 43 `skillDelivery` keys for 43 agents, no duplicate keys, Claude entries `explicit-path` |
 
+### Post-verification fixes (independent verifier findings)
+
+An independent verifier (V2/V3/V4/V9 plus adversarial probes) confirmed those cases PASS and found
+five further defects; all are fixed here.
+
+- **V-A** a repository whose default branch is neither `main` nor `master` could not be bootstrapped,
+  and the refusal advised creating a control branch that was already checked out. The delivery branch
+  is now resolved as explicit `-DeliveryBranch` → `origin/HEAD` → `init.defaultBranch` → `main` →
+  `master` → the current branch, with the source recorded; `bootstrap-project.ps1` accepts
+  `-DeliveryBranch`; and the refusal names the resolved branch, its source, and that flag. The guard
+  still writes nothing.
+- **V-B** a lock with `status = released` still blocked bootstrap, and the refusal advised a command
+  that provably could not clear it. A released lock is now archived and taken over (new additive
+  `lockLiveness` value `released`), while an `active` lock keeps the live/dead/unknown behavior.
+- **V-C** `create-run.ps1 -RunSlug` accepted path traversal (`..\..\escaped-run` wrote a run tree
+  outside `.dev-work`, and enough `..` escaped the project root). The slug must now match
+  `^[A-Za-z0-9][A-Za-z0-9._-]*$` and the resolved run directory must stay inside
+  `<gitRoot>\.dev-work\runs\`; both checks run before any write.
+- **V-D** the liveness table in `references/coordinator-lock.md` described the `dead` row as "the
+  handle is absent"; an absent handle is `unknown`, a recorded handle whose probe fails is `dead`.
+- **V-E** `-Force` archived only the four state files. `reconciliation.json` is archived too, and the
+  warning now reports how many other files were deliberately preserved.
+- **V-F (accepted, deliberately unchanged)** `assemble-task.ps1` embeds `AGENTS.md` verbatim, so its
+  own H1 is not demoted in the assembled prompt. Preserving project policy text byte-for-byte
+  outranks heading cosmetics.
+
+Re-verified by the coordinator after the fixes: a `develop`-only repository refuses bootstrap with
+zero writes and succeeds with `-DeliveryBranch develop`; the traversal slug exits 1 and writes
+nothing; a released lock is archived (`lockLiveness: released`) and a fresh `active` lock is written.
+
 ## 1.0.0 — baseline
 
 - 82 files as installed on 2026-10-02. The pre-fix 77-file copy is kept at

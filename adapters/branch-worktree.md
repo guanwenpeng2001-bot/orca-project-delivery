@@ -26,7 +26,8 @@ Its HEAD may be stale without affecting delivery.
 Resolved once at run intake:
 
 - user-specified branch; or
-- the repository default branch (`main`, else `master`) when unspecified, recorded with its source.
+- the repository default branch when unspecified, resolved as `origin/HEAD` → `init.defaultBranch` → `main` → `master` → the current branch, recorded with its source.
+- an explicit `-DeliveryBranch` whenever the repository's default branch is none of the above.
 
 It is the default task base, reviewed-source merge target, and final-verification source.
 

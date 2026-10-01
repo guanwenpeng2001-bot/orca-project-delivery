@@ -34,7 +34,7 @@ Written by `scripts/bootstrap-project.ps1`; `activeRun` is updated by `scripts/c
 | State | Test | Bootstrap behaviour (without `-ForceLock`) |
 | --- | --- | --- |
 | `live` | `orca terminal show --terminal <handle> --json` returns `ok` | Refuse: a live coordinator owns this worktree |
-| `dead` | the handle is absent, or the probe returns non-zero | Warn, archive the old lock, take over |
+| `dead` | a handle is recorded and the probe returns non-zero | Warn, archive the old lock, take over |
 | `unknown` | no recorded handle, no `orca` on PATH, or an unparsable response | Refuse (absence is not proof — invariant 14) |
 
 `-ForceLock` archives the existing lock into `.dev-work/archive/coordinator-lock-<timestamp>.json`
@@ -51,8 +51,8 @@ and writes a new one regardless of state. Use it only after the holder is confir
 3. archives `active-run.json` and `coordinator-lock.json` into
    `.dev-work/archive/released-<timestamp>/`;
 4. sets the lock to `status = released` with `releasedAt`/`releaseReason` (it does not
-   delete the lock file, so a later `bootstrap` sees a `dead`/`unknown` holder and can
-   take over deliberately);
+   delete the lock file, so a later `bootstrap` sees a `released` holder, archives it and
+   takes over deliberately — even when the previous coordinator terminal is still alive);
 5. deletes `active-run.json`.
 
 The Orca Run is a namespace and is **not** deleted. `orca orchestration reset` is a
