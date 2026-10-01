@@ -57,3 +57,12 @@ and writes a new one regardless of state. Use it only after the holder is confir
 
 The Orca Run is a namespace and is **not** deleted. `orca orchestration reset` is a
 global-scope operation — never use it to clean up a single run.
+
+## Worker terminal retention
+
+`worker-release` is post-settlement cleanup, not cancellation. On a host whose default new-tab
+mode is a terminal, Orca can answer `state: retained` / `reason: user_takeover` /
+`ownershipState: user_owned` and keep the worker terminal alive. The completion accounting still
+holds (`worker-list --terminal-state reclaimable` returns none), but the terminal is not closed.
+Decide explicitly between reuse, retain, and close. Removing a task worktree orphans its
+terminal — close it explicitly instead of leaving a dead pane.

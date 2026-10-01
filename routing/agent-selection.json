@@ -5,7 +5,7 @@
     "Apply run-level and project-level overrides.",
     "Read the Role's minimum quality and capability requirements.",
     "Discard agents unavailable on the current runtime or not detected.",
-    "Discard profiles whose model/effort cannot be verified or applied.",
+    "Keep a profile whose model or effort cannot be verified out of automatic routing; it stays manually selectable by the coordinator and is never claimed as effective.",
     "Discard profiles unable to receive the required Skills or permission mode.",
     "Choose the first healthy preferred profile; preferredProfiles is ordered, and a profile whose autoRouteAfterProbe is false may only appear after every auto-routeable profile.",
     "Use fallback-policy.json only after classifying the failure.",

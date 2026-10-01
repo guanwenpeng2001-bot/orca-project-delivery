@@ -29,6 +29,7 @@ surface that carries the evidence or the action — current global `orchestratio
 | --- | --- |
 | `prompt_delivery_failed` | `worker-read --source transcript` shows no injected spec; repair topology or re-dispatch |
 | `readiness_failed` | `worker-show.observation.status`; `terminal wait --for tui-idle` timed out before injection |
+| `turn_start_unobserved` | `worker-start` receipt `state: outcome_unknown` / `stage: turn_start_unobserved`; `worker-show` reports `worker.state: start_unknown` and `projection.liveness.verdict: unverifiable`; the terminal preview still holds `[Pasted Content N chars]` with no turn output. Inspect first; when the task was accepted but never submitted, submit it in the **same** terminal (send a bare Enter). This is unobserved, not failed: never re-dispatch, stop, or abandon from it |
 | `process_exited` | `worker-show`/`worker-list` liveness `exited`, or the worker observed its own exit |
 
 ## Capacity

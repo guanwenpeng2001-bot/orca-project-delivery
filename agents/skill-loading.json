@@ -29,6 +29,7 @@
       "effectiveMode": "explicit-path"
     }
   },
+  "registryAlignment": "agents/registry.json records explicit-path for claude and claude-agent-teams as of 2026-10-02; this file is the authority when the two disagree (see SKILL.md 'Skill delivery').",
   "defaultForOtherAgents": {
     "preferred": "explicit-path",
     "fallback": "inline-extract",

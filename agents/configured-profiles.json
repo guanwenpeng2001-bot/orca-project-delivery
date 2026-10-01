@@ -11,7 +11,7 @@
     {
       "id": "antigravity-gemini-3.8-flash-high",
       "agent": "antigravity",
-      "model": "gemini-3.8-flash",
+      "model": "gemini-3.8-flash-high",
       "effort": "high",
       "modelControl": "orca-launch-preferences",
       "qualityTier": "standard",

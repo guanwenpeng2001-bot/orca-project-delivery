@@ -26,7 +26,7 @@ Its HEAD may be stale without affecting delivery.
 Resolved once at run intake:
 
 - user-specified branch; or
-- `main` when unspecified.
+- the repository default branch (`main`, else `master`) when unspecified, recorded with its source.
 
 It is the default task base, reviewed-source merge target, and final-verification source.
 

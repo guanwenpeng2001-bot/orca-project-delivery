@@ -17,9 +17,15 @@
 
 ## Outcome vocabulary
 
-Orca accepts only two values for the completion event
-(`orca orchestration send --type worker_done --outcome succeeded|failed`). Never encode
-failure only in prose.
+Orca accepts only two values for the completion event. The current `send` form requires a
+subject as well as the explicit outcome:
+
+```text
+orca orchestration send --subject "<task title> — <outcome>" --type worker_done --outcome succeeded|failed
+```
+
+Never encode failure only in prose. The injected Orca preamble always wins when it differs
+from this example.
 
 | Your verdict | What to send | What else to do |
 | --- | --- | --- |

@@ -88,7 +88,7 @@ Review each source branch against requirements, Task Contract, project rules, di
 
 ### Integration
 
-After approval, merge the source branch directly into `delivery_branch`. Do not use the coordinator control branch.
+After approval, merge the source branch directly into `delivery_branch`. Do not use the coordinator control branch. Orca has no merge primitive: this is an explicit coordinator `git merge` in the worktree that has `delivery_branch` checked out, recorded together with the diff, the tests, and the process-artifact exclusion check.
 
 ### Final verification
 

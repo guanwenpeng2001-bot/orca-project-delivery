@@ -31,7 +31,10 @@ Use the Agent's own configuration. Record evidence when visible; otherwise mark 
 
 ### `unverified`
 
-Manual-only. Exclude from automatic routes and fallbacks.
+Manual-only. Exclude from automatic routes and fallbacks. A profile whose *model* is verified but
+whose *effort* has no evidence is unverified for this purpose: an unverified effort may be launched
+by explicit coordinator choice, but the launch receipt must confirm `launch.requested` equals
+`launch.effective` before it is recorded as effective.
 
 ## Requested versus effective
 

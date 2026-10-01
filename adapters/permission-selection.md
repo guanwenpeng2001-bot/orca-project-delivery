@@ -24,7 +24,10 @@ Use Agent-specific unattended flags only when:
 - the expected commands are understood;
 - the user has not requested manual approval.
 
-Read the current Orca permission behavior before launch. The registry's flags are advisory snapshots, not authority.
+Read the current Orca permission behavior before launch. `worker-start` itself carries no
+permission flag — the effective permission comes from the Agent's own configuration and the user's
+Orca settings — so `unattendedArgs` in `agents/permission-presets.json` applies only to an explicit
+custom terminal command topology. The registry's flags are advisory snapshots, not authority.
 
 ## Recording
 

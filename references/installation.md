@@ -5,7 +5,7 @@ The delivery contains `.agents/skills/` as the canonical Skill tree.
 On Windows, copy or merge it into:
 
 ```text
-C:\Users\Administrator\.agents\skills\
+%USERPROFILE%\.agents\skills\
 ```
 
 Do not overwrite existing Orca-provided Skills such as:

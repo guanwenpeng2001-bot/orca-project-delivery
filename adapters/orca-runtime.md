@@ -35,3 +35,10 @@ Before any Run, Task, Dispatch, Worker, Message, Gate, worktree, terminal, or cl
 - Model/effort overrides cannot be assumed available for every Agent.
 - Runtime receipts and worker projections override local assumptions.
 - Timeouts and silence are observation checkpoints, not proof of failure.
+- A non-zero `worker-start` receipt (`state: outcome_unknown`, `stage: turn_start_unobserved`) is
+  unobserved, not failed: read `failedStage` and `residualResources`, inspect with `worker-show`
+  and `worker-read`, repair the same Agent's launch topology, and never re-dispatch on that
+  evidence alone.
+- Orca exposes no merge primitive. Integration is an explicit coordinator-run `git merge` into the
+  worktree that has `delivery_branch` checked out, recorded with its diff, tests, and
+  process-artifact exclusion check.

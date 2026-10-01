@@ -68,6 +68,10 @@
         "null"
       ]
     },
+    "allowCrossProviderFallback": {
+      "type": "boolean",
+      "description": "Default false. Cross-provider fallback needs an explicit user authorization recorded for the run; without it the coordinator suspends and asks."
+    },
     "completedStages": {
       "type": "array",
       "items": {

@@ -31,11 +31,15 @@
     },
     "prompt_delivery_failed": {
       "retry": "bounded",
-      "action": "repair-launch-topology-or-attach"
+      "action": "inspect-transcript-and-terminal-first; repair-launch-topology-or-attach; confirm the previous attempt is not still writing before any retry"
+    },
+    "turn_start_unobserved": {
+      "retry": false,
+      "action": "inspect-worker-show-and-terminal; if the task was accepted but never submitted, submit it in the same terminal; never re-dispatch from this evidence"
     },
     "readiness_failed": {
       "retry": "bounded",
-      "action": "inspect-terminal-before-retry"
+      "action": "inspect-terminal-before-retry; confirm the previous attempt is not still writing before any retry"
     },
     "rate_limited": {
       "retry": "bounded-backoff",
@@ -60,12 +64,13 @@
   },
   "recoveryOrder": [
     "Repair the same agent's launch topology.",
-    "Retry only a confirmed failed or stopped attempt when allowed.",
+    "Retry only a confirmed failed or stopped attempt when allowed, and only after confirming the previous attempt is not still writing.",
     "Use another supported model/effort on the same agent.",
-    "Use another agent profile at the same or higher quality tier.",
+    "Use another agent profile at the same or higher quality tier — same provider only, unless the user authorized cross-provider fallback for this run.",
     "Use a lower tier only if the Role minimum still passes.",
-    "Pause for user decision if the user pinned the unavailable choice or no eligible candidate remains."
+    "Pause for user decision if the user pinned the unavailable choice, if crossing providers would be required without authorization, or if no eligible candidate remains."
   ],
+  "crossProviderPolicy": "Cross-provider fallback (a different agent family) suspends the affected Task for a user decision unless run-state records allowCrossProviderFallback=true with the user's authorization. Silence, a timeout, or an unverifiable attempt is never a reason to cross providers.",
   "writeTaskHandoff": [
     "Confirm the original worker is stopped, failed, fenced, or explicitly handing off.",
     "Capture git status, diff, commits, untracked files, and test state.",

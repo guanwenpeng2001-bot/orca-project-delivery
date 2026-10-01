@@ -1,6 +1,10 @@
 {
   "schemaVersion": 1,
   "defaultMode": "manual",
+  "authority": [
+    "Orca's worker-start exposes no permission flag: the effective permission comes from the Agent's own configuration and the user's Orca settings. This package records requested and effective values; it cannot set them at dispatch time.",
+    "unattendedArgs below apply only to an explicit custom terminal command topology, never to worker-start."
+  ],
   "policy": [
     "A Git worktree is not a security sandbox.",
     "Use manual unless the user or project policy explicitly allows unattended execution for the task.",

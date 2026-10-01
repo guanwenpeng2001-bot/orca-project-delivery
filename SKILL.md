@@ -52,18 +52,25 @@ At coordinator start:
 1. Locate the coordinator control worktree root.
 2. Refuse a second live coordinator according to `references/coordinator-lock.md`.
 3. If `AGENTS.md` is absent, create it from `templates/AGENTS.md`; otherwise preserve it unchanged.
-4. If `.dev-work/` is absent, initialize it from `templates/dev-work/`; otherwise validate and reuse it.
+4. If `.dev-work/` is absent, initialize it with `scripts/bootstrap-project.ps1`; the files in
+   `templates/dev-work/` are schema-validated references for what the script writes, not copies.
+   If it already exists, validate and reuse it.
 5. Add `/AGENTS.md` and `/.dev-work/` to the local Git exclude file unless the user explicitly tracks them.
 6. Resolve the run's `delivery_branch`:
    - explicit user branch;
-   - otherwise `main`.
+   - otherwise the repository default branch (`main`, else `master`), recorded with its source.
+   The control branch must differ from `delivery_branch` (invariant 3). Choose the control branch
+   **before** bootstrapping: `scripts/bootstrap-project.ps1` refuses a worktree whose current
+   branch is the resolved delivery branch unless `-AllowControlEqualsDelivery` is passed
+   deliberately.
 7. Create or resume a `.dev-work/runs/<run-slug>/` record.
 8. Create or bind an Orca Run through the global `orchestration` skill.
 9. Probe relevant Agent backends before automatic routing.
 10. Record the active coordinator, delivery branch, Orca Run id, and schema versions.
 
 Use `scripts/bootstrap-project.ps1` to initialize the control worktree (it refuses a
-detached HEAD and a second live coordinator), `scripts/probe-agent-capabilities.ps1` to
+detached HEAD, a second live coordinator, and a control branch equal to the resolved
+delivery branch unless `-AllowControlEqualsDelivery` is passed deliberately), `scripts/probe-agent-capabilities.ps1` to
 probe agent backends and model/effort evidence, `scripts/create-run.ps1` to create the run
 record (it archives prior state when `-Force` reuses a run), `scripts/assemble-task.ps1`
 to build a worker assignment from a Task Definition, `scripts/validate-run.ps1` to check
@@ -249,6 +256,26 @@ The coordinator remains active while workers run:
 8. Integrate reviewed source into `delivery_branch`.
 9. Start final verification from the latest delivery branch.
 
+### Unobservable and failed receipts
+
+- A non-zero `worker-start` receipt is not a failed attempt. Read `failedStage` and
+  `residualResources`, classify it with `references/agent-failure-taxonomy.md`, and never
+  re-dispatch from that evidence alone.
+- `outcome_unknown`, `turn_start_unobserved`, an empty wait, and a timeout are unobserved, not
+  failed. `unverifiable` liveness never authorizes stop, abandon, retry, or release.
+- After three consecutive empty waits, enumerate the fleet and act on each row's attention
+  categories and its literal `nextAction`; use `worker-read` for bounded inspection instead of
+  screenshots. Current syntax lives in the global `orchestration` skill.
+- Release is post-settlement cleanup. A worker terminal that stays `retained` or `user_owned` is a
+  recorded decision, not a leak; removing its worktree orphans it, so close it explicitly.
+
+### Decisions and ordering
+
+- Encode a user decision as an Orca decision gate so it suspends only the dependent Tasks, and
+  resolve the gate once the user decides. The gate verbs live in the global `orchestration` skill.
+- Express real ordering as a Task dependency at creation time; prefer parallel waves over chains
+  deeper than three or four steps.
+
 ## Review and integration
 
 Implementer self-review is not independent acceptance.
@@ -259,7 +286,9 @@ For source-producing Tasks:
 2. Coordinator creates an independent review Task based on the implementation branch.
 3. Reviewer reports `APPROVED`, `CHANGES_REQUIRED`, or `UNVERIFIABLE`.
 4. Findings create separate fix Tasks; Reviewer does not edit the source.
-5. After approval, merge the source branch directly into `delivery_branch`.
+5. After approval, merge the source branch directly into the worktree that has `delivery_branch`
+   checked out. Orca exposes no merge primitive, so this is an explicit coordinator `git merge`,
+   recorded together with the diff, the tests, and the process-artifact exclusion check.
 6. Remove the task worktree and safe-to-delete branch only after integration or explicit abandonment.
 
 Never merge source into the coordinator control branch.
@@ -273,11 +302,14 @@ Classify failures using `references/agent-failure-taxonomy.md`.
 Recovery order:
 
 1. Correct launch topology for the same Agent.
-2. Retry a confirmed failed/stopped attempt when allowed.
+2. Retry a confirmed failed/stopped attempt when allowed, and only after confirming the previous
+   attempt is not still writing.
 3. Use another model/effort on the same Agent.
-4. Use another Agent profile in the same capability tier.
+4. Use another Agent profile in the same capability tier — same provider only, unless the user
+   authorized cross-provider fallback for this run (`allowCrossProviderFallback`).
 5. Use a lower tier only if the Role floor still passes.
-6. Pause for user decision when the user pinned the unavailable choice or no eligible candidate remains.
+6. Pause for user decision when the user pinned the unavailable choice, when crossing providers
+   would be required without authorization, or when no eligible candidate remains.
 
 A writing Worker may be replaced only after:
 
@@ -297,7 +329,8 @@ A run closes only when:
 - accepted source is integrated into `delivery_branch`;
 - final verification is complete or explicitly marked unverifiable;
 - process reports and decisions are stored;
-- no reclaimable worker resources remain;
+- no reclaimable worker resources remain: `worker-list --terminal-state reclaimable` returns none.
+  A worker terminal that stays `retained` or `user_owned` is a recorded decision, not a leak;
 - `final-report.md` and a separate user-decision report are written;
 - active run and coordinator lock are cleared safely with `scripts/release-coordinator.ps1 -ConfirmRunClosed`.
 
@@ -313,4 +346,8 @@ Keep `.dev-work/runs/<run>/` as local history.
 - Do not assume all Agents discover global Skills.
 - Do not trigger cross-Agent fallback when the user fixed the provider without permission.
 - Do not equate silence, timeout, or unverifiable output with quota exhaustion.
+- Do not re-dispatch a Task because a `worker-start` receipt was unobserved or a wait came back
+  empty.
+- Do not treat a retained or user-owned worker terminal as a failed release, and do not leave an
+  orphaned terminal behind after removing its worktree.
 - Do not merge process artifacts into the delivery branch.

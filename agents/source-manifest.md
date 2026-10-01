@@ -20,6 +20,11 @@ Relevant source surfaces:
 
 Policy: the installed Orca version, current global `orchestration` / `orca-cli` Skills, and live `--help` output are authoritative if this package's advisory metadata drifts.
 
+Local verification note (2026-10-02): the repository URL above could not be verified from this
+host, so treat it as unverified provenance. The installed build exposes its own command and agent
+registry locally (`orca agent-context --json`), which is the better source when regenerating this
+snapshot. `agents/registry.json` therefore carries an `orcaVersion` anchor and is advisory only.
+
 ## Role-design sources consulted
 
 - Roo Code custom-mode structure and the Roo Code repository's `.roomodes`.
@@ -38,3 +43,7 @@ The user's existing `AGENTS.md` supplied the initial project-specific defaults:
 - Decision ownership, one-writer branches, requested/effective model verification, process artifact exclusion, and Orca lifecycle discipline.
 
 These model identifiers remain requested profiles and require live capability verification before automatic routing.
+
+Correction applied in 1.1.0: the antigravity profile now names the model the CLI actually exposes
+(`gemini-3.8-flash-high`); the earlier bare `gemini-3.8-flash` id is not listed by `agy models`.
+Its automatic-routing eligibility is decided by the capability probe, not by this manifest.

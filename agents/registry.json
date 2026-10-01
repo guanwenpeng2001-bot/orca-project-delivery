@@ -1,5 +1,8 @@
 {
   "schemaVersion": 1,
+  "orcaVersion": "1.4.218",
+  "hostVerifiedAt": "2026-10-02",
+  "provenance": "Source-derived advisory snapshot. The repository URL is unverified from this host and every entry below is advisory only: the installed Orca build, its global skills, and their --help output are authoritative.",
   "source": {
     "repository": "https://github.com/stablyai/orca",
     "files": [
@@ -26,12 +29,14 @@
       "pasteNeedsTypedRequest": true,
       "preflightTrust": "claude",
       "modelControl": "orca-launch-preferences",
-      "skillDelivery": "provider-alias",
+      "skillDelivery": "explicit-path",
       "autoRoute": false,
       "detectAliases": [],
       "requiredCommands": [],
       "unsupportedRuntimes": [],
-      "notes": [],
+      "notes": [
+        "Skill delivery is explicit-path: the historical .claude/skills provider alias does not exist on this host (see agents/skill-loading.json)."
+      ],
       "supportsWorkerLaunchPreferences": true,
       "verificationStatus": "source-derived",
       "sourceOfTruth": "Current Orca TUI agent configuration; prefer installed Orca behavior on mismatch."
@@ -57,10 +62,11 @@
       "pasteNeedsTypedRequest": true,
       "preflightTrust": "claude",
       "modelControl": "agent-config",
-      "skillDelivery": "provider-alias",
+      "skillDelivery": "explicit-path",
       "autoRoute": false,
       "notes": [
-        "Orca native-pane mode is unavailable on Windows and WSL; do not auto-route there."
+        "Orca native-pane mode is unavailable on Windows and WSL; do not auto-route there.",
+        "Skill delivery is explicit-path: the historical .claude/skills provider alias does not exist on this host (see agents/skill-loading.json)."
       ],
       "supportsWorkerLaunchPreferences": false,
       "verificationStatus": "source-derived",
