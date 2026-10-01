@@ -13,6 +13,28 @@ param(
 $ErrorActionPreference = "Stop"
 $warnings = @()
 
+# --- host environment guard -------------------------------------------------
+# Some hosts inject GIT_CONFIG_COUNT together with GIT_CONFIG_KEY_n pairs, then strip child
+# variables whose names contain KEY/TOKEN/SECRET. The orphaned count makes every git call fail
+# with: fatal: missing config key GIT_CONFIG_KEY_0. Drop the orphan so git still works.
+if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
+  Remove-Item Env:GIT_CONFIG_COUNT -ErrorAction SilentlyContinue
+}
+
+function Invoke-Git {
+  param(
+    [Parameter(Mandatory = $true)][string]$Root,
+    [Parameter(Mandatory = $true)][string[]]$Arguments
+  )
+  $output = & git -C $Root @Arguments 2>&1
+  $exitCode = $LASTEXITCODE
+  if ($exitCode -ne 0) {
+    throw ("git {0} failed (exit {1}) in {2}: {3}" -f ($Arguments -join " "), $exitCode, $Root, (($output | Out-String).Trim()))
+  }
+  return $output
+}
+# ---------------------------------------------------------------------------
+
 function Write-JsonFile {
   param([string]$Path, [object]$Value)
   $json = $Value | ConvertTo-Json -Depth 20
@@ -20,8 +42,11 @@ function Write-JsonFile {
 }
 
 $root = (Resolve-Path $ProjectRoot).Path
-$gitRoot = (& git -C $root rev-parse --show-toplevel 2>$null)
-if (-not $gitRoot) { throw "Not inside a Git worktree." }
+try {
+  $gitRoot = (Invoke-Git -Root $root -Arguments @("rev-parse", "--show-toplevel") | Select-Object -First 1)
+} catch {
+  throw "Not inside a Git worktree. git said: $($_.Exception.Message)"
+}
 $gitRoot = (Resolve-Path $gitRoot.Trim()).Path
 
 $devWork = Join-Path $gitRoot ".dev-work"
@@ -41,10 +66,27 @@ Then re-run with -ConfirmRunClosed.
 }
 
 # Best-effort reclaimable-worker check. Unverifiable is reported, never treated as failure.
+# Scope the query to the Run recorded in .dev-work/active-run.json: called without --run, Orca
+# scopes worker-list to the Run bound to the calling terminal, which may be a different Run.
+# Note that Orca may legitimately answer state: retained / ownershipState: user_owned for a
+# worker terminal that was started in terminal mode, so a zero reclaimable count does NOT mean
+# the terminal was closed - only that this Run has nothing to reclaim.
 $reclaimable = $null
+$reclaimableScope = "bound-to-caller-terminal"
+$scopeRunId = $null
+$scopeActivePath = Join-Path $devWork "active-run.json"
+if (Test-Path $scopeActivePath) {
+  $scopeActive = Get-Content $scopeActivePath -Raw | ConvertFrom-Json
+  if ($scopeActive.orcaRunId) { $scopeRunId = "$($scopeActive.orcaRunId)" }
+}
 try {
   if (Get-Command orca -ErrorAction SilentlyContinue) {
-    $raw = & orca orchestration worker-list --terminal-state reclaimable --json 2>$null
+    if ($scopeRunId) {
+      $reclaimableScope = "run:$scopeRunId"
+      $raw = & orca orchestration worker-list --run $scopeRunId --terminal-state reclaimable --json 2>$null
+    } else {
+      $raw = & orca orchestration worker-list --terminal-state reclaimable --json 2>$null
+    }
     if ($LASTEXITCODE -eq 0 -and $raw) {
       $parsed = $raw | ConvertFrom-Json
       $reclaimable = @(($parsed.result.workers)).Count
@@ -101,6 +143,7 @@ if (Test-Path $lockPath) {
   archived = $archived
   archiveDir = $archiveDir
   reclaimableWorkers = $reclaimable
+  reclaimableScope = $reclaimableScope
   warnings = $warnings
   note = "The Orca Run itself is a namespace and is not deleted by this script."
 } | ConvertTo-Json -Depth 10

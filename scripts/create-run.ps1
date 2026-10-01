@@ -25,6 +25,28 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# --- host environment guard -------------------------------------------------
+# Some hosts inject GIT_CONFIG_COUNT together with GIT_CONFIG_KEY_n pairs, then strip child
+# variables whose names contain KEY/TOKEN/SECRET. The orphaned count makes every git call fail
+# with: fatal: missing config key GIT_CONFIG_KEY_0. Drop the orphan so git still works.
+if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
+  Remove-Item Env:GIT_CONFIG_COUNT -ErrorAction SilentlyContinue
+}
+
+function Invoke-Git {
+  param(
+    [Parameter(Mandatory = $true)][string]$Root,
+    [Parameter(Mandatory = $true)][string[]]$Arguments
+  )
+  $output = & git -C $Root @Arguments 2>&1
+  $exitCode = $LASTEXITCODE
+  if ($exitCode -ne 0) {
+    throw ("git {0} failed (exit {1}) in {2}: {3}" -f ($Arguments -join " "), $exitCode, $Root, (($output | Out-String).Trim()))
+  }
+  return $output
+}
+# ---------------------------------------------------------------------------
+
 function Write-JsonFile {
   param([string]$Path, [object]$Value)
   $json = $Value | ConvertTo-Json -Depth 30
@@ -32,13 +54,16 @@ function Write-JsonFile {
 }
 
 $root = (Resolve-Path $ProjectRoot).Path
-$gitRoot = (& git -C $root rev-parse --show-toplevel 2>$null)
-if (-not $gitRoot) { throw "Not inside a Git worktree." }
+try {
+  $gitRoot = (Invoke-Git -Root $root -Arguments @("rev-parse", "--show-toplevel") | Select-Object -First 1)
+} catch {
+  throw "Not inside a Git worktree. git said: $($_.Exception.Message)"
+}
 $gitRoot = (Resolve-Path $gitRoot.Trim()).Path
 
 # Validate the coordinator control branch before any write, so a detached HEAD cannot
 # leave a partial run directory behind.
-$currentBranch = (& git -C $gitRoot branch --show-current 2>$null)
+$currentBranch = (Invoke-Git -Root $gitRoot -Arguments @("branch", "--show-current") | Select-Object -First 1)
 $currentBranch = if ($currentBranch) { $currentBranch.Trim() } else { $null }
 if (-not $currentBranch) {
   throw "Cannot create a run from a detached HEAD: $gitRoot. Check out the coordinator control branch first."
@@ -49,7 +74,9 @@ if (-not $currentBranch) {
 $deliveryBranchSource = "user"
 if (-not $DeliveryBranch) {
   foreach ($candidate in @("main", "master")) {
-    & git -C $gitRoot show-ref --verify --quiet "refs/heads/$candidate"
+    # Existence probe: a missing ref exits 1 by design, so this stays a raw call that captures
+    # stderr instead of a throwing Invoke-Git call.
+    $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$candidate" 2>&1
     if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $candidate; $deliveryBranchSource = $candidate; break }
   }
   if (-not $DeliveryBranch) { $DeliveryBranch = $currentBranch; $deliveryBranchSource = "current" }

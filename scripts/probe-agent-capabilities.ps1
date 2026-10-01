@@ -20,6 +20,29 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# --- host environment guard -------------------------------------------------
+# Some hosts inject GIT_CONFIG_COUNT together with GIT_CONFIG_KEY_n pairs, then strip child
+# variables whose names contain KEY/TOKEN/SECRET. The orphaned count makes every git call fail
+# with: fatal: missing config key GIT_CONFIG_KEY_0. Drop the orphan so git still works.
+if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
+  Remove-Item Env:GIT_CONFIG_COUNT -ErrorAction SilentlyContinue
+}
+
+function Invoke-Git {
+  param(
+    [Parameter(Mandatory = $true)][string]$Root,
+    [Parameter(Mandatory = $true)][string[]]$Arguments
+  )
+  $output = & git -C $Root @Arguments 2>&1
+  $exitCode = $LASTEXITCODE
+  if ($exitCode -ne 0) {
+    throw ("git {0} failed (exit {1}) in {2}: {3}" -f ($Arguments -join " "), $exitCode, $Root, (($output | Out-String).Trim()))
+  }
+  return $output
+}
+# ---------------------------------------------------------------------------
+
 $warnings = @()
 
 function Write-JsonFile {
@@ -28,7 +51,9 @@ function Write-JsonFile {
   [System.IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
 }
 
-# Run a CLI, capture merged output, and never hang: the child is killed on timeout.
+# Run a CLI, capture merged output, and never hang: stdout/stderr are drained concurrently with
+# the wait (a CLI that writes more than the OS pipe buffer would otherwise look like a timeout),
+# the child is killed on timeout, and stdOut/stdErr stay separable for health decisions.
 function Invoke-CliCaptured {
   param([string]$ExePath, [string]$Arguments, [int]$TimeoutMs = 8000)
   $file = $ExePath
@@ -53,25 +78,49 @@ function Invoke-CliCaptured {
     $psi.RedirectStandardError = $true
     $psi.UseShellExecute = $false
     $psi.CreateNoWindow = $true
-    $p = [System.Diagnostics.Process]::Start($psi)
+    $p = [System.Diagnostics.Process]::new()
+    $p.StartInfo = $psi
+    if (-not $p.Start()) {
+      return @{ ok = $false; timedOut = $false; exitCode = $null; output = $null; stdOut = $null; stdErr = $null; reason = "process could not be started" }
+    }
+    $stdOutTask = $p.StandardOutput.ReadToEndAsync()
+    $stdErrTask = $p.StandardError.ReadToEndAsync()
     if (-not $p.WaitForExit($TimeoutMs)) {
       try { $p.Kill($true) } catch { }
-      return @{ ok = $false; timedOut = $true; exitCode = $null; output = $null; reason = "timed out after ${TimeoutMs}ms" }
+      try { $p.WaitForExit(2000) | Out-Null } catch { }
+      try { $stdOutTask.Wait(2000) | Out-Null } catch { }
+      try { $stdErrTask.Wait(2000) | Out-Null } catch { }
+      return @{ ok = $false; timedOut = $true; exitCode = $null; output = $null; stdOut = $null; stdErr = $null; reason = "timed out after ${TimeoutMs}ms" }
     }
-    $text = ($p.StandardOutput.ReadToEnd() + $p.StandardError.ReadToEnd()).Trim()
-    return @{ ok = ($p.ExitCode -eq 0); timedOut = $false; exitCode = $p.ExitCode; output = $text; reason = $null }
+    $stdOut = $stdOutTask.GetAwaiter().GetResult()
+    $stdErr = $stdErrTask.GetAwaiter().GetResult()
+    $text = ($stdOut + $stdErr).Trim()
+    return @{ ok = ($p.ExitCode -eq 0); timedOut = $false; exitCode = $p.ExitCode; output = $text; stdOut = $stdOut.Trim(); stdErr = $stdErr.Trim(); reason = $null }
   } catch {
-    return @{ ok = $false; timedOut = $false; exitCode = $null; output = $null; reason = $_.Exception.Message }
+    return @{ ok = $false; timedOut = $false; exitCode = $null; output = $null; stdOut = $null; stdErr = $null; reason = $_.Exception.Message }
   }
 }
 
+# A CLI counts as usable only when `--version` really produced a version on stdout: exit code
+# alone is not enough, because a broken shim (observed: opencode.ps1) exits 0 while writing a
+# PowerShell ResourceUnavailable error to stderr.
 function Get-CliVersion {
   param([string]$ExePath, [int]$TimeoutMs = 8000)
-  if (-not $ExePath) { return $null }
+  if (-not $ExePath) { return @{ ok = $false; version = $null; reason = "no executable path" } }
   $result = Invoke-CliCaptured -ExePath $ExePath -Arguments "--version" -TimeoutMs $TimeoutMs
-  if ($result.timedOut) { $script:warnings += "Version probe timed out: $ExePath"; return $null }
-  if (-not $result.output) { return $null }
-  return [string](($result.output -split "`r?`n")[0])
+  if ($result.timedOut) { return @{ ok = $false; version = $null; reason = "version probe timed out after ${TimeoutMs}ms" } }
+  if ($result.exitCode -ne 0) {
+    $detail = $result.reason
+    if (-not $detail) { $detail = [string](($result.output -split "`r?`n" | Where-Object { $_ -match '\S' } | Select-Object -First 1)) }
+    return @{ ok = $false; version = $null; reason = "version probe failed (exit $($result.exitCode)): $detail" }
+  }
+  $version = [string](($result.stdOut -split "`r?`n" | Where-Object { $_ -match '\S' } | Select-Object -First 1))
+  if (-not $version) {
+    $detail = [string](($result.stdErr -split "`r?`n" | Where-Object { $_ -match '\S' } | Select-Object -First 1))
+    if (-not $detail) { $detail = "no output on stdout or stderr" }
+    return @{ ok = $false; version = $null; reason = "no version on stdout: $detail" }
+  }
+  return @{ ok = $true; version = $version; reason = $null }
 }
 
 function Read-TomlScalar {
@@ -114,8 +163,52 @@ function Get-KimiModelTable {
   return $table
 }
 
+# Extract an explicitly advertised effort list (e.g. `[possible values: low, medium, high]`) that
+# belongs to an effort flag. Only an explicit enumeration counts: a bare `<EFFORT>` placeholder
+# must never be read as "this CLI advertises its effort values".
+function Get-AdvertisedEffortValues {
+  param([string]$HelpText, [int]$Window = 4)
+  if (-not $HelpText) { return @() }
+  $lines = @($HelpText -split "`r?`n")
+  for ($i = 0; $i -lt $lines.Count; $i++) {
+    if ($lines[$i] -notmatch '(^|\s)--?(reasoning-)?effort\b') { continue }
+    $end = [Math]::Min($i + $Window, $lines.Count - 1)
+    for ($j = $i; $j -le $end; $j++) {
+      if ($lines[$j] -match '\[possible values:\s*(?<list>[^\]]+)\]') {
+        return @($Matches.list -split ',' | ForEach-Object { $_.Trim().Trim('"') } | Where-Object { $_ })
+      }
+    }
+  }
+  return @()
+}
+
+# Parse model ids out of a `models` listing. The `agy models` shape is "<id>\t<display name>";
+# a bare token, a "Default model: <id>" line and an "* <id> (default)" bullet are also accepted.
+# Prose lines such as "Fetching available models..." are ignored, so they cannot be mistaken
+# for a listed model.
+function Get-ListedModelIds {
+  param([string]$Listing)
+  if (-not $Listing) { return @() }
+  $ids = @()
+  foreach ($line in ($Listing -split "`r?`n")) {
+    if ($line -notmatch '\S') { continue }
+    if ($line -match '(?i)^\s*(?:default|current)\s+model\s*[:=]\s*(?<id>\S+)') {
+      $ids += $Matches.id.Trim('"')
+      continue
+    }
+    if ($line -match '^\s*(?:[\*\-]\s*)?(?<id>[A-Za-z0-9][A-Za-z0-9._/:\-]*)(?:\t|\s{2,}|\s+\(|$)') {
+      $ids += $Matches.id
+    }
+  }
+  return @($ids | Where-Object { $_ -notmatch '^(Fetching|Loading|Reading|Resolving|Downloading|Available|Models)$' } | Select-Object -Unique)
+}
+
 $root = (Resolve-Path $ProjectRoot).Path
-$gitRoot = (& git -C $root rev-parse --show-toplevel 2>$null)
+try {
+  $gitRoot = Invoke-Git -Root $root -Arguments @("rev-parse", "--show-toplevel")
+} catch {
+  throw "Not inside a Git worktree. git said: $($_.Exception.Message)"
+}
 if (-not $gitRoot) { throw "Not inside a Git worktree." }
 $gitRoot = (Resolve-Path $gitRoot.Trim()).Path
 
@@ -137,6 +230,12 @@ if (Get-Variable IsWindows -ErrorAction SilentlyContinue) {
   $isWin = $true
 }
 $runtime = $(if ($isWin) { "win32" } else { "linux" })
+
+# Portable home resolution: $env:USERPROFILE is Windows-only and is unset elsewhere, while the
+# script already models a non-Windows runtime. On Windows the first branch keeps today's value.
+$userProfile = $env:USERPROFILE
+if (-not $userProfile) { $userProfile = $HOME }
+if (-not $userProfile) { $userProfile = [Environment]::GetFolderPath("UserProfile") }
 
 $rows = @()
 foreach ($agent in $registry.agents) {
@@ -160,20 +259,32 @@ foreach ($agent in $registry.agents) {
 
   $detected = ($null -ne $found) -and ($missingRequired.Count -eq 0) -and (-not $unsupported)
   $version = $null
+  $probeFailure = $null
   if ($detected) {
-    $version = Get-CliVersion -ExePath $found.Source -TimeoutMs $VersionTimeoutMs
+    $versionProbe = Get-CliVersion -ExePath $found.Source -TimeoutMs $VersionTimeoutMs
+    if ($versionProbe.ok) {
+      $version = $versionProbe.version
+    } else {
+      # Present but broken: not usable, so it is reported as not detected.
+      $probeFailure = $versionProbe.reason
+      $detected = $false
+    }
   }
 
   $notes = @($agent.notes)
   if ($unsupported) { $notes += "Unsupported on runtime $runtime." }
   if ($missingRequired.Count -gt 0) { $notes += "Missing required commands: $($missingRequired -join ', ')." }
+  if ($probeFailure) {
+    $notes += "CLI found at $($found.Source) but not usable: $probeFailure"
+    $script:warnings += "CLI '$($agent.id)' is present at $($found.Source) but did not run: $probeFailure"
+  }
 
   $rows += [ordered]@{
     id = $agent.id
     displayName = $agent.displayName
     detected = $detected
     runtimeSupported = (-not $unsupported)
-    command = $(if ($found) { $found.Source } else { $null })
+    command = $(if ($detected) { $found.Source } else { $null })
     version = $version
     missingRequiredCommands = $missingRequired
     modelControl = $agent.modelControl
@@ -215,32 +326,51 @@ if (-not $SkipModelProbe) {
   $detectedById = @{}
   foreach ($row in $rows) { $detectedById[$row.id] = $row }
 
-  $codexConfig = Join-Path $env:USERPROFILE ".codex\config.toml"
+  $codexConfig = Join-Path $userProfile ".codex\config.toml"
   $codexModel = Read-TomlScalar -Path $codexConfig -Key "model"
   $codexEffort = Read-TomlScalar -Path $codexConfig -Key "model_reasoning_effort"
   $codexEfforts = Read-TomlArray -Path $codexConfig -Key "enabled-reasoning-efforts"
 
-  $kimiConfig = Join-Path $env:USERPROFILE ".kimi-code\config.toml"
+  $kimiConfig = Join-Path $userProfile ".kimi-code\config.toml"
   $kimiDefault = Read-TomlScalar -Path $kimiConfig -Key "default_model"
   $kimiModels = Get-KimiModelTable -Path $kimiConfig
 
+  # grok: the model listing is host evidence, but `grok --help` only shows an `<EFFORT>`
+  # placeholder, so the effort can only be verified from a launch receipt.
   $grokRow = $detectedById["grok"]
   $grokModels = $null
+  $grokHelp = $null
   if ($grokRow -and $grokRow.detected) {
     $grokResult = Invoke-CliCaptured -ExePath $grokRow.command -Arguments "models" -TimeoutMs $CommandTimeoutMs
-    if ($grokResult.ok) { $grokModels = $grokResult.output }
+    if ($grokResult.ok -and $grokResult.output) { $grokModels = $grokResult.output }
+    $grokHelpResult = Invoke-CliCaptured -ExePath $grokRow.command -Arguments "--help" -TimeoutMs $CommandTimeoutMs
+    if ($grokHelpResult.ok -and $grokHelpResult.output) { $grokHelp = $grokHelpResult.output }
+    if (-not $grokModels) {
+      $grokFailure = $(if ($grokResult.reason) { $grokResult.reason } else { "no output" })
+      $script:warnings += "grok: 'grok models' could not be read ($grokFailure); model evidence stays unverified."
+    }
   }
+  $grokEfforts = @(Get-AdvertisedEffortValues -HelpText $grokHelp)
 
+  # antigravity: `agy models` does list models on this host, and `agy --help` advertises effort values.
   $agyRow = $detectedById["antigravity"]
   $agyHelp = $null
+  $agyModelListing = $null
   if ($agyRow -and $agyRow.detected) {
     $agyResult = Invoke-CliCaptured -ExePath $agyRow.command -Arguments "--help" -TimeoutMs $CommandTimeoutMs
     if ($agyResult.output) { $agyHelp = $agyResult.output }
+    $agyModelsResult = Invoke-CliCaptured -ExePath $agyRow.command -Arguments "models" -TimeoutMs $CommandTimeoutMs
+    if ($agyModelsResult.ok -and $agyModelsResult.output) { $agyModelListing = $agyModelsResult.output }
+    if (-not $agyModelListing) {
+      $agyFailure = $(if ($agyModelsResult.reason) { $agyModelsResult.reason } else { "no output" })
+      $script:warnings += "antigravity: 'agy models' could not be read ($agyFailure); model existence stays unverified."
+    }
   }
   $agyEfforts = @()
   if ($agyHelp -and $agyHelp -match 'effort[^\r\n]*\((?<list>[a-z\|]+)\)') {
     $agyEfforts = @($Matches.list -split '\|' | Where-Object { $_ })
   }
+  $agyModelIds = @(Get-ListedModelIds -Listing $agyModelListing)
 
   $profileRows = @()
   foreach ($profile in $profiles.profiles) {
@@ -249,13 +379,17 @@ if (-not $SkipModelProbe) {
     $supportedEfforts = @()
     $verified = $false
     $verificationPath = $null
+    # A profile is verified only when BOTH the model and the effort have positive host evidence.
+    $modelEvidence = $false
+    $effortEvidence = $false
 
     switch ($profile.agent) {
       "codex" {
         if (Test-Path $codexConfig) { $evidence += "config: $codexConfig" }
         if ($codexModel) { $evidence += "config model='$codexModel' effort='$codexEffort'" }
         $supportedEfforts = $codexEfforts
-        if ($codexModel -and ($profile.model -eq $codexModel) -and ($profile.effort -in $codexEfforts)) { $verified = $true }
+        $modelEvidence = [bool]($codexModel -and ($profile.model -eq $codexModel))
+        $effortEvidence = [bool]($profile.effort -and ($profile.effort -in $codexEfforts))
         $verificationPath = "config.toml + worker-start receipt (launch.requested vs launch.effective)"
       }
       "kimi" {
@@ -264,7 +398,8 @@ if (-not $SkipModelProbe) {
         if ($kimiModels.ContainsKey($profile.model)) {
           $supportedEfforts = @($kimiModels[$profile.model].supportEfforts)
           $evidence += "support_efforts=[$($supportedEfforts -join ', ')] default_effort='$($kimiModels[$profile.model].defaultEffort)'"
-          if ((-not $profile.effort) -or ($profile.effort -in $supportedEfforts)) { $verified = $true }
+          $modelEvidence = $true
+          $effortEvidence = [bool]((-not $profile.effort) -or ($profile.effort -in $supportedEfforts))
         } else {
           $evidence += "model table '$($profile.model)' not found in config.toml"
         }
@@ -273,14 +408,27 @@ if (-not $SkipModelProbe) {
       "grok" {
         if ($grokModels) {
           $evidence += "grok models: $((@($grokModels -split "`r?`n" | Where-Object { $_ -match '\S' }) | Select-Object -First 3) -join ' / ')"
-          if ($grokModels -match ("(?m)^\s*[\*\-]\s*" + [regex]::Escape($profile.model) + "\b") -or $grokModels -match ("Default model:\s*" + [regex]::Escape($profile.model))) {
-            $verified = $true
+          $modelEvidence = [bool](
+            $grokModels -match ("(?m)^\s*[\*\-]\s*" + [regex]::Escape($profile.model) + "(?![\w.\-])") -or
+            $grokModels -match ("Default model:\s*" + [regex]::Escape($profile.model) + "(?![\w.\-])"))
+          if ($modelEvidence) {
+            $evidence += "model '$($profile.model)' is listed by 'grok models' (model-name evidence only; a model listing cannot verify effort)"
+          } else {
+            $evidence += "model '$($profile.model)' is not listed by 'grok models'"
           }
         } else {
           $evidence += "grok models could not be read"
         }
-        $evidence += "effort: --reasoning-effort/--effort flag present; accepted values are not advertised"
-        $verificationPath = "grok models + worker-start receipt"
+        $supportedEfforts = $grokEfforts
+        $effortEvidence = [bool](($grokEfforts.Count -gt 0) -and $profile.effort -and ($profile.effort -in $grokEfforts))
+        if (-not $grokHelp) {
+          $evidence += "grok --help could not be read, so effort '$($profile.effort)' cannot be verified from the CLI"
+        } elseif ($grokEfforts.Count -gt 0) {
+          $evidence += "grok --help advertises effort values=[$($grokEfforts -join ', ')]"
+        } else {
+          $evidence += "effort values are not advertised: grok --help shows --reasoning-effort/--effort but no accepted values, so effort '$($profile.effort)' is unverifiable here"
+        }
+        $verificationPath = "worker-start launch receipt (launch.requested vs launch.effective)"
       }
       "antigravity" {
         if ($agyHelp) {
@@ -290,13 +438,46 @@ if (-not $SkipModelProbe) {
         } else {
           $evidence += "agy --help could not be read"
         }
-        $evidence += "model '$($profile.model)' existence is not listable from the CLI"
-        $verificationPath = "worker-start receipt (launch.requested vs launch.effective)"
+        if ($agyModelIds.Count -gt 0) {
+          $evidence += "agy models lists $($agyModelIds.Count) models"
+          if ($agyModelIds -contains $profile.model) {
+            $modelEvidence = $true
+            $evidence += "model '$($profile.model)' is listed by 'agy models'"
+          } else {
+            $related = @($agyModelIds | Where-Object { $_ -like "$($profile.model)*" })
+            if ($related.Count -gt 0) {
+              $evidence += "model '$($profile.model)' is NOT listed by 'agy models'; closest listed ids: $($related -join ', ')"
+            } else {
+              $evidence += "model '$($profile.model)' is NOT listed by 'agy models'; listed ids: $(@($agyModelIds | Select-Object -First 12) -join ', ')"
+            }
+          }
+        } elseif ($agyModelListing) {
+          $evidence += "agy models produced no parseable model ids"
+        } else {
+          $evidence += "agy models could not be read"
+        }
+        $effortEvidence = [bool]($profile.effort -and ($agyEfforts -contains $profile.effort))
+        if ($agyEfforts.Count -gt 0) {
+          if ($effortEvidence) {
+            $evidence += "effort '$($profile.effort)' is advertised by agy --help"
+          } else {
+            $evidence += "effort '$($profile.effort)' is NOT advertised by agy --help"
+          }
+        }
+        $verificationPath = "agy models + agy --help"
       }
       default {
         $evidence += "No host-side model probe implemented for agent '$($profile.agent)'."
         $verificationPath = "worker-start receipt (launch.requested vs launch.effective)"
       }
+    }
+
+    $verified = [bool]($modelEvidence -and $effortEvidence)
+    if (-not $verified) {
+      $missing = @()
+      if (-not $modelEvidence) { $missing += "model" }
+      if (-not $effortEvidence) { $missing += "effort" }
+      $evidence += "verified=false: no positive $($missing -join ' + ') evidence on this host."
     }
 
     $profileRows += [ordered]@{
@@ -308,6 +489,8 @@ if (-not $SkipModelProbe) {
       agentDetected = [bool]($row -and $row.detected)
       agentSupportsLaunchPreferences = [bool]($row -and $row.supportsWorkerLaunchPreferences)
       verified = $verified
+      modelEvidence = $modelEvidence
+      effortEvidence = $effortEvidence
       supportedEfforts = $supportedEfforts
       evidence = $evidence
       verificationPath = $verificationPath
@@ -317,12 +500,14 @@ if (-not $SkipModelProbe) {
   $modelOutput = [ordered]@{
     schemaVersion = 1
     checkedAt = [DateTimeOffset]::UtcNow.ToString("o")
-    policy = "requiresProbe profiles are eligible for automatic routing only when verified is true; unverifiable stays manual."
+    policy = "requiresProbe profiles are eligible for automatic routing only when verified is true; verified requires positive host evidence for BOTH model and effort, and anything unverifiable stays manual."
     sources = [ordered]@{
       codexConfig = $(if (Test-Path $codexConfig) { $codexConfig } else { $null })
       kimiConfig = $(if (Test-Path $kimiConfig) { $kimiConfig } else { $null })
       grokModelsRead = [bool]$grokModels
+      grokHelpRead = [bool]$grokHelp
       antigravityHelpRead = [bool]$agyHelp
+      antigravityModelsRead = [bool]$agyModelListing
     }
     profiles = $profileRows
   }

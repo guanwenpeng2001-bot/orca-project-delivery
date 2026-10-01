@@ -21,8 +21,38 @@ $role = $catalog.roles | Where-Object { $_.id -eq $task.role } | Select-Object -
 if (-not $role) { throw "Unknown role: $($task.role)" }
 
 $rolePath = Join-Path $skillRoot ($role.path -replace "/", "\")
-# Demote the role document's H1 so the embedded contract nests under "## Primary Role".
-$roleBody = (Get-Content $rolePath -Raw) -replace '(?m)^# ', '### '
+
+# Prepare a whole Markdown document for embedding inside one of the assignment's own
+# "## " sections: demote H1-H3 by two levels in a single pass (so a demoted heading is
+# never demoted twice), and turn leading YAML front matter into a fenced ```yaml block so
+# it renders as data instead of loose prose. Documents without front matter are unchanged
+# apart from the heading levels.
+function ConvertTo-EmbeddedMarkdown {
+  param([string]$Text)
+
+  $body = $Text
+  $frontMatter = $null
+
+  $frontMatterMatch = [regex]::Match($body, '(?s)\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\z)')
+  if ($frontMatterMatch.Success) {
+    $frontMatter = $frontMatterMatch.Groups[1].Value.TrimEnd("`r", "`n")
+    $body = $body.Substring($frontMatterMatch.Length)
+  }
+
+  $body = [regex]::Replace($body, '(?m)^#{1,3} ', { param($match) '##' + $match.Value })
+  $body = $body.TrimStart("`r", "`n")
+
+  if ($null -ne $frontMatter) {
+    # LF between the fence lines keeps the generated Markdown LF-only, matching the
+    # embedded document bodies.
+    $fenced = '```yaml' + "`n" + $frontMatter + "`n" + '```'
+    $body = $fenced + "`n`n" + $body
+  }
+
+  return $body
+}
+
+$roleBody = ConvertTo-EmbeddedMarkdown (Get-Content $rolePath -Raw)
 
 function To-Bullets {
   param($Items)
@@ -56,10 +86,11 @@ foreach ($skillName in @($task.skills.conditional)) {
 }
 if ($skillLines.Count -eq 0) { $skillLines = @("- None") }
 
-# Demote the contract's H1 and drop its duplicate title; the document already has
-# its own "## Orca Worker Contract" heading.
+# Drop the contract's duplicate title; the document already has its own
+# "## Orca Worker Contract" heading. Remaining headings nest two levels deeper.
 $workerContract = (Get-Content (Join-Path $skillRoot "references\worker-contract.md") -Raw)
 $workerContract = $workerContract -replace '(?m)^# Orca Worker Contract\r?\n+', ''
+$workerContract = ConvertTo-EmbeddedMarkdown $workerContract
 
 # Resolve AGENTS files. Explicit Task list wins; otherwise include the coordinator/project
 # root and the task worktree root when present. Deduplicate by canonical path.
@@ -73,6 +104,9 @@ if ($task.PSObject.Properties.Name -contains "applicableAgentsFiles" -and @($tas
   }
 }
 $seen = @{}
+# $seen stays case-insensitive purely for deduplication; $agentsFiles keeps the on-disk
+# casing of each resolved AGENTS.md for the JSON output.
+$agentsFiles = @()
 $agentsSections = @()
 foreach ($candidate in $agentsCandidates) {
   if (-not $candidate) { continue }
@@ -81,6 +115,7 @@ foreach ($candidate in $agentsCandidates) {
   $key = $resolved.ToLowerInvariant()
   if ($seen.ContainsKey($key)) { continue }
   $seen[$key] = $true
+  $agentsFiles += (Get-Item -LiteralPath $resolved).FullName
   $agentsSections += @"
 ## AGENTS source: ``$resolved``
 
@@ -183,5 +218,5 @@ if ($outParent -and -not (Test-Path $outParent)) {
   output = $OutputPath
   role = $task.role
   skills = $task.skills
-  agentsFiles = @($seen.Keys)
+  agentsFiles = @($agentsFiles)
 } | ConvertTo-Json -Depth 10

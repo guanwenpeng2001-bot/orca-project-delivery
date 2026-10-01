@@ -4,10 +4,35 @@ param(
   [string]$ProjectRoot = (Get-Location).Path,
 
   [Parameter(Mandatory = $false)]
-  [switch]$ForceLock
+  [switch]$ForceLock,
+
+  [Parameter(Mandatory = $false)]
+  [switch]$AllowControlEqualsDelivery
 )
 
 $ErrorActionPreference = "Stop"
+
+# --- host environment guard -------------------------------------------------
+# Some hosts inject GIT_CONFIG_COUNT together with GIT_CONFIG_KEY_n pairs, then strip child
+# variables whose names contain KEY/TOKEN/SECRET. The orphaned count makes every git call fail
+# with: fatal: missing config key GIT_CONFIG_KEY_0. Drop the orphan so git still works.
+if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
+  Remove-Item Env:GIT_CONFIG_COUNT -ErrorAction SilentlyContinue
+}
+
+function Invoke-Git {
+  param(
+    [Parameter(Mandatory = $true)][string]$Root,
+    [Parameter(Mandatory = $true)][string[]]$Arguments
+  )
+  $output = & git -C $Root @Arguments 2>&1
+  $exitCode = $LASTEXITCODE
+  if ($exitCode -ne 0) {
+    throw ("git {0} failed (exit {1}) in {2}: {3}" -f ($Arguments -join " "), $exitCode, $Root, (($output | Out-String).Trim()))
+  }
+  return $output
+}
+# ---------------------------------------------------------------------------
 
 function Write-JsonFile {
   param([string]$Path, [object]$Value)
@@ -19,18 +44,40 @@ $root = (Resolve-Path $ProjectRoot).Path
 $skillRoot = Split-Path -Parent $PSScriptRoot
 $templateAgents = Join-Path $skillRoot "templates\AGENTS.md"
 
-$gitRoot = (& git -C $root rev-parse --show-toplevel 2>$null)
-if (-not $gitRoot) {
-  throw "ProjectRoot is not inside a Git worktree: $root"
+try {
+  $gitRoot = (Invoke-Git -Root $root -Arguments @("rev-parse", "--show-toplevel") | Select-Object -First 1)
+} catch {
+  throw "ProjectRoot is not inside a Git worktree: $root. git said: $($_.Exception.Message)"
 }
 $gitRoot = (Resolve-Path $gitRoot.Trim()).Path
 
 # Validate the coordinator control branch BEFORE any write, so a detached HEAD cannot
 # leave a half-initialized .dev-work behind.
-$currentBranch = (& git -C $gitRoot branch --show-current 2>$null)
+$currentBranch = (Invoke-Git -Root $gitRoot -Arguments @("branch", "--show-current") | Select-Object -First 1)
 $currentBranch = if ($currentBranch) { $currentBranch.Trim() } else { $null }
 if (-not $currentBranch) {
   throw "Coordinator control worktree is in detached HEAD: $gitRoot. Check out the coordinator control branch before bootstrapping."
+}
+
+# Resolve the candidate delivery branch in the same order as create-run.ps1 does: there is no
+# explicit -DeliveryBranch here, so it is main, else master, else the current branch.
+$deliveryBranch = $null
+$deliveryBranchSource = $null
+foreach ($candidate in @("main", "master")) {
+  # Existence probe: a missing ref exits 1 by design, so this stays a raw call that captures
+  # stderr instead of a throwing Invoke-Git call.
+  $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$candidate" 2>&1
+  if ($LASTEXITCODE -eq 0) { $deliveryBranch = $candidate; $deliveryBranchSource = $candidate; break }
+}
+if (-not $deliveryBranch) { $deliveryBranch = $currentBranch; $deliveryBranchSource = "current" }
+
+# Invariant 3: the coordinator control branch must differ from the delivery branch, otherwise
+# the run bootstrapped from this control worktree is invalid as soon as it is created.
+if ($currentBranch -eq $deliveryBranch) {
+  if (-not $AllowControlEqualsDelivery) {
+    throw "Coordinator control branch equals the resolved delivery branch '$deliveryBranch'. Create/checkout a control branch first (for example 'coord/<run-slug>'), or pass -AllowControlEqualsDelivery to accept an invariant 3 violation."
+  }
+  Write-Warning "Invariant 3 is knowingly violated for this control worktree: coordinator control branch equals the resolved delivery branch '$deliveryBranch'."
 }
 
 function Get-CoordinatorLiveness {
@@ -82,7 +129,7 @@ if (-not (Test-Path $manifestPath)) {
 }
 
 # Local-only ignore rules. This does not modify the repository's tracked .gitignore.
-$excludePathRaw = (& git -C $gitRoot rev-parse --git-path info/exclude).Trim()
+$excludePathRaw = (Invoke-Git -Root $gitRoot -Arguments @("rev-parse", "--git-path", "info/exclude") | Select-Object -First 1).Trim()
 if ([System.IO.Path]::IsPathRooted($excludePathRaw)) {
   $excludePath = $excludePathRaw
 } else {
@@ -146,5 +193,8 @@ $result = [ordered]@{
   lockPath = $lockPath
   lockLiveness = $lockLiveness
   gitExcludePath = $excludePath
+  deliveryBranch = $deliveryBranch
+  deliveryBranchSource = $deliveryBranchSource
+  controlEqualsDeliveryWaived = [bool]$AllowControlEqualsDelivery
 }
 $result | ConvertTo-Json -Depth 10

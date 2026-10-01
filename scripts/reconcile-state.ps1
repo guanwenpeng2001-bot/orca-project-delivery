@@ -6,6 +6,28 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# --- host environment guard -------------------------------------------------
+# Some hosts inject GIT_CONFIG_COUNT together with GIT_CONFIG_KEY_n pairs, then strip child
+# variables whose names contain KEY/TOKEN/SECRET. The orphaned count makes every git call fail
+# with: fatal: missing config key GIT_CONFIG_KEY_0. Drop the orphan so git still works.
+if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
+  Remove-Item Env:GIT_CONFIG_COUNT -ErrorAction SilentlyContinue
+}
+
+function Invoke-Git {
+  param(
+    [Parameter(Mandatory = $true)][string]$Root,
+    [Parameter(Mandatory = $true)][string[]]$Arguments
+  )
+  $output = & git -C $Root @Arguments 2>&1
+  $exitCode = $LASTEXITCODE
+  if ($exitCode -ne 0) {
+    throw ("git {0} failed (exit {1}) in {2}: {3}" -f ($Arguments -join " "), $exitCode, $Root, (($output | Out-String).Trim()))
+  }
+  return $output
+}
+# ---------------------------------------------------------------------------
+
 function Write-JsonFile {
   param([string]$Path, [object]$Value)
   $json = $Value | ConvertTo-Json -Depth 30
@@ -13,8 +35,11 @@ function Write-JsonFile {
 }
 
 $root = (Resolve-Path $ProjectRoot).Path
-$gitRoot = (& git -C $root rev-parse --show-toplevel 2>$null)
-if (-not $gitRoot) { throw "Not inside a Git worktree." }
+try {
+  $gitRoot = (Invoke-Git -Root $root -Arguments @("rev-parse", "--show-toplevel") | Select-Object -First 1)
+} catch {
+  throw "Not inside a Git worktree. git said: $($_.Exception.Message)"
+}
 $gitRoot = (Resolve-Path $gitRoot.Trim()).Path
 $devWork = Join-Path $gitRoot ".dev-work"
 $activePath = Join-Path $devWork "active-run.json"
@@ -23,8 +48,8 @@ if (-not (Test-Path $activePath)) { throw "No active run." }
 $active = Get-Content $activePath -Raw | ConvertFrom-Json
 $runDir = Join-Path $devWork ($active.runDirectory -replace "/", "\")
 $assignmentsDir = Join-Path $runDir "assignments"
-$worktreeText = (& git -C $gitRoot worktree list --porcelain) -join "`n"
-$branchLines = (& git -C $gitRoot for-each-ref --format="%(refname:short)|%(objectname)" refs/heads)
+$worktreeText = (Invoke-Git -Root $gitRoot -Arguments @("worktree", "list", "--porcelain")) -join "`n"
+$branchLines = Invoke-Git -Root $gitRoot -Arguments @("for-each-ref", "--format=%(refname:short)|%(objectname)", "refs/heads")
 
 # Exact indexes. Substring matching on the porcelain text reports a branch as
 # registered when only a longer sibling branch (scout/csv vs scout/csv-export) has a
