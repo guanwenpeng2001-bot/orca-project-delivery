@@ -260,6 +260,9 @@ The coordinator remains active while workers run:
 7. Create fix Tasks from accepted findings.
 8. Integrate reviewed source into `delivery_branch`.
 9. Start final verification from the latest delivery branch.
+10. Record each Task's machine-readable assignment under `runs/<run>/assignments/<task>.json`
+    (shape: `templates/dev-work/assignment.json`) whenever the Task has a branch and a report path;
+    the assembled `.md` brief alone leaves `reconcile-state.ps1` with nothing to compare against Git.
 
 ### Unobservable and failed receipts
 

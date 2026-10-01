@@ -132,6 +132,10 @@ five further defects; all are fixed here.
   about committing, and a task that also forbade `git commit` produced a correct deliverable that the
   coordinator had to commit. Both documents now say the worker commits on its task branch before
   reporting and still never merges.
+- **V-H (found while running V12)** `reconcile-state.ps1` compares `runs/<run>/assignments/*.json`
+  with Git, but nothing told the coordinator to write those files — a run whose Tasks only had
+  assembled `.md` briefs reconciled to an empty list. `SKILL.md` now requires recording the
+  machine-readable assignment for every Task that has a branch and a report path.
 
 Re-verified by the coordinator after the fixes: a `develop`-only repository refuses bootstrap with
 zero writes and succeeds with `-DeliveryBranch develop`; the traversal slug exits 1 and writes
