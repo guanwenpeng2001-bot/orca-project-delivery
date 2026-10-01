@@ -141,6 +141,42 @@ Re-verified by the coordinator after the fixes: a `develop`-only repository refu
 zero writes and succeeds with `-DeliveryBranch develop`; the traversal slug exits 1 and writes
 nothing; a released lock is archived (`lockLiveness: released`) and a fresh `active` lock is written.
 
+### Real dispatch evidence (V10 / V11 / V12)
+
+Run `run_1eacc8861006`, delivery branch `main` of the package repository itself
+(`C:\Users\Administrator\.agents\skills\orca-project-delivery`, registered with Orca for this
+exercise), coordinator control worktree `orca-project-delivery\opd-control`.
+
+- **V10/V11 — the `turn_start_unobserved` recovery works, three out of three.** Three
+  `worker-start` calls returned `state: outcome_unknown` / `stage: turn_start_unobserved` (codex had
+  accepted the task but no turn start was observed). Each was handled exactly as the taxonomy now
+  prescribes: `worker-show` to confirm the composer still held `[Pasted Content N chars]`, then a
+  bare Enter into the **same** terminal — the agent started within 12–15 s. No re-dispatch, no
+  abandon, no second writer. One transient `Stream disconnected before completion` recovered by
+  itself and triggered no degradation.
+- **V12 — the full source-delivery chain.** Implementation Task `task_5f2954a7c712`
+  (codex `gpt-6-astra` medium) produced `scripts/verify-package.ps1` on `task-verify-package`;
+  the independent review Task `task_718dbb0bc90c` (codex `gpt-6-astra` high) returned **APPROVED**
+  after six real runs; the coordinator merged it into `main` (`a19221e`).
+- **The final verification found a real integration defect.** Running the merged harness in the
+  installed package exited 1: its `runtime/delivery-branch-refusal-zero-writes` check asserted the
+  old bootstrap sentence, which the V-A fix had improved. Fix Task `task_cd6a258d12f0`
+  (codex medium) replaced the sentence coupling with independent, case-insensitive topic checks
+  (`control branch` and `delivery branch`) and kept the zero-write and hash-snapshot assertions;
+  the coordinator reviewed the one-commit diff and merged it (`11676c9`).
+- **Final verification `task_505914caa9c6` — READY**, run by a different Agent
+  (**antigravity `gemini-3.8-flash-high` high**, the profile repaired by this remediation) in a fresh
+  worktree from the merged `main`: harness 20/20 PASS exit 0, VERSION/manifest/file counts equal,
+  `git diff c129d9f..HEAD` free of process artifacts, and a mutated copy still exits 1.
+- All three codex dispatches and the antigravity dispatch reported
+  `launch.requested == launch.effective`. `worker-list --terminal-state reclaimable` returned none
+  at close.
+
+Process lesson recorded for the coordinator: a worker Task Definition must name the deliverable
+**inside the task worktree**. One fix Task named the installed path instead, and the worker wrote the
+installed copy out of band; the coordinator reverted it with `git checkout --` so Git stayed the
+single source of truth.
+
 ## 1.0.0 — baseline
 
 - 82 files as installed on 2026-10-02. The pre-fix 77-file copy is kept at
