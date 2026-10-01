@@ -43,6 +43,12 @@ happens after this batch is merged.
 - **F5** `validate-run.ps1` gained a recursive schema validator (nested `required`, `items`,
   `enum`, `const`, `minLength`, `uniqueItems`, `additionalProperties: false`) with JSON-path error
   messages.
+- **F5 (follow-on discovery, same fix)** schema validation had never reported *anything*:
+  `$errors = @()` is an `Object[]`, and binding it to a
+  `[System.Collections.ArrayList]` parameter copies it by value, so every error raised inside the
+  validator was discarded when the function returned. The accumulator is now a real `ArrayList`
+  with `[void]$errors.Add(...)` at each call site. Without this, a recursive validator would still
+  have been silent.
 - **F6/F7** the delivery-branch default is `main` → `master` → current branch with its source
   recorded, in `SKILL.md`, `adapters/branch-worktree.md` and `templates/AGENTS.md`; bootstrap
   refuses a control worktree whose current branch is the resolved delivery branch unless
@@ -78,6 +84,23 @@ happens after this batch is merged.
   `worker-read` for bounded inspection, the wait → enumerate (`worker-list` `nextAction`) escalation
   ladder, and explicit dependency creation for Task ordering.
 - **F20** `Omni\hind\.dev-work\` leftover resolved by a deliberate decision (recorded below).
+
+### Verification evidence (offline, reproducible)
+
+Observed by the coordinator and by an independent verifier on Orca 1.4.218 / PowerShell 7.6.6 /
+Windows. Every row is a real command run against the shipped files.
+
+| Check | Command (abridged) | Observed |
+| --- | --- | --- |
+| Scripts parse / encoding | `[Parser]::ParseFile` on all 7 scripts; byte scan | 0 parse errors; no BOM; 0 CR; LF only |
+| Host git env (F1) | `$env:GIT_CONFIG_COUNT=2` with no `GIT_CONFIG_KEY_0`, then bootstrap / create-run / reconcile-state / release-coordinator | all exit 0; a bare `git` in the same shell fails with `missing config key GIT_CONFIG_KEY_0` |
+| Topology guard (F7) | bootstrap in a temp repo whose current branch is the delivery branch | exit 1 with the conflict named; `AGENTS.md` and `.dev-work` absent (zero writes); exit 0 on a control branch |
+| Recursive schema (F5) | validate-run against crafted documents | missing `artifacts.evidencePath`, missing `branch.worktree`, unknown `skills` key, duplicate `completedStages`, invalid `workflow` enum → `ok:false` with JSON paths; compliant documents → `ok:true` |
+| Probe verdicts (F3) | probe-agent-capabilities on a temp project | antigravity `verified=true` (`agy models` + `agy --help`); grok `verified=false` (effort not advertised); codex/kimi unchanged `verified=true` |
+| Probe hardening (F14) | A/B on a CLI whose output exceeds 4 KB | pre-fix `grok --help` (7686 chars) → `timedOut` with 0 chars; post-fix → exit 0, 7511 chars; broken `opencode` → `detected=false` plus a warning |
+| Assignment rendering (F13) | assemble-task in a temp project | role H1→`###` and role H2→`####` nested under `## Primary Role`; front matter in a ```yaml fence; 0 literal placeholders; AGENTS.md still last |
+| Metadata coherence | routing vs role-compatibility, referenced profiles, `autoRouteAfterProbe` ordering, role/skill paths, manifest counts | equal / all present / 0 violations; manifest and VERSION both 1.1.0 |
+| Registry keys (F12) | key census of `agents/registry.json` | 43 `skillDelivery` keys for 43 agents, no duplicate keys, Claude entries `explicit-path` |
 
 ## 1.0.0 — baseline
 
