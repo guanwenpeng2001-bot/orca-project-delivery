@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "pathBase": "package-root",
+  "note": "Each skill path is relative to this package directory (orca-project-delivery), for example ..\\code-review\\SKILL.md resolves to <skills root>\\code-review\\SKILL.md.",
+  "skills": [
+    {
+      "id": "codebase-reconnaissance",
+      "name": "Codebase Reconnaissance",
+      "path": "..\\codebase-reconnaissance\\SKILL.md",
+      "description": "Inspect a codebase, branch, history, configuration, and tests to answer scoped factual questions without modifying source. Use for dynamic reconnaissance before planning or review."
+    },
+    {
+      "id": "technical-research",
+      "name": "Technical Research",
+      "path": "..\\technical-research\\SKILL.md",
+      "description": "Research current technical behavior using primary sources, source code, standards, and reproducible experiments. Use when library, CLI, protocol, platform, or vendor behavior can affect a decision."
+    },
+    {
+      "id": "product-discovery",
+      "name": "Product Discovery",
+      "path": "..\\product-discovery\\SKILL.md",
+      "description": "Turn a vague product request into a validated problem, users, outcomes, scope, non-goals, assumptions, and acceptance direction. Use before requirements when product intent is unclear."
+    },
+    {
+      "id": "product-design",
+      "name": "Product Design",
+      "path": "..\\product-design\\SKILL.md",
+      "description": "Design user flows, information architecture, interaction states, accessibility behavior, and testable UX acceptance. Use for UI, workflow, or interaction-heavy tasks."
+    },
+    {
+      "id": "requirements-analysis",
+      "name": "Requirements Analysis",
+      "path": "..\\requirements-analysis\\SKILL.md",
+      "description": "Convert objectives and evidence into traceable, unambiguous, testable functional and non-functional requirements. Use before planning or when acceptance is unclear."
+    },
+    {
+      "id": "solution-architecture",
+      "name": "Solution Architecture",
+      "path": "..\\solution-architecture\\SKILL.md",
+      "description": "Design minimal software boundaries, responsibilities, interfaces, data flow, migration, rollback, and operational behavior for a scoped objective. Use for cross-module or high-risk changes."
+    },
+    {
+      "id": "api-design",
+      "name": "API Design",
+      "path": "..\\api-design\\SKILL.md",
+      "description": "Design stable HTTP, RPC, event, CLI, or module contracts with validation, errors, idempotency, auth, compatibility, and contract tests. Use when interfaces change."
+    },
+    {
+      "id": "database-design",
+      "name": "Database Design",
+      "path": "..\\database-design\\SKILL.md",
+      "description": "Design data models, constraints, migrations, transactions, indexes, query patterns, retention, and rollback. Use for schema or persistence changes."
+    },
+    {
+      "id": "implementation-planning",
+      "name": "Implementation Planning",
+      "path": "..\\implementation-planning\\SKILL.md",
+      "description": "Turn an approved requirement and design into small, self-contained, dependency-aware Tasks with exact scope, acceptance, tests, roles, skills, branches, and reports."
+    },
+    {
+      "id": "test-driven-development",
+      "name": "Test-Driven Development",
+      "path": "..\\test-driven-development\\SKILL.md",
+      "description": "Use RED-GREEN-REFACTOR to implement behavior with evidence. Use for source changes where a focused automated test can express the intended contract."
+    },
+    {
+      "id": "systematic-debugging",
+      "name": "Systematic Debugging",
+      "path": "..\\systematic-debugging\\SKILL.md",
+      "description": "Reproduce, isolate, explain, fix, and verify defects through evidence-driven hypothesis testing. Use for bugs, flaky behavior, regressions, and unexplained failures."
+    },
+    {
+      "id": "code-review",
+      "name": "Code Review",
+      "path": "..\\code-review\\SKILL.md",
+      "description": "Perform independent, evidence-based review for spec compliance, correctness, lifecycle, concurrency, error handling, maintainability, and test quality. Use before integration."
+    },
+    {
+      "id": "security-review",
+      "name": "Security Review",
+      "path": "..\\security-review\\SKILL.md",
+      "description": "Review trust boundaries, authentication, authorization, input handling, secrets, sensitive data, injection, dependencies, configuration, and abuse paths. Use for security-sensitive changes."
+    },
+    {
+      "id": "performance-review",
+      "name": "Performance Review",
+      "path": "..\\performance-review\\SKILL.md",
+      "description": "Measure and analyze latency, throughput, complexity, queries, memory, concurrency, caching, and capacity. Use for performance-sensitive code or claimed optimizations."
+    },
+    {
+      "id": "integration-verification",
+      "name": "Integration Verification",
+      "path": "..\\integration-verification\\SKILL.md",
+      "description": "Verify Task and final-delivery acceptance with commands, runtime evidence, integration checks, and explicit skipped items. Use before completion claims and final delivery."
+    },
+    {
+      "id": "merge-conflict-resolution",
+      "name": "Merge Conflict Resolution",
+      "path": "..\\merge-conflict-resolution\\SKILL.md",
+      "description": "Resolve Git merge conflicts using branch intent, common base, commit history, interfaces, and tests. Use when integrating reviewed work into the delivery branch."
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "canonicalRootWindows": "%USERPROFILE%\\.agents\\skills",
+  "modes": {
+    "native": "Agent discovers the canonical .agents/skills root.",
+    "provider-alias": "Orca-managed provider path links back to the canonical root.",
+    "explicit-path": "Task instructs the worker to read exact SKILL.md paths.",
+    "inline-extract": "Coordinator includes only necessary skill sections and records source/hash."
+  },
+  "verifiedProviders": {
+    "codex": {
+      "mode": "native",
+      "globalPath": "%USERPROFILE%\\.agents\\skills",
+      "evidence": "codex.exe contains the '.agents/skills' lookup string; `orca skills installed` publishes to the 'codex' provider.",
+      "fallback": "explicit-path"
+    },
+    "agent-skills-home": {
+      "mode": "native",
+      "globalPath": "%USERPROFILE%\\.agents\\skills",
+      "evidence": "`orca skills installed` reports provider 'agent-skills' for this home; the coordinator session reads this root directly."
+    }
+  },
+  "unverifiedProviders": {
+    "claude": {
+      "claimedMode": "provider-alias",
+      "claimedPath": "%USERPROFILE%\\.claude\\skills",
+      "observedAt": "2026-10-02",
+      "observed": "The claimed path does not exist on this host; `orca skills installed` lists no 'claude' provider (only 'agent-skills' and 'codex'); claude.exe contains '.agents/skills'.",
+      "effectiveMode": "explicit-path"
+    }
+  },
+  "defaultForOtherAgents": {
+    "preferred": "explicit-path",
+    "fallback": "inline-extract",
+    "policy": "Do not assume native discovery until current provider behavior is verified on this host. A skill name appearing in a Task is not evidence that the worker loaded it."
+  }
+}

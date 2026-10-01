@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "limits": {
+    "requiredMax": 3,
+    "conditionalMax": 2
+  },
+  "rules": [
+    "Always include every default skill declared by the selected Role unless the Task proves it irrelevant.",
+    "Add domain skills only for material task scope or risk.",
+    "Do not load overlapping generic skills that duplicate each other.",
+    "End source-producing tasks with verification."
+  ],
+  "riskRoutes": {
+    "authentication-or-authorization": [
+      "security-review"
+    ],
+    "schema-or-migration": [
+      "database-design"
+    ],
+    "public-api": [
+      "api-design"
+    ],
+    "performance-sensitive": [
+      "performance-review"
+    ],
+    "bug-or-flaky-failure": [
+      "systematic-debugging"
+    ],
+    "ui-or-user-flow": [
+      "product-design"
+    ],
+    "cross-module-design": [
+      "solution-architecture"
+    ],
+    "source-implementation": [
+      "test-driven-development",
+      "integration-verification"
+    ],
+    "independent-review": [
+      "code-review",
+      "integration-verification"
+    ]
+  }
+}

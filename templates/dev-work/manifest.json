@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "orca-project-delivery",
+  "createdAt": "<ISO-8601-UTC>",
+  "projectRoot": "<absolute-path>"
+}

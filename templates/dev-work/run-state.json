@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "runSlug": "<run-slug>",
+  "objective": "<objective>",
+  "workflow": "feature-development",
+  "status": "active",
+  "stage": "intake",
+  "deliveryBranch": "<delivery-branch>",
+  "deliveryBranchSource": "user",
+  "coordinatorControlBranch": "<coordinator-control-branch>",
+  "coordinatorWorktree": "<absolute-path>",
+  "orcaRunId": null,
+  "completedStages": [],
+  "pendingUserDecisions": [],
+  "createdAt": "<ISO-8601-UTC>",
+  "updatedAt": "<ISO-8601-UTC>"
+}

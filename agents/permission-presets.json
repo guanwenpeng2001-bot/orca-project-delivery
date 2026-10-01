@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "defaultMode": "manual",
+  "policy": [
+    "A Git worktree is not a security sandbox.",
+    "Use manual unless the user or project policy explicitly allows unattended execution for the task.",
+    "Reviewers and scouts should receive the least privileges required.",
+    "Command overrides in Orca may opt an agent out of global permission-mode migrations."
+  ],
+  "unattendedArgs": {
+    "claude": "--dangerously-skip-permissions",
+    "codebuddy": "--dangerously-skip-permissions",
+    "claude-agent-teams": "--dangerously-skip-permissions",
+    "openclaude": "--dangerously-skip-permissions",
+    "codex": "--dangerously-bypass-approvals-and-sandbox",
+    "qoder": "--dangerously-skip-permissions",
+    "gemini": "--yolo",
+    "antigravity": "--dangerously-skip-permissions",
+    "aider": "--yes-always",
+    "amp": "--dangerously-allow-all",
+    "kiro": "--trust-all-tools",
+    "crush": "--yolo",
+    "autohand": "--unrestricted",
+    "cline": "--auto-approve true",
+    "command-code": "--yolo",
+    "continue": "--allow \"*\"",
+    "cursor": "--yolo",
+    "kimi": "--yolo",
+    "muse": "--yolo",
+    "zcode": "--mode yolo",
+    "mistral-vibe": "--agent auto-approve",
+    "qwen-code": "--approval-mode yolo",
+    "rovo": "--yolo",
+    "hermes": "--yolo",
+    "copilot": "--yolo",
+    "grok": "--permission-mode bypassPermissions",
+    "devin": "--permission-mode bypass --respect-workspace-trust false",
+    "ante": "--yolo",
+    "trae": "--yolo",
+    "droid": "--auto high"
+  },
+  "unattendedEnv": {
+    "goose": {
+      "GOOSE_MODE": "auto"
+    }
+  },
+  "roleDefaults": {
+    "research": "manual",
+    "product": "manual",
+    "architecture": "manual",
+    "engineering": "project-policy",
+    "quality": "manual"
+  },
+  "modeDefinitions": {
+    "manual": "The agent asks before consequential actions.",
+    "project-policy": "Inherit the unattended-execution policy stated in the applicable project AGENTS.md. When that policy is silent, fall back to manual.",
+    "unattended": "Apply the agent-specific unattended flag from unattendedArgs; only when project policy permits it and the Task is bounded."
+  }
+}

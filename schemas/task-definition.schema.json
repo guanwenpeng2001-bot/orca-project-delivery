@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Task Definition",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "taskKey",
+    "title",
+    "objective",
+    "role",
+    "skills",
+    "skillDeliveryMode",
+    "branch",
+    "artifacts",
+    "orca"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "taskKey": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "type": "string",
+      "minLength": 1
+    },
+    "skills": {
+      "type": "object",
+      "required": [
+        "required",
+        "conditional"
+      ],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conditional": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "skillDeliveryMode": {
+      "enum": [
+        "native",
+        "provider-alias",
+        "explicit-path",
+        "inline-extract"
+      ]
+    },
+    "inputs": {
+      "type": "array"
+    },
+    "allowedScope": {
+      "type": "array"
+    },
+    "forbiddenScope": {
+      "type": "array"
+    },
+    "branch": {
+      "type": "object",
+      "required": [
+        "delivery",
+        "base",
+        "work",
+        "mergeTarget",
+        "worktree"
+      ]
+    },
+    "artifacts": {
+      "type": "object",
+      "required": [
+        "reportPath",
+        "evidencePath"
+      ]
+    },
+    "acceptance": {
+      "type": "array"
+    },
+    "tests": {
+      "type": "array"
+    },
+    "orca": {
+      "type": "object",
+      "required": [
+        "runId",
+        "taskId",
+        "dispatchId"
+      ]
+    },
+    "applicableAgentsFiles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

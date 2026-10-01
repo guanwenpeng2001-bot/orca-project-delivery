@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "probeEvidenceRef": ".dev-work/runtime/model-capabilities.json",
+  "policy": [
+    "Every profile is a requested configuration; runtime evidence decides effective values.",
+    "Profiles marked requiresProbe are not eligible for automatic routing until the current host validates the CLI and model.",
+    "scripts/probe-agent-capabilities.ps1 writes the per-profile verdicts (verified / unverifiable) to probeEvidenceRef; an unverified profile stays manual.",
+    "User-pinned profiles do not cross-provider fallback without explicit permission."
+  ],
+  "profiles": [
+    {
+      "id": "antigravity-gemini-3.8-flash-high",
+      "agent": "antigravity",
+      "model": "gemini-3.8-flash",
+      "effort": "high",
+      "modelControl": "orca-launch-preferences",
+      "qualityTier": "standard",
+      "costTier": "unknown",
+      "requiresProbe": true,
+      "autoRouteAfterProbe": true,
+      "source": "Existing project AGENTS.md"
+    },
+    {
+      "id": "codex-gpt-6-astra-low",
+      "agent": "codex",
+      "model": "gpt-6-astra",
+      "effort": "low",
+      "modelControl": "orca-launch-preferences",
+      "qualityTier": "standard",
+      "costTier": "unknown",
+      "requiresProbe": true,
+      "autoRouteAfterProbe": true,
+      "source": "Existing project AGENTS.md"
+    },
+    {
+      "id": "codex-gpt-6-astra-medium",
+      "agent": "codex",
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "modelControl": "orca-launch-preferences",
+      "qualityTier": "high",
+      "costTier": "unknown",
+      "requiresProbe": true,
+      "autoRouteAfterProbe": true,
+      "source": "Existing project AGENTS.md"
+    },
+    {
+      "id": "kimi-k3-max",
+      "agent": "kimi",
+      "model": "kimi-code/k3",
+      "effort": "max",
+      "modelControl": "session-command",
+      "qualityTier": "high",
+      "costTier": "unknown",
+      "requiresProbe": true,
+      "autoRouteAfterProbe": true,
+      "source": "Existing project AGENTS.md",
+      "verificationHints": [
+        "Use the agent's actual model/status surface.",
+        "Do not invent a launch-time --effort flag if the current CLI does not expose one."
+      ]
+    },
+    {
+      "id": "grok-4.7-xhigh",
+      "agent": "grok",
+      "model": "grok-4.7",
+      "effort": "xhigh",
+      "modelControl": "custom-terminal-args",
+      "qualityTier": "high",
+      "costTier": "unknown",
+      "requiresProbe": true,
+      "autoRouteAfterProbe": true,
+      "source": "Existing project AGENTS.md quota fallback",
+      "verificationHints": [
+        "Probe `grok models` and the local CLI before use.",
+        "Use only effort levels advertised by the selected model."
+      ]
+    },
+    {
+      "id": "claude-sonnet-high",
+      "agent": "claude",
+      "model": "sonnet",
+      "effort": "high",
+      "modelControl": "orca-launch-preferences",
+      "qualityTier": "standard",
+      "costTier": "unknown",
+      "requiresProbe": true,
+      "autoRouteAfterProbe": false,
+      "source": "Current Orca Claude family aliases"
+    },
+    {
+      "id": "claude-opus-high",
+      "agent": "claude",
+      "model": "opus",
+      "effort": "high",
+      "modelControl": "orca-launch-preferences",
+      "qualityTier": "high",
+      "costTier": "unknown",
+      "requiresProbe": true,
+      "autoRouteAfterProbe": false,
+      "source": "Current Orca Claude family aliases"
+    },
+    {
+      "id": "claude-fable-high",
+      "agent": "claude",
+      "model": "fable",
+      "effort": "high",
+      "modelControl": "orca-launch-preferences",
+      "qualityTier": "highest",
+      "costTier": "unknown",
+      "requiresProbe": true,
+      "autoRouteAfterProbe": false,
+      "source": "Current Orca Claude family aliases"
+    },
+    {
+      "id": "claude-haiku-default",
+      "agent": "claude",
+      "model": "haiku",
+      "effort": null,
+      "modelControl": "orca-launch-preferences",
+      "qualityTier": "fast",
+      "costTier": "unknown",
+      "requiresProbe": true,
+      "autoRouteAfterProbe": false,
+      "source": "Current Orca Claude family aliases"
+    }
+  ]
+}

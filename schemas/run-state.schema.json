@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Delivery Run State",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "runSlug",
+    "objective",
+    "workflow",
+    "status",
+    "stage",
+    "deliveryBranch",
+    "coordinatorWorktree",
+    "completedStages",
+    "pendingUserDecisions",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "runSlug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workflow": {
+      "enum": [
+        "feature-development",
+        "bug-fix",
+        "refactor",
+        "audit"
+      ]
+    },
+    "status": {
+      "enum": [
+        "active",
+        "paused",
+        "completed",
+        "failed",
+        "abandoned"
+      ]
+    },
+    "stage": {
+      "type": "string"
+    },
+    "deliveryBranch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "coordinatorControlBranch": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "coordinatorWorktree": {
+      "type": "string",
+      "minLength": 1
+    },
+    "orcaRunId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "completedStages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "pendingUserDecisions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "createdAt": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent Runtime Capabilities",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "host",
+    "checkedAt",
+    "agents"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "host": {
+      "type": "object"
+    },
+    "checkedAt": {
+      "type": "string"
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "detected",
+          "runtimeSupported"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "detected": {
+            "type": "boolean"
+          },
+          "runtimeSupported": {
+            "type": "boolean"
+          },
+          "command": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modelControl": {
+            "type": "string"
+          },
+          "skillDelivery": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

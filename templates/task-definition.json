@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "taskKey": "replace-me",
+  "title": "Replace me",
+  "objective": "State one observable outcome.",
+  "role": "codebase-scout",
+  "skills": {
+    "required": [
+      "codebase-reconnaissance"
+    ],
+    "conditional": []
+  },
+  "skillDeliveryMode": "explicit-path",
+  "inputs": [],
+  "allowedScope": [],
+  "forbiddenScope": [],
+  "branch": {
+    "delivery": "main",
+    "base": "main",
+    "work": "scout/replace-me",
+    "mergeTarget": null,
+    "worktree": "C:\\path\\to\\worktree"
+  },
+  "artifacts": {
+    "reportPath": "C:\\path\\to\\coordinator\\.dev-work\\runs\\run\\reconnaissance\\replace-me.md",
+    "evidencePath": "C:\\path\\to\\coordinator\\.dev-work\\runs\\run\\evidence\\replace-me"
+  },
+  "acceptance": [],
+  "tests": [],
+  "orca": {
+    "runId": null,
+    "taskId": null,
+    "dispatchId": null
+  },
+  "applicableAgentsFiles": []
+}

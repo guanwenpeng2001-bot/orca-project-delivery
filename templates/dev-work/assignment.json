@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "taskKey": "<task-key>",
+  "role": "<role-id>",
+  "skills": {
+    "required": [],
+    "conditional": []
+  },
+  "runtime": {
+    "requested": {
+      "profile": null,
+      "agent": null,
+      "model": null,
+      "effort": null,
+      "permissionMode": null
+    },
+    "effective": {
+      "profile": null,
+      "agent": null,
+      "model": null,
+      "effort": null,
+      "permissionMode": null
+    },
+    "verification": {
+      "status": "pending",
+      "evidence": []
+    }
+  },
+  "branch": {
+    "base": "<base-branch>",
+    "work": "<work-branch>",
+    "mergeTarget": "<delivery-branch-or-null>",
+    "worktree": "<absolute-path>"
+  },
+  "artifacts": {
+    "reportPath": "<absolute-path>",
+    "evidencePath": "<absolute-path>"
+  },
+  "orca": {
+    "runId": null,
+    "taskId": null,
+    "dispatchId": null
+  },
+  "status": "planned",
+  "fallbackReason": null
+}

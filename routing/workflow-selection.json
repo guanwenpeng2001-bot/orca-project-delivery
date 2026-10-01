@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {
+      "workflow": "bug-fix",
+      "when": [
+        "objective is defect correction",
+        "reproduction or regression is central"
+      ]
+    },
+    {
+      "workflow": "audit",
+      "when": [
+        "objective is assessment/findings",
+        "implementation is not the initial goal"
+      ]
+    },
+    {
+      "workflow": "refactor",
+      "when": [
+        "external behavior should remain stable",
+        "internal structure is the target"
+      ]
+    },
+    {
+      "workflow": "feature-development",
+      "when": [
+        "new or changed product/system behavior is the target"
+      ]
+    }
+  ],
+  "default": "feature-development",
+  "adaptiveDepth": {
+    "light": [
+      "intake",
+      "implementation",
+      "independent-review",
+      "final-verification"
+    ],
+    "standard": [
+      "intake",
+      "dynamic-reconnaissance",
+      "planning",
+      "task-graph",
+      "implementation",
+      "review",
+      "final-verification"
+    ],
+    "high-risk": [
+      "intake",
+      "parallel-reconnaissance",
+      "audit",
+      "independent-plans",
+      "adjudication",
+      "architecture",
+      "task-graph",
+      "implementation",
+      "review-loops",
+      "final-verification"
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "run": "<run-slug>",
+  "runDirectory": "runs/<run-slug>",
+  "orcaRunId": null,
+  "updatedAt": "<ISO-8601-UTC>"
+}

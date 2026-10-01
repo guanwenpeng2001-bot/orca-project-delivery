@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "principles": [
+    "Select exactly one primary role per Task.",
+    "Choose the role by the Task's deliverable, not by the agent brand.",
+    "Split tasks that require conflicting roles such as designer, implementer, and independent reviewer."
+  ],
+  "deliverableRoutes": {
+    "repository-facts": "codebase-scout",
+    "external-technical-evidence": "technical-researcher",
+    "issue-root-cause": "issue-investigator",
+    "product-scope": "product-manager",
+    "user-flow-and-interaction": "product-designer",
+    "testable-requirements": "requirements-analyst",
+    "implementation-options": "solution-planner",
+    "plan-comparison": "plan-adjudicator",
+    "system-boundaries": "software-architect",
+    "api-contract": "api-designer",
+    "data-model": "database-architect",
+    "backend-source": "backend-engineer",
+    "frontend-source": "frontend-engineer",
+    "vertical-slice-source": "fullstack-engineer",
+    "tests": "test-engineer",
+    "review-findings-fix": "fixer",
+    "independent-code-review": "code-reviewer",
+    "security-review": "security-reviewer",
+    "performance-review": "performance-reviewer",
+    "final-delivery-verification": "release-verifier",
+    "merge-conflict-resolution": "merge-resolver"
+  }
+}
