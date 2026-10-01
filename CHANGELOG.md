@@ -127,6 +127,11 @@ five further defects; all are fixed here.
 - **V-F (accepted, deliberately unchanged)** `assemble-task.ps1` embeds `AGENTS.md` verbatim, so its
   own H1 is not demoted in the assembled prompt. Preserving project policy text byte-for-byte
   outranks heading cosmetics.
+- **V-G (found while running V12)** the package never told an implementation worker to *commit* its
+  work: `templates/task-spec.md` and `references/worker-contract.md` forbade merging but said nothing
+  about committing, and a task that also forbade `git commit` produced a correct deliverable that the
+  coordinator had to commit. Both documents now say the worker commits on its task branch before
+  reporting and still never merges.
 
 Re-verified by the coordinator after the fixes: a `develop`-only repository refuses bootstrap with
 zero writes and succeeds with `-DeliveryBranch develop`; the traversal slug exits 1 and writes

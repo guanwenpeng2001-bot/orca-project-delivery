@@ -56,6 +56,7 @@ Read before starting:
 - Work branch: `<work-branch>`
 - Worktree: `<path>`
 - Merge target: `<delivery-branch or none>`
+- Commit your work on the work branch before you report; the coordinator reviews and merges it.
 - You must not merge the branch yourself.
 
 ## Process Artifact Contract

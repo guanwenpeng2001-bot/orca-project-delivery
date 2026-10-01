@@ -10,6 +10,8 @@
 - Ask the coordinator only for genuinely external, directional, or missing decisions.
 - Escalate when blocked and include what you tried, current Git state, and what is needed.
 - Write only the assigned `.dev-work` report/evidence path. Never modify run-global state.
+- Commit your work on your task branch before reporting: the coordinator reviews a branch, not a dirty
+  worktree. An uncommitted deliverable cannot be reviewed or merged.
 - Do not merge your branch.
 - Report exactly one explicit outcome using the vocabulary below.
 - Send authoritative completion exactly once using the current global `orchestration` Skill.
