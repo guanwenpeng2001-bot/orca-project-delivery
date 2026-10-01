@@ -261,12 +261,14 @@ try {
     $before = @(Get-ChildItem -LiteralPath $repository -Recurse -Force -File | ForEach-Object { $_.FullName + ':' + (Get-FileHash -LiteralPath $_.FullName).Hash })
     $result = Invoke-PackageScript 'bootstrap-project.ps1' @('-ProjectRoot', $repository)
     Assert-Condition ($result.ExitCode -ne 0) 'Bootstrap accepted the delivery branch'
-    Assert-Condition (($result.Stdout + $result.Stderr) -match 'control branch equals.*delivery branch') 'Bootstrap failed for an unrelated reason'
     foreach ($name in @('AGENTS.md', '.dev-work')) {
       Assert-Condition (-not (Test-Path -LiteralPath (Join-Path $repository $name))) "Bootstrap wrote $name on the delivery branch"
     }
     $after = @(Get-ChildItem -LiteralPath $repository -Recurse -Force -File | ForEach-Object { $_.FullName + ':' + (Get-FileHash -LiteralPath $_.FullName).Hash })
     Assert-Condition (-not (Compare-Object $before $after)) 'Bootstrap changed repository files before refusing'
+    # Check diagnostic topics independently of word order, quotes, or resolution details.
+    $diagnostic = $result.Stdout + $result.Stderr
+    Assert-Condition ($diagnostic -imatch '\bcontrol\s+branch\b' -and $diagnostic -imatch '\bdelivery\s+branch\b') 'Bootstrap refusal must name both the control branch and delivery branch'
   }
   Invoke-Check 'runtime/schema-missing-evidence-path' {
     Assert-Condition ([bool]$healthyRepository) 'Healthy fixture unavailable'
