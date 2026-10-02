@@ -187,6 +187,20 @@ try {
       }
     }
   }
+  Invoke-Check 'metadata/routing-role-coverage' {
+    $catalogIds = @(foreach ($role in (Read-PackageJson 'roles/catalog.json').roles) { $role.id })
+    Assert-Condition ($catalogIds.Count -gt 0) 'roles/catalog.json lists no roles'
+    foreach ($source in @('routing/agent-selection.json', 'agents/role-compatibility.json')) {
+      $document = Read-PackageJson $source
+      $routes = if ($document.ContainsKey('roleRoutes')) { $document['roleRoutes'] } else { $document['roles'] }
+      Assert-Condition ($routes -is [Collections.IDictionary]) "$source has no role map"
+      $routeIds = @($routes.Keys)
+      $missing = @($catalogIds | Where-Object { $routeIds -notcontains $_ })
+      $extra = @($routeIds | Where-Object { $catalogIds -notcontains $_ })
+      Assert-Condition ($missing.Count -eq 0) "$source is missing catalog roles: $($missing -join ', ')"
+      Assert-Condition ($extra.Count -eq 0) "$source routes roles absent from roles/catalog.json: $($extra -join ', ')"
+    }
+  }
   Invoke-Check 'routing/claude-first' {
     $eligibleIds = @(foreach ($profile in (Read-PackageJson 'agents/configured-profiles.json').profiles) {
       if ($profile.autoRouteAfterProbe -is [bool] -and $profile.autoRouteAfterProbe -eq $true) { $profile.id }
