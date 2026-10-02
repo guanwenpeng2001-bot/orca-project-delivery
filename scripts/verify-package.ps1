@@ -187,6 +187,33 @@ try {
       }
     }
   }
+  Invoke-Check 'routing/claude-first' {
+    $eligibleIds = @(foreach ($profile in (Read-PackageJson 'agents/configured-profiles.json').profiles) {
+      if ($profile.autoRouteAfterProbe -is [bool] -and $profile.autoRouteAfterProbe -eq $true) { $profile.id }
+    })
+    $routes = (Read-PackageJson 'routing/agent-selection.json').roleRoutes
+    Assert-Condition ($routes -is [Collections.IDictionary] -and $routes.Count -gt 0) 'routing/agent-selection.json has no roleRoutes to check'
+    foreach ($role in $routes.Keys) {
+      $entry = $routes[$role]
+      $hasCandidates = $entry -is [Collections.IDictionary] -and $entry.Contains('preferredProfiles')
+      $candidates = $null
+      if ($hasCandidates) { $candidates = $entry['preferredProfiles'] }
+      $first = $null
+      $actual = '<missing>'
+      if ($candidates -is [array]) {
+        if ($candidates.Count -gt 0) {
+          $first = $candidates[0]
+          $actual = ConvertTo-Json -InputObject $first -Depth 100 -Compress
+        }
+      } elseif ($hasCandidates) {
+        $actual = '<not-an-array>'
+      }
+      $valid = $candidates -is [array] -and $candidates.Count -gt 0 -and
+        $first -is [string] -and -not [string]::IsNullOrWhiteSpace($first) -and
+        $first -clike 'claude-*' -and $eligibleIds -ccontains $first
+      Assert-Condition $valid "Role '$role' preferredProfiles[0]=$actual; expected an existing claude-* profile with autoRouteAfterProbe=true in agents/configured-profiles.json"
+    }
+  }
   Invoke-Check 'metadata/role-paths' {
     foreach ($role in (Read-PackageJson 'roles/catalog.json').roles) {
       Assert-Condition (-not [string]::IsNullOrWhiteSpace($role.path)) "Role $($role.id) has no path"
