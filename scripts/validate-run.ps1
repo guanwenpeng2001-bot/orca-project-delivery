@@ -333,7 +333,23 @@ if (-not $SkipPackageChecks) {
     $selection = Read-JsonSafe $agentSelectionPath
     foreach ($roleId in @($selection.roleRoutes.PSObject.Properties.Name)) {
       $seenExcluded = $null
-      foreach ($profileId in @($selection.roleRoutes.$roleId.preferredProfiles)) {
+      # A malformed route value (number, boolean, string, null) must produce a role-level error
+      # instead of a host-language exception from reading a property off a scalar.
+      $routeValue = $selection.roleRoutes.$roleId
+      if (-not ($routeValue -is [System.Management.Automation.PSCustomObject])) {
+        [void]$errors.Add("Role '$roleId' has a non-object route value in routing/agent-selection.json.")
+        continue
+      }
+      if (-not ($routeValue.PSObject.Properties.Name -contains 'preferredProfiles')) {
+        [void]$errors.Add("Role '$roleId' has no preferredProfiles list in routing/agent-selection.json.")
+        continue
+      }
+      $preferredProfiles = @($routeValue.preferredProfiles)
+      if ($preferredProfiles.Count -eq 0) {
+        [void]$errors.Add("Role '$roleId' lists no preferred profiles in routing/agent-selection.json.")
+        continue
+      }
+      foreach ($profileId in $preferredProfiles) {
         if (-not $mayAutoRoute.ContainsKey($profileId)) {
           [void]$errors.Add("Role '$roleId' prefers unknown profile '$profileId'.")
           continue

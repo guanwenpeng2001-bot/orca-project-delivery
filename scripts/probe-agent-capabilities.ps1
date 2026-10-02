@@ -186,6 +186,28 @@ function Get-AdvertisedEffortValues {
 # a bare token, a "Default model: <id>" line and an "* <id> (default)" bullet are also accepted.
 # Prose lines such as "Fetching available models..." are ignored, so they cannot be mistaken
 # for a listed model.
+function Test-OrcaModelOption {
+  # Orca validates the (agent, model, effort) combination against its own per-model option catalog
+  # before it places anything. Pointing the request at a repo id that cannot exist keeps a valid
+  # combination from launching, so the reply separates "Orca accepts this combination" from
+  # "Orca rejects it" without starting a worker.
+  param([string]$Agent, [string]$Model, [string]$Effort)
+  $orcaCommand = Get-Command orca -ErrorAction SilentlyContinue
+  if (-not $orcaCommand) { return 'unknown' }
+  $sentinelRepo = "id:00000000-0000-0000-0000-000000000000"
+  $cliArgs = @('orchestration', 'worker-start', '--spec', 'option probe', '--worktree', 'new-top-level',
+    '--repo', $sentinelRepo, '--base-branch', 'main', '--setup', 'skip', '--name', 'orca-option-probe',
+    '--agent', $Agent, '--model', $Model)
+  if ($Effort) { $cliArgs += @('--effort', $Effort) }
+  $cliArgs += @('--timeout-ms', '15000', '--json')
+  $probeOutput = & $orcaCommand.Source @cliArgs 2>&1 | Out-String
+  try { $parsed = $probeOutput | ConvertFrom-Json } catch { return 'unknown' }
+  if ($null -eq $parsed) { return 'unknown' }
+  if ($parsed.ok) { return 'launched' }
+  $message = [string]$parsed.error.message
+  if ($message -match 'does not support') { return 'rejected' }
+  return 'accepted'
+}
 function Get-ListedModelIds {
   param([string]$Listing)
   if (-not $Listing) { return @() }
@@ -510,6 +532,33 @@ if (-not $SkipModelProbe) {
       }
     }
 
+    # Orca's per-model option catalog is stricter than the CLI contract: it can reject a
+    # (model, effort) pair the CLI would accept silently. Only profiles whose model control is
+    # orca-launch-preferences are dispatched with these flags, so only those are checked.
+    $orcaOptionVerdict = 'not-applicable'
+    if ($profile.modelControl -eq 'orca-launch-preferences') {
+      $orcaOptionVerdict = Test-OrcaModelOption -Agent $profile.agent -Model $profile.model -Effort $profile.effort
+      switch ($orcaOptionVerdict) {
+        'rejected' {
+          $effortEvidence = $false
+          $evidence += "Orca rejects model='$($profile.model)' with effort='$($profile.effort)' (per-model option catalog)."
+        }
+        'accepted' {
+          $evidence += "Orca accepts model='$($profile.model)' with effort='$($profile.effort)' (sentinel repo; nothing launched)."
+        }
+        'launched' {
+          $modelEvidence = $false
+          $effortEvidence = $false
+          $evidence += "Orca option probe unexpectedly launched a worker; this profile is treated as unverified."
+        }
+        default {
+          $evidence += "Orca option validation unavailable, so the model/effort combination is not confirmed by Orca."
+        }
+      }
+    } else {
+      $evidence += "Orca launch options do not apply (modelControl='$($profile.modelControl)')."
+    }
+
     $verified = [bool]($modelEvidence -and $effortEvidence)
     if (-not $verified) {
       $missing = @()
@@ -529,6 +578,7 @@ if (-not $SkipModelProbe) {
       verified = $verified
       modelEvidence = $modelEvidence
       effortEvidence = $effortEvidence
+      orcaOptionVerdict = $orcaOptionVerdict
       supportedEfforts = $supportedEfforts
       evidence = $evidence
       verificationPath = $verificationPath
