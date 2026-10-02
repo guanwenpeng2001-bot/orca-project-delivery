@@ -118,7 +118,7 @@
       "model": "haiku",
       "effort": "max",
       "modelControl": "orca-launch-preferences",
-      "qualityTier": "fast",
+      "qualityTier": "standard",
       "costTier": "unknown",
       "requiresProbe": true,
       "autoRouteAfterProbe": true,
