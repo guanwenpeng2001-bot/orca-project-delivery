@@ -194,7 +194,10 @@ try {
     $routes = (Read-PackageJson 'routing/agent-selection.json').roleRoutes
     Assert-Condition ($routes -is [Collections.IDictionary] -and $routes.Count -gt 0) 'routing/agent-selection.json has no roleRoutes to check'
     foreach ($role in $routes.Keys) {
-      $candidates = $routes[$role].preferredProfiles
+      $entry = $routes[$role]
+      $hasCandidates = $entry -is [Collections.IDictionary] -and $entry.Contains('preferredProfiles')
+      $candidates = $null
+      if ($hasCandidates) { $candidates = $entry['preferredProfiles'] }
       $first = $null
       $actual = '<missing>'
       if ($candidates -is [array]) {
@@ -202,7 +205,7 @@ try {
           $first = $candidates[0]
           $actual = ConvertTo-Json -InputObject $first -Depth 100 -Compress
         }
-      } elseif ($routes[$role].Contains('preferredProfiles')) {
+      } elseif ($hasCandidates) {
         $actual = '<not-an-array>'
       }
       $valid = $candidates -is [array] -and $candidates.Count -gt 0 -and
