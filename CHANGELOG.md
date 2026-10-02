@@ -4,7 +4,51 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
-## Unreleased — 1.1.0
+## 1.1.1
+
+Follow-up batch after 1.1.0. Evidence: the claude-first routing change plus a real four-tier claude
+delivery chain (`run_588c9434cc6c`) that ran reconnaissance, planning, implementation, independent
+review, a fix, a re-review and the integration — one claude tier per stage.
+
+### Claude priority in routing
+
+- All 21 roles list their claude profile first and `codex-gpt-6-astra-medium` second; the remaining
+  entries keep their previous relative order and duplicate claude entries were removed.
+  `routing/agent-selection.json` and its mirror `agents/role-compatibility.json` stay identical.
+- The four claude profiles move to `autoRouteAfterProbe: true` so they may legally sit first.
+- Tiers are named for the effort they use: `claude-fable-max`, `claude-opus-max`,
+  `claude-sonnet-high` (the level is chosen per dispatch, `low`..`max`) and `claude-haiku-default`.
+  The `claude-haiku-max` rename was reverted because Orca's per-model option catalog rejects every
+  effort value for `haiku`. `claude-haiku-default` is `qualityTier: standard` so the three
+  reconnaissance roles' floor is met.
+
+### Probe: claude CLI contract and Orca's option catalog
+
+- A claude branch verifies the CLI contract: `--model` is advertised, `--effort` is advertised, and
+  the declared effort is one the CLI enumerates (read from an unknown-value probe that contacts no
+  backend). The alias-to-backend mapping remains host configuration and is not probed.
+- Profiles whose `modelControl` is `orca-launch-preferences` are additionally checked against
+  Orca's own per-model option catalog through a sentinel repo id that cannot exist, so the check can
+  never launch a worker. The verdict is recorded as `orcaOptionVerdict`, and a combination Orca
+  rejects makes the profile unverified.
+
+### Verification harness
+
+- New `routing/claude-first`: every role's `preferredProfiles[0]` must be an existing claude profile
+  with `autoRouteAfterProbe: true`; a failure names the role and the actual first entry.
+- New `metadata/routing-role-coverage`: the role key sets of both routing mirrors must match
+  `roles/catalog.json` in both directions. Before this, deleting a role from both mirrors left the
+  suite green.
+- `verify-package.ps1` now runs 22 checks.
+
+### Defects found by independent review and closed
+
+- `verify-package.ps1`: malformed route entries (number, null, boolean, string) keep the role-level
+  `<missing>` / `<not-an-array>` diagnostics instead of raising a host-language exception.
+- `validate-run.ps1`: the same class of malformed input now reports a role-level error instead of
+  raising a host-language exception.
+
+## 1.1.0
 
 Evidence base: in-place remediation driven by the 2026-10-02 audit on Orca 1.4.218 / PowerShell
 7.6.6 / Windows, including one real read-only orchestration run (`run_048c16f28004`:

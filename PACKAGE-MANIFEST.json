@@ -1,10 +1,10 @@
 {
   "name": "orca-project-delivery",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-02",
   "releasedAt": "2026-10-02",
-  "revisionNote": "In-place remediation released as 1.1.0 (findings F1-F20 in orca-project-delivery-remediation-plan.md). See CHANGELOG.md for the per-wave list; the inPlaceFixes block below records the earlier 1.0.0 in-place pass.",
+  "revisionNote": "In-place remediation released as 1.1.0 (findings F1-F20 in orca-project-delivery-remediation-plan.md); the follow-up batch released as 1.1.1 puts claude first in every role route, corrects the claude tiers against Orca's per-model option catalog, and adds two harness checks. See CHANGELOG.md for the per-wave list; the inPlaceFixes block below records the earlier 1.0.0 in-place pass.",
   "inPlaceFixes": {
     "scripts/assemble-task.ps1": "1.0.0 pass: parse error (escaped closing quote) and literal placeholders in the assembled assignment. Heading levels and role front matter were finalised in the 1.1.0 pass (F13).",
     "scripts/bootstrap-project.ps1": "Detached HEAD validated before any write; coordinator lock records the Orca terminal handle and applies a live/dead/unknown liveness rule.",
