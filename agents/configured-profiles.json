@@ -89,10 +89,10 @@
       "source": "Current Orca Claude family aliases"
     },
     {
-      "id": "claude-opus-high",
+      "id": "claude-opus-max",
       "agent": "claude",
       "model": "opus",
-      "effort": "high",
+      "effort": "max",
       "modelControl": "orca-launch-preferences",
       "qualityTier": "high",
       "costTier": "unknown",
@@ -101,10 +101,10 @@
       "source": "Current Orca Claude family aliases"
     },
     {
-      "id": "claude-fable-high",
+      "id": "claude-fable-max",
       "agent": "claude",
       "model": "fable",
-      "effort": "high",
+      "effort": "max",
       "modelControl": "orca-launch-preferences",
       "qualityTier": "highest",
       "costTier": "unknown",
@@ -113,10 +113,10 @@
       "source": "Current Orca Claude family aliases"
     },
     {
-      "id": "claude-haiku-default",
+      "id": "claude-haiku-max",
       "agent": "claude",
       "model": "haiku",
-      "effort": null,
+      "effort": "max",
       "modelControl": "orca-launch-preferences",
       "qualityTier": "fast",
       "costTier": "unknown",

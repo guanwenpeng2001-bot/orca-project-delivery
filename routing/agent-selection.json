@@ -15,7 +15,7 @@
     "codebase-scout": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "claude-haiku-default",
+        "claude-haiku-max",
         "codex-gpt-6-astra-medium",
         "antigravity-gemini-3.8-flash-high",
         "claude-sonnet-high"
@@ -32,7 +32,7 @@
     "technical-researcher": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "claude-haiku-default",
+        "claude-haiku-max",
         "codex-gpt-6-astra-medium",
         "antigravity-gemini-3.8-flash-high",
         "claude-sonnet-high"
@@ -49,7 +49,7 @@
     "issue-investigator": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "claude-haiku-default",
+        "claude-haiku-max",
         "codex-gpt-6-astra-medium",
         "antigravity-gemini-3.8-flash-high",
         "claude-sonnet-high"
@@ -66,11 +66,11 @@
     "product-manager": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-fable-high",
+        "claude-fable-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -84,11 +84,11 @@
     "product-designer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-fable-high",
+        "claude-fable-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -102,11 +102,11 @@
     "requirements-analyst": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-fable-high",
+        "claude-fable-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -120,11 +120,11 @@
     "solution-planner": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-fable-high",
+        "claude-fable-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -138,11 +138,11 @@
     "plan-adjudicator": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-fable-high",
+        "claude-fable-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -156,11 +156,11 @@
     "software-architect": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-fable-high",
+        "claude-fable-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -174,11 +174,11 @@
     "api-designer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-fable-high",
+        "claude-fable-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -192,11 +192,11 @@
     "database-architect": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-fable-high",
+        "claude-fable-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -212,7 +212,7 @@
       "preferredProfiles": [
         "claude-sonnet-high",
         "codex-gpt-6-astra-medium",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -228,7 +228,7 @@
       "preferredProfiles": [
         "claude-sonnet-high",
         "codex-gpt-6-astra-medium",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -244,7 +244,7 @@
       "preferredProfiles": [
         "claude-sonnet-high",
         "codex-gpt-6-astra-medium",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -260,7 +260,7 @@
       "preferredProfiles": [
         "claude-sonnet-high",
         "codex-gpt-6-astra-medium",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -276,7 +276,7 @@
       "preferredProfiles": [
         "claude-sonnet-high",
         "codex-gpt-6-astra-medium",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -290,7 +290,7 @@
     "code-reviewer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-opus-high",
+        "claude-opus-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh"
@@ -307,7 +307,7 @@
     "security-reviewer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-opus-high",
+        "claude-opus-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh"
@@ -324,7 +324,7 @@
     "performance-reviewer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-opus-high",
+        "claude-opus-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh"
@@ -341,7 +341,7 @@
     "release-verifier": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
-        "claude-opus-high",
+        "claude-opus-max",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh"
@@ -361,7 +361,7 @@
         "claude-sonnet-high",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
-        "claude-opus-high"
+        "claude-opus-max"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
