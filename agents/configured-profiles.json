@@ -85,7 +85,7 @@
       "qualityTier": "standard",
       "costTier": "unknown",
       "requiresProbe": true,
-      "autoRouteAfterProbe": false,
+      "autoRouteAfterProbe": true,
       "source": "Current Orca Claude family aliases"
     },
     {
@@ -97,7 +97,7 @@
       "qualityTier": "high",
       "costTier": "unknown",
       "requiresProbe": true,
-      "autoRouteAfterProbe": false,
+      "autoRouteAfterProbe": true,
       "source": "Current Orca Claude family aliases"
     },
     {
@@ -109,7 +109,7 @@
       "qualityTier": "highest",
       "costTier": "unknown",
       "requiresProbe": true,
-      "autoRouteAfterProbe": false,
+      "autoRouteAfterProbe": true,
       "source": "Current Orca Claude family aliases"
     },
     {
@@ -121,7 +121,7 @@
       "qualityTier": "fast",
       "costTier": "unknown",
       "requiresProbe": true,
-      "autoRouteAfterProbe": false,
+      "autoRouteAfterProbe": true,
       "source": "Current Orca Claude family aliases"
     }
   ]

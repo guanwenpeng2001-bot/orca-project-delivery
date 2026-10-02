@@ -15,8 +15,9 @@
     "codebase-scout": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "antigravity-gemini-3.8-flash-high",
+        "claude-haiku-default",
         "codex-gpt-6-astra-medium",
+        "antigravity-gemini-3.8-flash-high",
         "claude-sonnet-high"
       ],
       "requiredCapabilities": {
@@ -31,8 +32,9 @@
     "technical-researcher": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "antigravity-gemini-3.8-flash-high",
+        "claude-haiku-default",
         "codex-gpt-6-astra-medium",
+        "antigravity-gemini-3.8-flash-high",
         "claude-sonnet-high"
       ],
       "requiredCapabilities": {
@@ -47,8 +49,9 @@
     "issue-investigator": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "antigravity-gemini-3.8-flash-high",
+        "claude-haiku-default",
         "codex-gpt-6-astra-medium",
+        "antigravity-gemini-3.8-flash-high",
         "claude-sonnet-high"
       ],
       "requiredCapabilities": {
@@ -63,6 +66,8 @@
     "product-manager": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-fable-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
         "claude-opus-high"
@@ -79,6 +84,8 @@
     "product-designer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-fable-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
         "claude-opus-high"
@@ -95,6 +102,8 @@
     "requirements-analyst": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-fable-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
         "claude-opus-high"
@@ -111,6 +120,8 @@
     "solution-planner": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-fable-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
         "claude-opus-high"
@@ -127,6 +138,8 @@
     "plan-adjudicator": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-fable-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
         "claude-opus-high"
@@ -143,6 +156,8 @@
     "software-architect": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-fable-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
         "claude-opus-high"
@@ -159,6 +174,8 @@
     "api-designer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-fable-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
         "claude-opus-high"
@@ -175,6 +192,8 @@
     "database-architect": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-fable-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "grok-4.7-xhigh",
         "claude-opus-high"
@@ -191,8 +210,8 @@
     "backend-engineer": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "codex-gpt-6-astra-medium",
         "claude-sonnet-high",
+        "codex-gpt-6-astra-medium",
         "claude-opus-high"
       ],
       "requiredCapabilities": {
@@ -207,8 +226,8 @@
     "frontend-engineer": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "codex-gpt-6-astra-medium",
         "claude-sonnet-high",
+        "codex-gpt-6-astra-medium",
         "claude-opus-high"
       ],
       "requiredCapabilities": {
@@ -223,8 +242,8 @@
     "fullstack-engineer": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "codex-gpt-6-astra-medium",
         "claude-sonnet-high",
+        "codex-gpt-6-astra-medium",
         "claude-opus-high"
       ],
       "requiredCapabilities": {
@@ -239,8 +258,8 @@
     "test-engineer": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "codex-gpt-6-astra-medium",
         "claude-sonnet-high",
+        "codex-gpt-6-astra-medium",
         "claude-opus-high"
       ],
       "requiredCapabilities": {
@@ -255,8 +274,8 @@
     "fixer": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "codex-gpt-6-astra-medium",
         "claude-sonnet-high",
+        "codex-gpt-6-astra-medium",
         "claude-opus-high"
       ],
       "requiredCapabilities": {
@@ -271,9 +290,10 @@
     "code-reviewer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-opus-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
-        "grok-4.7-xhigh",
-        "claude-opus-high"
+        "grok-4.7-xhigh"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -287,9 +307,10 @@
     "security-reviewer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-opus-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
-        "grok-4.7-xhigh",
-        "claude-opus-high"
+        "grok-4.7-xhigh"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -303,9 +324,10 @@
     "performance-reviewer": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-opus-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
-        "grok-4.7-xhigh",
-        "claude-opus-high"
+        "grok-4.7-xhigh"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -319,9 +341,10 @@
     "release-verifier": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-opus-high",
+        "codex-gpt-6-astra-medium",
         "kimi-k3-max",
-        "grok-4.7-xhigh",
-        "claude-opus-high"
+        "grok-4.7-xhigh"
       ],
       "requiredCapabilities": {
         "sourceRead": true,
@@ -335,6 +358,7 @@
     "merge-resolver": {
       "minimumQualityTier": "high",
       "preferredProfiles": [
+        "claude-sonnet-high",
         "codex-gpt-6-astra-medium",
         "kimi-k3-max",
         "claude-opus-high"

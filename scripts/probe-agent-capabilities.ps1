@@ -372,6 +372,25 @@ if (-not $SkipModelProbe) {
   }
   $agyModelIds = @(Get-ListedModelIds -Listing $agyModelListing)
 
+  # claude: the declared model is an alias the CLI accepts and forwards to the host-managed
+  # backend. This probe verifies the CLI contract only - the flags exist and the declared effort
+  # is in the value set the CLI itself enumerates. The alias-to-backend mapping is host
+  # configuration and is deliberately not probed here.
+  $claudeRow = $detectedById["claude"]
+  $claudeHelp = $null
+  $claudeEffortProbe = $null
+  if ($claudeRow -and $claudeRow.detected) {
+    $claudeHelpResult = Invoke-CliCaptured -ExePath $claudeRow.command -Arguments "--help" -TimeoutMs $CommandTimeoutMs
+    if ($claudeHelpResult.output) { $claudeHelp = $claudeHelpResult.output }
+    # An unknown value makes the CLI print its accepted set without contacting any backend.
+    $claudeEffortResult = Invoke-CliCaptured -ExePath $claudeRow.command -Arguments "--effort __probe__ --help" -TimeoutMs $CommandTimeoutMs
+    if ($claudeEffortResult.output) { $claudeEffortProbe = $claudeEffortResult.output }
+  }
+  $claudeEfforts = @()
+  if ($claudeEffortProbe -and $claudeEffortProbe -match 'Valid values:\s*(?<list>[a-z,\s]+)') {
+    $claudeEfforts = @($Matches.list -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+  }
+
   $profileRows = @()
   foreach ($profile in $profiles.profiles) {
     $row = $detectedById[$profile.agent]
@@ -465,6 +484,25 @@ if (-not $SkipModelProbe) {
           }
         }
         $verificationPath = "agy models + agy --help"
+      }
+      "claude" {
+        if ($claudeHelp) {
+          $hasModelFlag = [bool]($claudeHelp -match '--model')
+          $hasEffortFlag = [bool]($claudeHelp -match '--effort')
+          $evidence += "claude --help advertises --model flag=$hasModelFlag --effort flag=$hasEffortFlag"
+          $modelEvidence = $hasModelFlag
+          if (-not $hasEffortFlag) { $evidence += "claude --help does not advertise --effort" }
+        } else {
+          $evidence += "claude --help could not be read"
+        }
+        $supportedEfforts = $claudeEfforts
+        if ($claudeEfforts.Count -gt 0) {
+          $evidence += "claude --effort enumerates [$($claudeEfforts -join ', ')]"
+          $effortEvidence = [bool]((-not $profile.effort) -or ($profile.effort -in $claudeEfforts))
+          if (-not $effortEvidence) { $evidence += "effort '$($profile.effort)' is NOT enumerated by claude --effort" }
+        }
+        $evidence += "model alias '$($profile.model)' is forwarded to the host-managed backend; the alias mapping is not probed here"
+        $verificationPath = "claude CLI contract (--model alias + --effort enumeration)"
       }
       default {
         $evidence += "No host-side model probe implemented for agent '$($profile.agent)'."
