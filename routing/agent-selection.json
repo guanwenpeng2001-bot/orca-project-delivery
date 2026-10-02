@@ -15,7 +15,7 @@
     "codebase-scout": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "claude-haiku-max",
+        "claude-haiku-default",
         "codex-gpt-6-astra-medium",
         "antigravity-gemini-3.8-flash-high",
         "claude-sonnet-high"
@@ -32,7 +32,7 @@
     "technical-researcher": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "claude-haiku-max",
+        "claude-haiku-default",
         "codex-gpt-6-astra-medium",
         "antigravity-gemini-3.8-flash-high",
         "claude-sonnet-high"
@@ -49,7 +49,7 @@
     "issue-investigator": {
       "minimumQualityTier": "standard",
       "preferredProfiles": [
-        "claude-haiku-max",
+        "claude-haiku-default",
         "codex-gpt-6-astra-medium",
         "antigravity-gemini-3.8-flash-high",
         "claude-sonnet-high"

@@ -113,10 +113,10 @@
       "source": "Current Orca Claude family aliases"
     },
     {
-      "id": "claude-haiku-max",
+      "id": "claude-haiku-default",
       "agent": "claude",
       "model": "haiku",
-      "effort": "max",
+      "effort": null,
       "modelControl": "orca-launch-preferences",
       "qualityTier": "standard",
       "costTier": "unknown",
