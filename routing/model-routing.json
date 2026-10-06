@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 2,
+  "agent": "claude",
+  "authority": [
+    "本文件是 角色→(model, effort) 路由的唯一数据源；角色清单以 roles/catalog.json 为准，两处角色集必须一致（verify-package 校验）。",
+    "Orca 命令、参数与回执形状以当前安装的全局 orchestration Skill 和 --help 为准；本文件不记录 argv。",
+    "各 (model, effort) 组合在本机的可接受性由 scripts/probe-claude-capabilities.ps1 以哨兵方式实测，结果写 .dev-work/runtime/claude-capabilities.json；本文件只记录策略，不记录实测结论。",
+    "effective 值只以首次 worker-start 回执 launch.effective 为准；requested 不等于 effective。"
+  ],
+  "vocabulary": {
+    "effortLevels": ["low", "medium", "high", "xhigh", "max"],
+    "modelLadder": ["haiku", "sonnet", "opus", "fable"],
+    "ordering": "比较两档时先比 tier 在 modelLadder 的位置，tier 相同再比 effort 在 effortLevels 的位置。每条 chain 必须按此严格递增。"
+  },
+  "modelTiers": {
+    "haiku": {
+      "preferred": { "model": "claude-haiku-4-5", "withEffort": true },
+      "fallback": { "model": "haiku", "withEffort": false },
+      "rule": "首选完整 id + effort；若 Orca 参数校验拒绝或首次回执 launch.effective 与 requested 不符，回退别名 haiku 且不指定 effort，记入 degradation-events.json。别名 haiku 被 Orca 拒绝任何 effort（2026-10-07 实测）；完整 id 是否真正生效以首次回执为准，接受情况由探针哨兵实测，不在本文件写死。"
+    },
+    "sonnet": { "preferred": { "model": "sonnet", "withEffort": true } },
+    "opus": { "preferred": { "model": "opus", "withEffort": true } },
+    "fable": { "preferred": { "model": "fable", "withEffort": true } }
+  },
+  "policies": {
+    "escalate": "升档沿 chain 右移一格：先同 tier 提 effort，到顶再跨 tier（已写死在链上）。触发：协调者判定高难度、worker 给出复杂度证据、审查/验证发现质量不足、能力原因的重复失败。链顶即上限。",
+    "downgrade": "仅明确证据触发：rate_limited 先同档有界退避 ≤2 次；quota_exhausted/model_unavailable 排除该 tier 全部档位，从当前索引左移找第一个未被排除且 ≥ floor 的档。不得跌破 floor，不得制造第二个并发写者。",
+    "suspend": "无 ≥ floor 的可用档、用户锁定选择不可用、或同一 Task 同类失败达熔断次数时：挂起该 Task（decision gate 或暂停），记录 degradation-events.json，收尾汇总给用户；不阻塞其他独立 Task。",
+    "userPinned": "用户锁定 model/effort 时不做任何自动升降档；锁定选择被拒绝或回执不符时挂起并提问。",
+    "trivialTaskAdjustment": "边界极小、输出格式明确的只读 Task 可从 default 左移一格起派，不得低于 floor。",
+    "coordinatorModel": "协调者模型不在路由范围：不选择、不校验、不探测；用户说明时记入 run-state.coordinatorModelReported。",
+    "recording": "每次派发在 assignments/<task>.json 的 runtime 块记录 requested（实际字面值）与 effective（首次回执 launch.effective）；无法核对记 null，verification.status ∈ verified|mismatch|unverified；换档原因记入顶层 fallbackReason。"
+  },
+  "roles": {
+    "codebase-scout": {
+      "chain": [
+        { "tier": "haiku", "effort": "low" },
+        { "tier": "haiku", "effort": "medium" },
+        { "tier": "haiku", "effort": "high" },
+        { "tier": "sonnet", "effort": "medium" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["只读侦察", "事实提取"]
+    },
+    "technical-researcher": {
+      "chain": [
+        { "tier": "haiku", "effort": "medium" },
+        { "tier": "haiku", "effort": "high" },
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["外部技术取证"]
+    },
+    "issue-investigator": {
+      "chain": [
+        { "tier": "haiku", "effort": "high" },
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "opus", "effort": "medium" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["缺陷根因调查", "复现"]
+    },
+    "requirements-analyst": {
+      "chain": [
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "opus", "effort": "medium" },
+        { "tier": "opus", "effort": "high" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["需求与验收定义", "产品范围与非目标"]
+    },
+    "solution-planner": {
+      "chain": [
+        { "tier": "opus", "effort": "high" },
+        { "tier": "fable", "effort": "high" },
+        { "tier": "fable", "effort": "xhigh" },
+        { "tier": "fable", "effort": "max" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["实施方案", "任务图草案"]
+    },
+    "plan-adjudicator": {
+      "chain": [
+        { "tier": "fable", "effort": "high" },
+        { "tier": "fable", "effort": "xhigh" },
+        { "tier": "fable", "effort": "max" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["多方案裁决"]
+    },
+    "software-architect": {
+      "chain": [
+        { "tier": "opus", "effort": "xhigh" },
+        { "tier": "fable", "effort": "high" },
+        { "tier": "fable", "effort": "xhigh" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["边界与接口设计", "数据所有权", "迁移与回滚"]
+    },
+    "software-implementer": {
+      "chain": [
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "sonnet", "effort": "xhigh" },
+        { "tier": "opus", "effort": "medium" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["源码实施", "修复", "测试编写"]
+    },
+    "code-reviewer": {
+      "chain": [
+        { "tier": "sonnet", "effort": "xhigh" },
+        { "tier": "opus", "effort": "high" },
+        { "tier": "opus", "effort": "xhigh" },
+        { "tier": "fable", "effort": "high" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["独立代码审查"]
+    },
+    "security-reviewer": {
+      "chain": [
+        { "tier": "opus", "effort": "high" },
+        { "tier": "opus", "effort": "xhigh" },
+        { "tier": "fable", "effort": "high" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["安全审查"]
+    },
+    "release-verifier": {
+      "chain": [
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "opus", "effort": "high" },
+        { "tier": "opus", "effort": "xhigh" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["最终集成验证"]
+    },
+    "merge-resolver": {
+      "chain": [
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "opus", "effort": "medium" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["合并冲突解决"]
+    }
+  }
+}
