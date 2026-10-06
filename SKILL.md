@@ -143,27 +143,30 @@ Preserve project policy verbatim; `AGENTS.md` is always last.
 2. Reconnaissance: dispatch independent information domains as needed; stop when unknowns cease to affect the solution.
 3. Plan: use solution-planner, multiple plans plus plan-adjudicator when needed; resolve real product ambiguity with requirements-analyst first.
 4. Task graph: write task-definition and assemble input; record machine-readable assignments, true dependencies and parallel waves.
-5. Dispatch all ready Tasks; verify the first `launch.effective` receipt and fill assignment runtime evidence.
-6. Wait using `check --wait`; process every question/escalation, confirm worker_done belongs to the active Dispatch, decide the terminal's next owner, then acknowledge.
+5. Dispatch every ready Task; ready means its real dependencies settled successfully through their existing gates — a source dependency counts only after its own review and integration, never on `worker_done` alone — write scope disjoint from in-flight Tasks, and a usable baseline and route. Verify the first `launch.effective` receipt and fill assignment runtime evidence.
+6. Wait using `check --wait`; process every question/escalation, confirm worker_done belongs to the active Dispatch, decide the terminal's next owner, then acknowledge. After each confirmed settle, immediately re-evaluate readiness and dispatch newly ready Tasks (rolling dispatch) without waiting for unrelated in-flight Tasks.
 7. After three consecutive empty waits, enumerate using `worker-list` and act on `projection.nextAction`; use bounded `worker-read` inspection where needed.
-8. Review completed source Tasks independently, based on the implementation branch.
+8. When a source Task's `worker_done` is confirmed, immediately dispatch its independent review Task from an isolated worktree, in parallel with other in-flight implementation; review the actual implementation branch.
 9. Convert accepted findings into fix Tasks and re-review until resolved or explicitly unverifiable.
-10. Integrate approved source by explicit Git merge in the delivery worktree; record diff/tests/artifact exclusions, then reclaim eligible task worktrees.
-11. Verify the latest delivery state in a clean worktree with release-verifier; write reports, summarize user decisions, settle workers and release the coordinator.
+10. As each review is approved, integrate that branch by explicit Git merge in the delivery worktree — serially, one merge at a time in dependency order, not a batch barrier; record diff/tests/artifact exclusions for every merge, base Tasks created afterwards on the updated delivery baseline, then reclaim eligible task worktrees.
+11. Only after all intended changes are integrated, verify the latest delivery state in a clean worktree with release-verifier; write reports, summarize user decisions, settle workers and release the coordinator. This final-verification barrier never moves earlier and is never skipped.
 
 A nonzero start receipt alone does not prove a failed attempt: inspect `failedStage` and `residualResources` using `references/failure-taxonomy.md`.
 `outcome_unknown`, `turn_start_unobserved`, timeouts and unverifiable liveness do not authorize stop, abandon, retry or release.
 User decisions use decision gates suspending only dependent Tasks; independent work proceeds. Resolve gates after the user decides.
 Release is post-settlement cleanup. Record `retained` or `user_owned` decisions; explicitly resolve terminal ownership before removing its worktree.
+Rolling dispatch changes no stage or gate: stages and gates are neither added nor removed, `AGENTS.md` stays verbatim, model routing and failure/unverifiable semantics are unchanged; only artificial batch waits between independent Tasks are removed.
 
 ## Review and integration
 
 Implementer self-check does not replace independent acceptance. Reviewers report `APPROVED`, `CHANGES_REQUIRED`, or `UNVERIFIABLE` and never edit source.
+Dispatch each independent review as soon as the source Task's `worker_done` is confirmed, in parallel with other in-flight work, always against the actual implementation branch.
 Findings become separate fix Tasks followed by re-review; unclear evidence remains explicitly unverifiable.
-After approval, the coordinator explicitly runs Git merge in the actual worktree with `delivery_branch` checked out; Orca has no merge primitive.
-Record the baseline, diff, tests, Git status and exclusion of all process artifacts. Never integrate through the control branch or treat its HEAD as delivery evidence.
+After each approval, the coordinator immediately runs Git merge in the actual worktree with `delivery_branch` checked out; Orca has no merge primitive.
+With several approved branches, integrate serially — one merge at a time in dependency order — recording the baseline, diff, tests, Git status and exclusion of all process artifacts for every merge.
+New Tasks created afterwards base on the updated delivery baseline. Never integrate through the control branch or treat its HEAD as delivery evidence.
 Remove task worktrees and safe-to-delete branches only after integration or explicit abandonment and terminal ownership resolution.
-After all intended changes are integrated, create final verification from the latest delivery branch in a clean worktree; do not reuse stale test claims.
+Final verification stays a global barrier: create it from the latest delivery branch in a clean worktree only after all intended changes are integrated, never earlier and never skipped; do not reuse stale test claims.
 
 ## Degradation and handoff
 

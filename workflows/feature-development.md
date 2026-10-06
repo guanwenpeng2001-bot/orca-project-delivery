@@ -78,17 +78,23 @@ Create self-contained Tasks with:
 
 Encode only real dependencies. Parallelize independent work.
 
+A Task is ready when its real dependencies have settled successfully through their existing gates — a source dependency needs its review and integration first, not `worker_done` alone — its write scope is disjoint from in-flight Tasks, and its baseline and route are usable. Dispatch ready Tasks as they become ready; do not hold a batch barrier for unrelated in-flight Tasks.
+
 ### Implementation
 
 Each source Task runs in an independent worktree. Implementers do not merge themselves.
 
 ### Independent review
 
+Dispatch the independent review Task as soon as the source Task's `worker_done` is confirmed, in parallel with other in-flight implementation.
+
 Review each source branch against requirements, Task Contract, project rules, diff, tests, and implementation report.
 
 ### Integration
 
 After approval, merge the source branch directly into `delivery_branch`. Do not use the coordinator control branch. Orca has no merge primitive: this is an explicit coordinator `git merge` in the worktree that has `delivery_branch` checked out, recorded together with the diff, the tests, and the process-artifact exclusion check.
+
+Integrate each approved branch as soon as its review passes: with several branches pending, merge serially, one at a time in dependency order, recording the diff, tests and process-artifact exclusion for every merge, and base Tasks created afterwards on the updated `delivery_branch`. Final verification still starts only after all intended changes are integrated.
 
 ### Final verification
 

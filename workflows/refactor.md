@@ -38,7 +38,7 @@ Each refactor Task uses an isolated branch. Do not combine behavior changes with
 
 ### Review
 
-Independent review checks:
+Dispatch the independent review Task as soon as the refactor Task settles, in parallel with other in-flight work. Independent review checks:
 
 - invariant preservation;
 - hidden behavior changes;
@@ -49,7 +49,7 @@ Independent review checks:
 
 ### Integration
 
-Integrate approved steps into `delivery_branch` in dependency order. Run final verification from a fresh worktree.
+Integrate each approved branch as soon as its review passes: merge serially into `delivery_branch`, one at a time in dependency order, recording the diff, tests and process-artifact exclusion for each merge; base Tasks created afterwards on the updated `delivery_branch`. Run final verification from a fresh worktree only after all intended changes are integrated.
 
 ## Failure handling
 

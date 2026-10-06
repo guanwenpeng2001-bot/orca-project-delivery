@@ -71,7 +71,7 @@ Independent review focuses on:
 
 ### Integration and verification
 
-Merge the approved fix directly into `delivery_branch`, then verify from a clean worktree:
+Merge the approved fix directly into `delivery_branch` as soon as review passes — with several fixes pending, merge serially, one at a time in dependency order, and base Tasks created afterwards on the updated `delivery_branch`. Verify from a clean worktree only after all intended changes are integrated:
 
 - original symptom;
 - regression test;
