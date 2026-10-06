@@ -11,14 +11,7 @@
       ],
       "optionalSkills": [
         "technical-research"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-only",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "technical-researcher",
@@ -30,14 +23,7 @@
       ],
       "optionalSkills": [
         "solution-architecture"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "safe",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "issue-investigator",
@@ -50,54 +36,7 @@
       ],
       "optionalSkills": [
         "technical-research"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-and-reproduce",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
-    },
-    {
-      "id": "product-manager",
-      "name": "Product Manager",
-      "category": "product",
-      "path": "roles/product/product-manager.md",
-      "defaultSkills": [
-        "product-discovery",
-        "requirements-analysis"
-      ],
-      "optionalSkills": [
-        "product-design"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-only",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
-    },
-    {
-      "id": "product-designer",
-      "name": "Product Designer",
-      "category": "product",
-      "path": "roles/product/product-designer.md",
-      "defaultSkills": [
-        "product-design"
-      ],
-      "optionalSkills": [
-        "product-discovery",
-        "requirements-analysis"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-only",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "requirements-analyst",
@@ -105,18 +44,12 @@
       "category": "product",
       "path": "roles/product/requirements-analyst.md",
       "defaultSkills": [
-        "requirements-analysis"
+        "requirements-analysis",
+        "product-discovery"
       ],
       "optionalSkills": [
         "product-design"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-only",
-        "networkRead": false,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "solution-planner",
@@ -130,14 +63,7 @@
       "optionalSkills": [
         "api-design",
         "database-design"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-only",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "plan-adjudicator",
@@ -150,14 +76,7 @@
       ],
       "optionalSkills": [
         "requirements-analysis"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-only",
-        "networkRead": false,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "software-architect",
@@ -171,163 +90,24 @@
         "api-design",
         "database-design",
         "security-review"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-only",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
-      "id": "api-designer",
-      "name": "API Designer",
-      "category": "architecture",
-      "path": "roles/architecture/api-designer.md",
+      "id": "software-implementer",
+      "name": "Software Implementer",
+      "category": "engineering",
+      "path": "roles/engineering/software-implementer.md",
       "defaultSkills": [
-        "api-design"
+        "test-driven-development",
+        "integration-verification"
       ],
       "optionalSkills": [
+        "api-design",
+        "database-design",
+        "systematic-debugging",
         "security-review",
-        "requirements-analysis"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-only",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
-    },
-    {
-      "id": "database-architect",
-      "name": "Database Architect",
-      "category": "architecture",
-      "path": "roles/architecture/database-architect.md",
-      "defaultSkills": [
-        "database-design"
-      ],
-      "optionalSkills": [
-        "performance-review",
-        "security-review"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-only",
-        "networkRead": false,
-        "orchestrationControl": false
-      }
-    },
-    {
-      "id": "backend-engineer",
-      "name": "Backend Engineer",
-      "category": "engineering",
-      "path": "roles/engineering/backend-engineer.md",
-      "defaultSkills": [
-        "test-driven-development",
-        "integration-verification"
-      ],
-      "optionalSkills": [
-        "api-design",
-        "database-design",
-        "systematic-debugging",
-        "security-review"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": true,
-        "command": "workspace",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
-    },
-    {
-      "id": "frontend-engineer",
-      "name": "Frontend Engineer",
-      "category": "engineering",
-      "path": "roles/engineering/frontend-engineer.md",
-      "defaultSkills": [
-        "test-driven-development",
-        "integration-verification"
-      ],
-      "optionalSkills": [
-        "product-design",
-        "systematic-debugging",
-        "performance-review"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": true,
-        "command": "workspace",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
-    },
-    {
-      "id": "fullstack-engineer",
-      "name": "Full-stack Engineer",
-      "category": "engineering",
-      "path": "roles/engineering/fullstack-engineer.md",
-      "defaultSkills": [
-        "test-driven-development",
-        "integration-verification"
-      ],
-      "optionalSkills": [
-        "api-design",
-        "database-design",
         "product-design"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": true,
-        "command": "workspace",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
-    },
-    {
-      "id": "test-engineer",
-      "name": "Test Engineer",
-      "category": "engineering",
-      "path": "roles/engineering/test-engineer.md",
-      "defaultSkills": [
-        "integration-verification"
-      ],
-      "optionalSkills": [
-        "test-driven-development",
-        "performance-review",
-        "security-review"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": true,
-        "command": "workspace",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
-    },
-    {
-      "id": "fixer",
-      "name": "Fixer",
-      "category": "engineering",
-      "path": "roles/engineering/fixer.md",
-      "defaultSkills": [
-        "systematic-debugging",
-        "integration-verification"
-      ],
-      "optionalSkills": [
-        "test-driven-development",
-        "security-review"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": true,
-        "command": "workspace",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "code-reviewer",
@@ -341,14 +121,7 @@
       "optionalSkills": [
         "security-review",
         "performance-review"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-and-test",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "security-reviewer",
@@ -361,34 +134,7 @@
       ],
       "optionalSkills": [
         "technical-research"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "read-and-test",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
-    },
-    {
-      "id": "performance-reviewer",
-      "name": "Performance Reviewer",
-      "category": "quality",
-      "path": "roles/quality/performance-reviewer.md",
-      "defaultSkills": [
-        "performance-review"
-      ],
-      "optionalSkills": [
-        "code-review",
-        "database-design"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "benchmark",
-        "networkRead": false,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "release-verifier",
@@ -402,14 +148,7 @@
         "security-review",
         "performance-review",
         "code-review"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": false,
-        "command": "verification",
-        "networkRead": true,
-        "orchestrationControl": false
-      }
+      ]
     },
     {
       "id": "merge-resolver",
@@ -422,14 +161,7 @@
       ],
       "optionalSkills": [
         "code-review"
-      ],
-      "requiredCapabilities": {
-        "sourceRead": true,
-        "sourceWrite": true,
-        "command": "workspace",
-        "networkRead": false,
-        "orchestrationControl": false
-      }
+      ]
     }
   ]
 }
