@@ -1,27 +1,13 @@
 {
   "name": "orca-project-delivery",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "generatedAt": "2026-10-02",
-  "revisedAt": "2026-10-02",
-  "releasedAt": "2026-10-02",
-  "revisionNote": "In-place remediation released as 1.1.0 (findings F1-F20 in orca-project-delivery-remediation-plan.md); the follow-up batch released as 1.1.1 puts claude first in every role route, corrects the claude tiers against Orca's per-model option catalog, and adds two harness checks. See CHANGELOG.md for the per-wave list; the inPlaceFixes block below records the earlier 1.0.0 in-place pass.",
-  "inPlaceFixes": {
-    "scripts/assemble-task.ps1": "1.0.0 pass: parse error (escaped closing quote) and literal placeholders in the assembled assignment. Heading levels and role front matter were finalised in the 1.1.0 pass (F13).",
-    "scripts/bootstrap-project.ps1": "Detached HEAD validated before any write; coordinator lock records the Orca terminal handle and applies a live/dead/unknown liveness rule.",
-    "scripts/create-run.ps1": "Detached HEAD validated before any write; failures roll back a partially created run directory; -Force archives prior state; delivery branch resolved from the repository default and recorded with its source.",
-    "scripts/release-coordinator.ps1": "New: refuses without -ConfirmRunClosed, archives active-run/lock, marks the lock released, reports reclaimable workers best-effort.",
-    "scripts/validate-run.ps1": "New: schema validation of manifest/lock/active-run/run-state/assignments plus templates, run invariants (3, 1, lock divergence, delivery branch), duplicate-authority drift, routing order, and declared-skill existence.",
-    "scripts/reconcile-state.ps1": "Exact branch/worktree matching instead of substring matching.",
-    "scripts/probe-agent-capabilities.ps1": "Manifest guard, timeout and shim-safe CLI probing, and per-profile model/effort evidence in .dev-work/runtime/model-capabilities.json.",
-    "schemas": "Added active-run, task-definition and coordinator-lock schemas; templates now validate.",
-    "routing/agent-selection.json, agents/role-compatibility.json": "Profiles with autoRouteAfterProbe=false no longer precede auto-routeable profiles.",
-    "agents/skill-loading.json, adapters/skill-delivery.md": "Claude provider alias marked unverified (path absent on this host); explicit-path is the default.",
-    "SKILL.md, adapters, references, templates": "Worker input order unified at 10 sections; outcome vocabulary mapped to worker_done --outcome; failure taxonomy mapped to Orca evidence; coordinator lock documented."
-  },
+  "revisedAt": "2026-10-07",
+  "releasedAt": "2026-10-07",
+  "revisionNote": "Claude-only delivery with a single role-to-model/effort routing authority, 12 roles, explicit Skill delivery, conservative capability evidence, and offline package regression checks. See CHANGELOG.md for the 2.0.0 changes.",
   "deliverables": {
-    "roles": 21,
+    "roles": 12,
     "professionalSkills": 16,
-    "orcaAgents": 43,
     "workflows": 4
   },
   "entrySkill": "orca-project-delivery/SKILL.md",

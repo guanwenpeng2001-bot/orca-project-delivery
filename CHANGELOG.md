@@ -4,6 +4,16 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 2.0.0 — 2026-10-07
+
+- Rebuilt the coordinator entry for Claude Code workers only, retaining isolated Tasks, single writers, independent review, direct delivery integration, locks and evidence-based completion.
+- Added one authoritative role-to-model/effort route: haiku reconnaissance, fable planning, sonnet implementation and opus review/verification, with explicit chains, defaults, floors, user pins and bounded degradation.
+- Consolidated 21 roles into 12; specialist API, database, product and performance concerns remain available through the 16 professional Skills. Kept four adaptive workflows.
+- Removed `agents/` and `adapters/`, cross-provider profiles and mirrored routing tables; moved surviving runtime and handoff guidance into `references/`. Historical role-source and migration notes are superseded by this release.
+- Replaced `probe-agent-capabilities.ps1` with `probe-claude-capabilities.ps1`: Claude CLI contract and sentinel parameter acceptance, with requested/effective separation and abnormal-launch stop guidance. Haiku prefers its full ID with effort, subject to first-receipt verification.
+- Reduced Skill delivery to explicit paths or recorded inline extracts; updated schemas, templates and run validation for the new routing contract.
+- Reworked offline package checks for routing chains, role coverage, Claude-only content, absent mirrors and 2.0.0 counts; retained all registered Skill path checks and isolated runtime fixtures, and added negative regression cases. Agent-ID scanning distinguishes PowerShell keywords from references and exempts only its exact vocabulary declaration.
+
 ## 1.1.1
 
 Follow-up batch after 1.1.0. Evidence: the claude-first routing change plus a real four-tier claude
