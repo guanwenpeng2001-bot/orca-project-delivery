@@ -38,7 +38,7 @@ Possible outputs:
 
 ### Product and requirements
 
-Use Product Manager, Product Designer, or Requirements Analyst Roles only when the feature has genuine product ambiguity, user-flow surface, or acceptance uncertainty.
+Use the Requirements Analyst Role (`requirements-analyst`) only when the feature has genuine product ambiguity, user-flow surface, or acceptance uncertainty.
 
 Outputs may include:
 
