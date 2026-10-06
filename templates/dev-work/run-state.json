@@ -10,6 +10,7 @@
   "coordinatorControlBranch": "<coordinator-control-branch>",
   "coordinatorWorktree": "<absolute-path>",
   "orcaRunId": null,
+  "coordinatorModelReported": null,
   "completedStages": [],
   "pendingUserDecisions": [],
   "createdAt": "<ISO-8601-UTC>",

@@ -58,8 +58,6 @@
     },
     "skillDeliveryMode": {
       "enum": [
-        "native",
-        "provider-alias",
         "explicit-path",
         "inline-extract"
       ]

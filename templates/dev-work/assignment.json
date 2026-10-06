@@ -8,22 +8,20 @@
   },
   "runtime": {
     "requested": {
-      "profile": null,
-      "agent": null,
-      "model": null,
-      "effort": null,
-      "permissionMode": null
+      "agent": "claude",
+      "model": "claude-haiku-4-5",
+      "effort": "medium"
     },
     "effective": {
-      "profile": null,
-      "agent": null,
-      "model": null,
-      "effort": null,
-      "permissionMode": null
+      "agent": "claude",
+      "model": "haiku",
+      "effort": null
     },
     "verification": {
-      "status": "pending",
-      "evidence": []
+      "status": "mismatch",
+      "evidence": [
+        "首次 worker-start 回执 launch.effective.model=haiku、无 effort 字段；按 §4.4 回退规则改用别名且不指定 effort"
+      ]
     }
   },
   "branch": {
@@ -42,5 +40,5 @@
     "dispatchId": null
   },
   "status": "planned",
-  "fallbackReason": null
+  "fallbackReason": "haiku 首次回执与请求不符，回退别名且不指定 effort"
 }
