@@ -261,6 +261,11 @@ if (Test-Path $activePath) {
   $warnings += "No active run: $activePath (the coordinator lock is still validated)."
 }
 
+$capabilitiesPath = Join-Path $devWork 'runtime/claude-capabilities.json'
+if (Test-Path $capabilitiesPath) {
+  Test-Document $capabilitiesPath (Join-Path $schemaRoot 'runtime-capabilities.schema.json') 'claude-capabilities' $errors
+}
+
 # ------------------------------------------------------------------- invariants
 $lock = Read-JsonSafe $lockPath
 $checks["invariantChecks"] = @()
@@ -298,81 +303,47 @@ if ($state) {
 # -------------------------------------------------------------- package checks
 if (-not $SkipPackageChecks) {
   $skillRoot = Split-Path -Parent $PSScriptRoot
-  $skillsRoot = Split-Path -Parent $skillRoot
-
-  # Duplicate authority: the routing table and the role compatibility matrix must agree.
-  $agentSelectionPath = Join-Path $skillRoot "routing\agent-selection.json"
-  $roleCompatPath = Join-Path $skillRoot "agents\role-compatibility.json"
-  if ((Test-Path $agentSelectionPath) -and (Test-Path $roleCompatPath)) {
-    $selection = Read-JsonSafe $agentSelectionPath
-    $compat = Read-JsonSafe $roleCompatPath
-    $selectionRoles = $selection.roleRoutes
-    $compatRoles = $compat.roles
-    foreach ($roleId in @($selectionRoles.PSObject.Properties.Name)) {
-      if (-not $compatRoles.PSObject.Properties[$roleId]) {
-        [void]$errors.Add("Routing role '$roleId' exists in agent-selection.json but not in role-compatibility.json.")
-        continue
-      }
-      $a = $selectionRoles.$roleId | ConvertTo-Json -Depth 10 -Compress
-      $b = $compatRoles.$roleId | ConvertTo-Json -Depth 10 -Compress
-      if ($a -ne $b) { [void]$errors.Add("Duplicate authority drift for role '$roleId' (agent-selection.json != role-compatibility.json).") }
-    }
-    foreach ($roleId in @($compatRoles.PSObject.Properties.Name)) {
-      if (-not $selectionRoles.PSObject.Properties[$roleId]) {
-        [void]$errors.Add("Routing role '$roleId' exists in role-compatibility.json but not in agent-selection.json.")
-      }
-    }
+  $routing = Read-JsonSafe (Join-Path $skillRoot 'routing/model-routing.json')
+  $catalog = Read-JsonSafe (Join-Path $skillRoot 'roles/catalog.json')
+  $selection = Read-JsonSafe (Join-Path $skillRoot 'routing/role-selection.json')
+  $skillCatalog = Read-JsonSafe (Join-Path $skillRoot 'routing/skill-catalog.json')
+  foreach ($document in @(
+    @{ name = 'model-routing'; value = $routing.roles },
+    @{ name = 'role catalog'; value = $catalog.roles },
+    @{ name = 'role-selection'; value = $selection.deliverableRoutes },
+    @{ name = 'skill catalog'; value = $skillCatalog.skills }
+  )) {
+    if (-not $document.value) { [void]$errors.Add("Package $($document.name) is missing, invalid, or empty.") }
   }
 
-  # Routing order: a profile that must not auto-route may not precede one that may.
-  $profilesPath = Join-Path $skillRoot "agents\configured-profiles.json"
-  if ((Test-Path $agentSelectionPath) -and (Test-Path $profilesPath)) {
-    $profiles = Read-JsonSafe $profilesPath
-    $mayAutoRoute = @{}
-    foreach ($p in $profiles.profiles) { $mayAutoRoute[$p.id] = [bool]$p.autoRouteAfterProbe }
-    $selection = Read-JsonSafe $agentSelectionPath
-    foreach ($roleId in @($selection.roleRoutes.PSObject.Properties.Name)) {
-      $seenExcluded = $null
-      # A malformed route value (number, boolean, string, null) must produce a role-level error
-      # instead of a host-language exception from reading a property off a scalar.
-      $routeValue = $selection.roleRoutes.$roleId
-      if (-not ($routeValue -is [System.Management.Automation.PSCustomObject])) {
-        [void]$errors.Add("Role '$roleId' has a non-object route value in routing/agent-selection.json.")
-        continue
-      }
-      if (-not ($routeValue.PSObject.Properties.Name -contains 'preferredProfiles')) {
-        [void]$errors.Add("Role '$roleId' has no preferredProfiles list in routing/agent-selection.json.")
-        continue
-      }
-      $preferredProfiles = @($routeValue.preferredProfiles)
-      if ($preferredProfiles.Count -eq 0) {
-        [void]$errors.Add("Role '$roleId' lists no preferred profiles in routing/agent-selection.json.")
-        continue
-      }
-      foreach ($profileId in $preferredProfiles) {
-        if (-not $mayAutoRoute.ContainsKey($profileId)) {
-          [void]$errors.Add("Role '$roleId' prefers unknown profile '$profileId'.")
-          continue
-        }
-        if ($mayAutoRoute[$profileId]) {
-          if ($seenExcluded) { [void]$errors.Add("Role '$roleId' prefers '$profileId' after non-auto-route profile '$seenExcluded'.") }
-        } elseif (-not $seenExcluded) {
-          $seenExcluded = $profileId
-        }
-      }
-    }
+  $roleIds = @($catalog.roles.id)
+  $routingIds = @($routing.roles.PSObject.Properties.Name)
+  $before = $errors.Count
+  foreach ($roleId in $roleIds) {
+    if ($routingIds -cnotcontains $roleId) { [void]$errors.Add("Catalog role '$roleId' is missing from model-routing.json.") }
   }
+  foreach ($roleId in $routingIds) {
+    if ($roleIds -cnotcontains $roleId) { [void]$errors.Add("Routing role '$roleId' is missing from roles/catalog.json.") }
+  }
+  $checks['modelRoutingRoles'] = ($routing.roles -and $catalog.roles -and $errors.Count -eq $before)
 
-  # Declared professional skills must exist as sibling skills. Catalog paths are
-  # package-root relative, i.e. "..\<skill>\SKILL.md" from this package directory.
-  $skillCatalogPath = Join-Path $skillRoot "routing\skill-catalog.json"
-  if (Test-Path $skillCatalogPath) {
-    $catalog = Read-JsonSafe $skillCatalogPath
-    foreach ($entry in $catalog.skills) {
-      $resolved = Join-Path $skillRoot ($entry.path -replace "/", "\")
-      if (-not (Test-Path $resolved)) { [void]$errors.Add("Declared skill '$($entry.id)' not found at $resolved.") }
+  $before = $errors.Count
+  foreach ($route in $selection.deliverableRoutes.PSObject.Properties) {
+    if ($roleIds -cnotcontains $route.Value) { [void]$errors.Add("Deliverable '$($route.Name)' selects unknown role '$($route.Value)'.") }
+  }
+  $checks['roleSelection'] = ($selection.deliverableRoutes -and $catalog.roles -and $errors.Count -eq $before)
+
+  $before = $errors.Count
+  $skillIds = @($skillCatalog.skills.id)
+  foreach ($role in $catalog.roles) {
+    if (-not $role.path -or -not (Test-Path -LiteralPath (Join-Path $skillRoot $role.path) -PathType Leaf)) {
+      [void]$errors.Add("Role '$($role.id)' path not found: $($role.path).")
+    }
+    foreach ($skillId in @($role.defaultSkills) + @($role.optionalSkills)) {
+      if ($skillIds -cnotcontains $skillId) { [void]$errors.Add("Role '$($role.id)' references unknown skill '$skillId'.") }
     }
   }
+  $checks['roleCatalog'] = ($catalog.roles -and $skillCatalog.skills -and $errors.Count -eq $before)
   $checks["packageChecks"] = "enabled"
 } else {
   $checks["packageChecks"] = "skipped"

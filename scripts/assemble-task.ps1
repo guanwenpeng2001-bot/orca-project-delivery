@@ -16,6 +16,9 @@ $root = (Resolve-Path $ProjectRoot).Path
 $skillRoot = Split-Path -Parent $PSScriptRoot
 $skillsRoot = Split-Path -Parent $skillRoot
 $task = Get-Content $TaskDefinitionPath -Raw | ConvertFrom-Json
+if ($task.skillDeliveryMode -cnotin @('explicit-path', 'inline-extract')) {
+  throw "skillDeliveryMode must be explicit-path or inline-extract."
+}
 $catalog = Get-Content (Join-Path $skillRoot "roles\catalog.json") -Raw | ConvertFrom-Json
 $role = $catalog.roles | Where-Object { $_.id -eq $task.role } | Select-Object -First 1
 if (-not $role) { throw "Unknown role: $($task.role)" }
