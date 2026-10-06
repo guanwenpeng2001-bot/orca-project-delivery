@@ -8,6 +8,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 
 # Hosts can leave an orphaned count after stripping GIT_CONFIG_KEY_n variables.
 if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
@@ -77,6 +78,7 @@ function Test-OrcaModelOption {
   param([string]$ExePath, [string]$Model, [string]$Effort, [int]$TimeoutMs)
   $arguments = @('orchestration', 'worker-start', '--spec', 'option probe', '--worktree', 'new-top-level',
     '--repo', 'id:00000000-0000-0000-0000-000000000000', '--base-branch', 'main', '--setup', 'skip',
+    '--name', 'claude-capability-probe',
     '--agent', 'claude', '--model', $Model)
   if ($Effort) { $arguments += @('--effort', $Effort) }
   $arguments += @('--timeout-ms', '15000', '--json')
