@@ -1,68 +1,100 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Agent Runtime Capabilities",
+  "title": "Claude Runtime Capabilities",
   "type": "object",
   "required": [
     "schemaVersion",
-    "host",
     "checkedAt",
-    "agents"
+    "claudeCli",
+    "combos"
   ],
   "properties": {
     "schemaVersion": {
-      "const": 1
-    },
-    "host": {
-      "type": "object"
+      "const": 2
     },
     "checkedAt": {
       "type": "string"
     },
-    "agents": {
+    "routingFileHash": {
+      "type": "string"
+    },
+    "policy": {
+      "type": "string"
+    },
+    "claudeCli": {
+      "type": "object",
+      "required": [
+        "detected"
+      ],
+      "properties": {
+        "detected": {
+          "type": "boolean"
+        },
+        "command": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "modelFlag": {
+          "type": "boolean"
+        },
+        "effortFlag": {
+          "type": "boolean"
+        },
+        "effortValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "combos": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
-          "id",
-          "detected",
-          "runtimeSupported"
+          "tier",
+          "model",
+          "verdict"
         ],
         "properties": {
-          "id": {
+          "tier": {
             "type": "string"
           },
-          "detected": {
-            "type": "boolean"
+          "model": {
+            "type": "string"
           },
-          "runtimeSupported": {
-            "type": "boolean"
-          },
-          "command": {
+          "effort": {
             "type": [
               "string",
               "null"
             ]
           },
-          "version": {
-            "type": [
-              "string",
-              "null"
+          "verdict": {
+            "enum": [
+              "accepted",
+              "rejected",
+              "unknown",
+              "launched"
             ]
-          },
-          "modelControl": {
-            "type": "string"
-          },
-          "skillDelivery": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           }
         },
         "additionalProperties": true
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     }
   },

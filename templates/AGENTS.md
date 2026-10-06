@@ -6,7 +6,7 @@
 
 ## 1. 适用范围与优先级
 
-本文件约束在本项目中工作的所有 Agent，包括侦察、产品、方案、架构、实施、审查、修复与验收角色。
+本文件约束在本项目中工作的所有 Agent，包括侦察、需求、方案、裁决、架构、实施、审查与验收角色。
 
 发生冲突时，按以下优先级处理：
 
@@ -167,16 +167,14 @@ Worker 只能：
 - 专业 Skill 只提供方法，不得扩大任务范围；
 - 任务完成前必须执行相应验证 Skill 或验证步骤。
 
-## 8. Agent、模型与降级
+## 8. 模型、推理档位与降级
 
-协调者必须通过 `orca-project-delivery` 的 Agent Registry 和 Runtime Profile 选择 Agent，不得凭记忆构造 CLI 启动参数。
+所有 Worker 都是 Claude Code（`--agent claude`）。协调者通过 `orca-project-delivery` 的 `routing/model-routing.json` 选择每个角色的档位链、默认档与最低档，不得凭记忆构造启动参数；Orca 的命令与回执形状以当前安装的全局 `orchestration` Skill 与 `--help` 为准。
 
 每次派发必须记录：
 
-- requested Agent；
 - requested model；
 - requested effort；
-- effective Agent；
 - effective model；
 - effective effort；
 - permission mode；
@@ -185,20 +183,21 @@ Worker 只能：
 - Orca Task / Dispatch；
 - 分支、工作树与报告路径。
 
-请求值不等于生效值。能够验证时必须核对实际生效值；无法验证时不得宣称已经生效。
+请求值不等于生效值。effective 只以首次 worker-start 回执的 `launch.effective` 为准；无法核对时记为未知，不得宣称已经生效。
+
+haiku 档位的请求形态：首选完整 id `claude-haiku-4-5` 加 effort；被 Orca 拒绝或回执不符时回退别名 `haiku` 且不指定 effort，并记录。
+
+协调者自己的模型不在路由范围内：不选择、不校验；用户主动说明时仅作记录。
 
 ### 自动降级
 
-- 用户未锁定 Agent/模型时，可以在同一 Agent 内按配置换模型或调整 effort；
-- 跨 Agent（跨 provider）降级必须获得用户明确授权，并记录在 run 的 `allowCrossProviderFallback`；未授权时挂起相关 Task，向用户提问；
-- 用户锁定 Agent/模型时，未经允许不得跨 Agent 或跨模型降级；
-- 降级不得低于 Role 的最低能力、权限和质量要求；
-- 优先修复同一 Agent 的启动拓扑，其次同 Agent 换模型，再考虑跨 Agent；
-- 静默、空等待或 `unverifiable` 不等于额度耗尽；
-- 只有明确的 rate limit、quota、auth、model unavailable 等证据才能触发对应降级；
+- 升降档只在 Claude 内部沿角色的档位链进行：升档先同模型提 effort、到顶再升模型；降档仅在有明确 rate limit、quota、auth、model unavailable 证据时发生；
+- 用户锁定 model/effort 时，不得自动升降档；锁定选择不可用时挂起相关 Task 并向用户提问；
+- 降级不得低于角色的最低档；最低档也不可用时挂起该 Task 并记录，不阻塞其他独立 Task；
+- 静默、空等待或 `unverifiable` 不等于额度耗尽，不触发降级；
 - 降级不得制造第二个并发写者。
 
-实施 Agent 中途失效时，必须先确认原 Worker 已停止或完成交接，保存 Git 状态与 handoff，再由新 Agent 顺序接管。
+实施 Worker 中途失效时，必须先确认原 Worker 已停止或完成交接，保存 Git 状态与 handoff，再由新 Worker 顺序接管。
 
 ## 9. 命名规则
 
@@ -294,7 +293,7 @@ Worker 必须遵守当前 Orca preamble 和全局 `orchestration` Skill：
 
 ## 16. 无人值守与权限来源
 
-权限的权威来源是 **Agent 自身配置 + 用户在本机的 Orca 设置**。Orca 的 `worker-start` 没有权限旗标，本包只能在报告中记录 requested / effective，不能在派发时设定权限。
+权限的权威来源是 **Claude Code 自身配置 + 用户在本机的 Orca 设置**。Orca 的 `worker-start` 没有权限旗标，本包只能在报告中记录 requested / effective，不能在派发时设定权限。
 
 无人值守（自动批准）**仅当**以下条件同时成立：
 
@@ -304,4 +303,4 @@ Worker 必须遵守当前 Orca preamble 和全局 `orchestration` Skill：
 
 出现以下任一情形必须回到人工批准：不可逆操作、越出本机、写共享环境或生产数据、任务范围不清、用户要求人工确认。
 
-跨 Agent（跨 provider）降级不属于无人值守的许可范围：必须取得用户明确授权，并记录在 run 的 `allowCrossProviderFallback`。
+用户锁定模型/档位时的换档不属于无人值守的许可范围：必须挂起并向用户提问。

@@ -68,9 +68,12 @@
         "null"
       ]
     },
-    "allowCrossProviderFallback": {
-      "type": "boolean",
-      "description": "Default false. Cross-provider fallback needs an explicit user authorization recorded for the run; without it the coordinator suspends and asks."
+    "coordinatorModelReported": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "用户主动说明的协调者模型；只记录，不校验、不作为路由输入。"
     },
     "completedStages": {
       "type": "array",
