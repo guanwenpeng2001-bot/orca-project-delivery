@@ -57,7 +57,7 @@ Define:
 
 ### Implementation
 
-Use a Fixer or appropriate Engineer Role in an isolated branch. Preserve the failing evidence before the fix and passing evidence after it.
+Use the Software Implementer Role (`software-implementer`) in an isolated branch. Preserve the failing evidence before the fix and passing evidence after it.
 
 ### Review
 

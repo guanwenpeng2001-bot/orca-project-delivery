@@ -9,12 +9,12 @@ Highest to lowest:
 5. Project-level `.dev-work/config/` override.
 6. Role Contract.
 7. Required professional Skills.
-8. Global Role routing and Agent profiles.
+8. Global Role routing and `routing/model-routing.json`.
 9. Agent defaults.
 
 ## Important consequences
 
-- A user-pinned Agent/model cannot be replaced across providers without permission.
+- A user-pinned model/effort allows no automatic upgrade or downgrade. If the choice is rejected or the receipt mismatches, suspend the Task and ask.
 - AGENTS project rules override fixed thresholds or technology assumptions in a generic Role/Skill.
 - Task scope overrides a Skill's broad checklist.
 - Runtime evidence overrides requested model names.
