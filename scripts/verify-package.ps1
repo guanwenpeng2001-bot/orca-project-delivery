@@ -32,20 +32,104 @@ function Read-PackageJson([string]$RelativePath) {
   Get-Content -LiteralPath (Join-Path $script:root $RelativePath) -Raw | ConvertFrom-Json -AsHashtable
 }
 
-# Sort object keys recursively, but retain array order and scalar types.
-function ConvertTo-CanonicalValue($Value) {
-  if ($Value -is [Collections.IDictionary]) {
-    $ordered = [ordered]@{}
-    foreach ($key in @($Value.Keys | Sort-Object -CaseSensitive)) {
-      $ordered[$key] = ConvertTo-CanonicalValue $Value[$key]
+# The sole vocabulary declaration is exempt from scanning, by its AST extent only.
+$forbiddenAgentIds = @(
+  'claude-agent-teams', 'codebuddy', 'openclaude', 'codex', 'autohand', 'opencode',
+  'opencode2', 'mimo-code', 'pi', 'omp', 'qoder', 'gemini', 'antigravity', 'aider',
+  'goose', 'amp', 'kilo', 'kiro', 'crush', 'aug', 'cline', 'codebuff', 'freebuff',
+  'command-code', 'continue', 'cursor', 'droid', 'kimi', 'mistral-vibe', 'qwen-code',
+  'rovo', 'hermes', 'openclaw', 'copilot', 'grok', 'devin', 'ante', 'trae', 'muse',
+  'zcode', 'prime-agent', 'dsh'
+)
+
+function Assert-Rejected([string]$Name, [scriptblock]$Action, [string]$Diagnostic) {
+  $caught = $null
+  try { & $Action } catch { $caught = $_.Exception.Message }
+  Assert-Condition ($null -ne $caught -and $caught.Contains($Diagnostic)) "Negative case $Name did not produce $Diagnostic (actual: $caught)"
+  Write-Host "REJECTED $Name : $caught"
+}
+
+function Assert-ModelRouting($Routing, $Catalog) {
+  $ids = @($Catalog.roles.id)
+  Assert-Condition ($ids.Count -eq 12 -and @($ids | Select-Object -Unique).Count -eq 12) 'routing: expected 12 unique catalog roles'
+  Assert-Condition ($Routing.agent -ceq 'claude') 'routing: agent must be claude'
+  Assert-Condition ($Routing.roles -is [Collections.IDictionary]) 'routing: roles must be a map'
+  Assert-Condition (-not (Compare-Object ($ids | Sort-Object) (@($Routing.roles.Keys) | Sort-Object) -CaseSensitive)) 'routing: role sets differ'
+  $tiers = @($Routing.vocabulary.modelLadder)
+  $efforts = @($Routing.vocabulary.effortLevels)
+  Assert-Condition (($tiers -join ',') -ceq 'haiku,sonnet,opus,fable') 'routing: invalid model ladder'
+  Assert-Condition (($efforts -join ',') -ceq 'low,medium,high,xhigh,max') 'routing: invalid effort levels'
+  foreach ($id in $ids) {
+    $route = $Routing.roles[$id]
+    Assert-Condition ($route.chain -is [array] -and $route.chain.Count -gt 0) "routing: $id chain must be nonempty"
+    foreach ($indexName in @('floor', 'default')) {
+      $index = $route[$indexName]
+      Assert-Condition ($index -is [int] -or $index -is [long]) "routing: $id $indexName must be an integer"
     }
-    return $ordered
+    Assert-Condition ($route.floor -ge 0 -and $route.floor -le $route.default -and $route.default -lt $route.chain.Count) "routing: $id invalid floor/default bounds"
+    $previous = -1
+    foreach ($step in $route.chain) {
+      Assert-Condition ($tiers -ccontains $step.tier -and $efforts -ccontains $step.effort) "routing: $id unknown tier/effort"
+      $rank = [array]::IndexOf($tiers, $step.tier) * $efforts.Count + [array]::IndexOf($efforts, $step.effort)
+      Assert-Condition ($rank -gt $previous) "routing: $id chain is not strictly increasing"
+      $previous = $rank
+    }
   }
-  if ($Value -is [array]) {
-    $items = @(foreach ($item in $Value) { ConvertTo-CanonicalValue $item })
-    return ,$items
+}
+
+function Assert-RoleSelection($Selection, $Catalog) {
+  Assert-Condition ($Selection.deliverableRoutes -is [Collections.IDictionary] -and $Selection.deliverableRoutes.Count -gt 0) 'selection: empty or invalid routes'
+  foreach ($deliverable in $Selection.deliverableRoutes.Keys) {
+    Assert-Condition (@($Catalog.roles.id) -ccontains $Selection.deliverableRoutes[$deliverable]) "selection: $deliverable selects unknown role"
   }
-  return $Value
+}
+
+function Assert-ClaudeText([string]$Content, [string]$Extension, [string]$Source) {
+  $segments = @($Content)
+  if ($Extension -eq '.ps1') {
+    $tokens = $null
+    $errors = $null
+    $syntax = [Management.Automation.Language.Parser]::ParseInput($Content, [ref]$tokens, [ref]$errors)
+    Assert-Condition ($errors.Count -eq 0) "agent scanner: invalid PowerShell in $Source"
+    $exemption = $null
+    if ($Source -ceq 'scripts/verify-package.ps1') {
+      $declarations = @($syntax.FindAll({ param($node)
+        $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -ceq '$forbiddenAgentIds'
+      }, $true))
+      Assert-Condition ($declarations.Count -eq 1) 'agent scanner: expected exactly one vocabulary declaration'
+      $exemption = $declarations[0].Right.Extent
+    }
+    # Token offsets retain comments and all string forms, while excluding keywords.
+    $segments = @(foreach ($token in $tokens) {
+      if ($token.Kind -notin @('Comment', 'StringLiteral', 'StringExpandable', 'HereStringLiteral', 'HereStringExpandable', 'Generic')) { continue }
+      if ($exemption -and $token.Extent.StartOffset -ge $exemption.StartOffset -and $token.Extent.EndOffset -le $exemption.EndOffset) { continue }
+      # The common-parameter enum is language configuration, not an agent name.
+      if ($token.Text -ceq ('Con' + 'tinue') -and $Content.Substring(0, $token.Extent.StartOffset) -match '-ErrorAction\s+$') { continue }
+      $token.Text
+    })
+  }
+  $pattern = '(?i)(?<![a-z0-9_-])(' + (($forbiddenAgentIds | ForEach-Object { [regex]::Escape($_) }) -join '|') + ')(?![a-z0-9_])'
+  foreach ($segment in $segments) {
+    foreach ($match in [regex]::Matches($segment, $pattern)) {
+      # Only this ordinary English imperative is disambiguated; quoted IDs still fail.
+      $ordinaryProse = $Extension -eq '.md' -and $match.Value -ieq ('con' + 'tinue') -and
+        $segment.Substring($match.Index) -match ('^Con' + 'tinue (processing|working|with|to)\b') -and
+        ($match.Index -eq 0 -or $segment[$match.Index - 1] -notin @('`', '"', "'"))
+      Assert-Condition $ordinaryProse "agent reference: $Source contains $($match.Value)"
+    }
+  }
+}
+
+function Assert-AbsentPaths([string]$Directory, [string[]]$Paths) {
+  foreach ($relative in $Paths) {
+    Assert-Condition (-not (Test-Path -LiteralPath (Join-Path $Directory $relative))) "forbidden path: $relative"
+  }
+}
+
+function Resolve-SkillFile([string]$Sibling, [string]$Installed) {
+  if (Test-Path -LiteralPath $Sibling -PathType Leaf) { return [pscustomobject]@{ Path = $Sibling; Origin = 'package-sibling' } }
+  if (Test-Path -LiteralPath $Installed -PathType Leaf) { return [pscustomobject]@{ Path = $Installed; Origin = 'installed-home' } }
+  throw "skill file missing: tried $Sibling and $Installed"
 }
 
 function Get-PackageFiles([string]$Directory) {
@@ -140,7 +224,7 @@ try {
   $pwsh = (Get-Command pwsh -CommandType Application | Select-Object -First 1).Source
   $git = (Get-Command git -CommandType Application | Select-Object -First 1).Source
   $files = @(Get-PackageFiles $root)
-  $scripts = @('assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'probe-agent-capabilities.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1', 'validate-run.ps1')
+  $scripts = @('assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'probe-claude-capabilities.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1', 'validate-run.ps1')
   foreach ($name in $scripts + @('verify-package.ps1')) {
     Invoke-Check "parse/$name" {
       $path = Join-Path $root "scripts/$name"
@@ -161,72 +245,32 @@ try {
     Assert-Condition ($violations.Count -eq 0) ($violations -join '; ')
     Write-Host "ENCODING $($files.Count) package files checked (excluding .git and .dev-work)"
   }
-  Invoke-Check 'metadata/routing-equivalence' {
-    $selection = (Read-PackageJson 'routing/agent-selection.json').roleRoutes
-    $compatibility = (Read-PackageJson 'agents/role-compatibility.json').roles
-    Assert-Condition ($selection.Count -gt 0 -and $compatibility.Count -gt 0) 'Routing maps must be nonempty'
-    $left = ConvertTo-CanonicalValue $selection | ConvertTo-Json -Depth 100 -Compress
-    $right = ConvertTo-CanonicalValue $compatibility | ConvertTo-Json -Depth 100 -Compress
-    Assert-Condition ($left -ceq $right) 'Normalized roleRoutes and roles differ'
+  Invoke-Check 'routing/model-routing-schema' {
+    Assert-ModelRouting (Read-PackageJson 'routing/model-routing.json') (Read-PackageJson 'roles/catalog.json')
   }
-  Invoke-Check 'metadata/profiles-and-routing-order' {
-    $profiles = @{}
-    foreach ($profile in (Read-PackageJson 'agents/configured-profiles.json').profiles) {
-      Assert-Condition (-not $profiles.ContainsKey($profile.id)) "Duplicate profile: $($profile.id)"
-      $profiles[$profile.id] = $profile.autoRouteAfterProbe
-    }
-    foreach ($routes in @((Read-PackageJson 'routing/agent-selection.json').roleRoutes, (Read-PackageJson 'agents/role-compatibility.json').roles)) {
-      foreach ($role in $routes.Keys) {
-        $excluded = $null
-        foreach ($profileId in $routes[$role].preferredProfiles) {
-          Assert-Condition ($profiles.ContainsKey($profileId)) "Role $role references unknown profile $profileId"
-          if ($profiles[$profileId] -eq $true) {
-            Assert-Condition (-not $excluded) "Role $role auto-routeable $profileId follows excluded $excluded"
-          } else { $excluded = $profileId }
-        }
-      }
+  Invoke-Check 'routing/role-selection-valid' {
+    Assert-RoleSelection (Read-PackageJson 'routing/role-selection.json') (Read-PackageJson 'roles/catalog.json')
+  }
+  Invoke-Check 'package/claude-only' {
+    Assert-AbsentPaths $root @('agents', 'adapters')
+    Assert-Condition ($forbiddenAgentIds.Count -eq 42) 'Expected 42 excluded agent IDs'
+    foreach ($file in $files) {
+      $relative = [IO.Path]::GetRelativePath($root, $file.FullName).Replace('\', '/')
+      if ($relative -ceq 'CHANGELOG.md') { continue }
+      Assert-ClaudeText ([IO.File]::ReadAllText($file.FullName, $utf8)) $file.Extension $relative
     }
   }
-  Invoke-Check 'metadata/routing-role-coverage' {
-    $catalogIds = @(foreach ($role in (Read-PackageJson 'roles/catalog.json').roles) { $role.id })
-    Assert-Condition ($catalogIds.Count -gt 0) 'roles/catalog.json lists no roles'
-    foreach ($source in @('routing/agent-selection.json', 'agents/role-compatibility.json')) {
-      $document = Read-PackageJson $source
-      $routes = if ($document.ContainsKey('roleRoutes')) { $document['roleRoutes'] } else { $document['roles'] }
-      Assert-Condition ($routes -is [Collections.IDictionary]) "$source has no role map"
-      $routeIds = @($routes.Keys)
-      $missing = @($catalogIds | Where-Object { $routeIds -notcontains $_ })
-      $extra = @($routeIds | Where-Object { $catalogIds -notcontains $_ })
-      Assert-Condition ($missing.Count -eq 0) "$source is missing catalog roles: $($missing -join ', ')"
-      Assert-Condition ($extra.Count -eq 0) "$source routes roles absent from roles/catalog.json: $($extra -join ', ')"
-    }
+  Invoke-Check 'package/no-mirror-tables' {
+    Assert-AbsentPaths $root @('agents/role-compatibility.json', 'routing/agent-selection.json')
   }
-  Invoke-Check 'routing/claude-first' {
-    $eligibleIds = @(foreach ($profile in (Read-PackageJson 'agents/configured-profiles.json').profiles) {
-      if ($profile.autoRouteAfterProbe -is [bool] -and $profile.autoRouteAfterProbe -eq $true) { $profile.id }
-    })
-    $routes = (Read-PackageJson 'routing/agent-selection.json').roleRoutes
-    Assert-Condition ($routes -is [Collections.IDictionary] -and $routes.Count -gt 0) 'routing/agent-selection.json has no roleRoutes to check'
-    foreach ($role in $routes.Keys) {
-      $entry = $routes[$role]
-      $hasCandidates = $entry -is [Collections.IDictionary] -and $entry.Contains('preferredProfiles')
-      $candidates = $null
-      if ($hasCandidates) { $candidates = $entry['preferredProfiles'] }
-      $first = $null
-      $actual = '<missing>'
-      if ($candidates -is [array]) {
-        if ($candidates.Count -gt 0) {
-          $first = $candidates[0]
-          $actual = ConvertTo-Json -InputObject $first -Depth 100 -Compress
-        }
-      } elseif ($hasCandidates) {
-        $actual = '<not-an-array>'
-      }
-      $valid = $candidates -is [array] -and $candidates.Count -gt 0 -and
-        $first -is [string] -and -not [string]::IsNullOrWhiteSpace($first) -and
-        $first -clike 'claude-*' -and $eligibleIds -ccontains $first
-      Assert-Condition $valid "Role '$role' preferredProfiles[0]=$actual; expected an existing claude-* profile with autoRouteAfterProbe=true in agents/configured-profiles.json"
-    }
+  Invoke-Check 'metadata/entry-outline' {
+    $entryPath = Join-Path $root 'SKILL.md'
+    $lines = [IO.File]::ReadAllLines($entryPath, $utf8)
+    Assert-Condition ($lines.Count -le 250) "Entry has $($lines.Count) lines; limit is 250"
+    $expected = @('Purpose', 'Coordinator-only guard', 'System boundaries', 'Required invariants', 'Bootstrap', 'Workflow selection', 'Dynamic reconnaissance', 'Role and Skill routing', 'Model and effort routing', 'Skill delivery', 'Task and branch creation', 'Worker input order', 'Execution loop', 'Review and integration', 'Degradation and handoff', 'Completion', 'Do not do')
+    $headings = @($lines | Where-Object { $_.StartsWith('## ') } | ForEach-Object { $_.Substring(3) })
+    Assert-Condition (($headings -join '|') -ceq ($expected -join '|')) 'Entry must contain all 17 sections in order'
+    Write-Host "ENTRY $($lines.Count) lines; 17 sections"
   }
   Invoke-Check 'metadata/role-paths' {
     foreach ($role in (Read-PackageJson 'roles/catalog.json').roles) {
@@ -244,13 +288,10 @@ try {
       Assert-Condition ($skill.path.Replace('\', '/') -ceq $expected) "Unexpected catalog path for $($skill.id): $($skill.path)"
       $sibling = [IO.Path]::GetFullPath((Join-Path $root $expected))
       $installed = [IO.Path]::GetFullPath((Join-Path ([Environment]::GetFolderPath('UserProfile')) ".agents/skills/$($skill.id)/SKILL.md"))
-      $source = $null
-      $origin = $null
-      if (Test-Path -LiteralPath $sibling -PathType Leaf) { $source = $sibling; $origin = 'package-sibling' }
-      elseif (Test-Path -LiteralPath $installed -PathType Leaf) { $source = $installed; $origin = 'installed-home' }
-      else { $missing.Add("$($skill.id): tried $sibling and $installed"); continue }
-      $resolvedSkills.Add([pscustomobject]@{ Id = $skill.id; Path = $source; Origin = $origin })
-      Write-Host "SKILL $($skill.id): $origin $source"
+      try { $resolved = Resolve-SkillFile $sibling $installed }
+      catch { $missing.Add("$($skill.id): $($_.Exception.Message)"); continue }
+      $resolvedSkills.Add([pscustomobject]@{ Id = $skill.id; Path = $resolved.Path; Origin = $resolved.Origin })
+      Write-Host "SKILL $($skill.id): $($resolved.Origin) $($resolved.Path)"
     }
     Assert-Condition ($missing.Count -eq 0) ($missing -join '; ')
   }
@@ -261,13 +302,56 @@ try {
     $counts = @{
       roles = @((Read-PackageJson 'roles/catalog.json').roles).Count
       professionalSkills = @((Read-PackageJson 'routing/skill-catalog.json').skills).Count
-      orcaAgents = @((Read-PackageJson 'agents/registry.json').agents).Count
       workflows = @(Get-ChildItem -LiteralPath (Join-Path $root 'workflows') -Filter '*.md' -File).Count
     }
+    Assert-Condition ($version -ceq '2.0.0') 'Expected release 2.0.0'
+    Assert-Condition (-not $manifest.deliverables.Contains('orcaAgents') -and -not $manifest.Contains('inPlaceFixes')) 'Obsolete manifest fields remain'
+    Assert-Condition ($counts.roles -eq 12 -and $counts.professionalSkills -eq 16 -and $counts.workflows -eq 4) 'Expected 12 roles, 16 professional skills, 4 workflows'
     foreach ($key in $counts.Keys) {
       Assert-Condition ($manifest.deliverables.Contains($key) -and $manifest.deliverables[$key] -eq $counts[$key]) "Manifest $key declared $($manifest.deliverables[$key]), actual $($counts[$key])"
       Write-Host "COUNT $key=$($counts[$key])"
     }
+  }
+  Invoke-Check 'regression/routing-contracts' {
+    $catalog = Read-PackageJson 'roles/catalog.json'
+    Assert-ModelRouting (Read-PackageJson 'routing/model-routing.json') $catalog
+    $mutations = [ordered]@{
+      'missing-role' = { param($document) $document.roles.Remove('codebase-scout') }
+      'extra-role' = { param($document) $document.roles['unknown-role'] = $document.roles['codebase-scout'] }
+      'empty-chain' = { param($document) $document.roles['codebase-scout'].chain = @() }
+      'unknown-tier' = { param($document) $document.roles['codebase-scout'].chain[0].tier = 'unknown-tier' }
+      'unknown-effort' = { param($document) $document.roles['codebase-scout'].chain[0].effort = 'unknown-effort' }
+      'duplicate-step' = { param($document) $document.roles['codebase-scout'].chain[1] = $document.roles['codebase-scout'].chain[0] }
+      'descending-tier' = { param($document) $document.roles['codebase-scout'].chain[0].tier = 'fable' }
+      'negative-floor' = { param($document) $document.roles['codebase-scout'].floor = -1 }
+      'floor-above-default' = { param($document) $document.roles['codebase-scout'].floor = 2 }
+      'default-outside-chain' = { param($document) $document.roles['codebase-scout'].default = 4 }
+      'fractional-default' = { param($document) $document.roles['codebase-scout'].default = 1.5 }
+      'string-floor' = { param($document) $document.roles['codebase-scout'].floor = '0' }
+    }
+    foreach ($case in $mutations.Keys) {
+      $document = Read-PackageJson 'routing/model-routing.json'
+      $null = & $mutations[$case] $document
+      Assert-Rejected $case { Assert-ModelRouting $document $catalog } 'routing:'
+    }
+    $selection = Read-PackageJson 'routing/role-selection.json'
+    Assert-RoleSelection $selection $catalog
+    $selection.deliverableRoutes['unknown-deliverable'] = 'unknown-role'
+    Assert-Rejected 'unknown-deliverable-role' { Assert-RoleSelection $selection $catalog } 'selection:'
+  }
+  Invoke-Check 'regression/agent-reference-scanner' {
+    foreach ($agentId in $forbiddenAgentIds) {
+      foreach ($extension in @('.md', '.json', '.ps1')) {
+        $sample = if ($extension -eq '.json') { '{"agent":"' + $agentId + '"}' } elseif ($extension -eq '.ps1') { '$agent = "' + $agentId + '"' } else { 'Worker agent: `' + $agentId + '`' }
+        Assert-Rejected "$extension-agent-reference" { Assert-ClaudeText $sample $extension 'fixture' } 'agent reference:'
+      }
+      Assert-Rejected 'comment-agent-reference' { Assert-ClaudeText ('# Worker agent: ' + $agentId) '.ps1' 'fixture' } 'agent reference:'
+    }
+    Assert-ClaudeText ('foreach ($entry in @()) { con' + 'tinue }') '.ps1' 'fixture'
+    Assert-ClaudeText ('Write-Error message -ErrorAction Con' + 'tinue') '.ps1' 'fixture'
+    Assert-ClaudeText ('Con' + 'tinue processing the current task.') '.md' 'fixture'
+    Assert-ClaudeText 'Use claude-haiku-4-5 with effort.' '.md' 'fixture'
+    Assert-Rejected 'vocabulary-name-does-not-exempt-other-files' { Assert-ClaudeText ('$forbiddenAgentIds = @("' + $forbiddenAgentIds[0] + '")') '.ps1' 'fixture' } 'agent reference:'
   }
   $stagedPackage = Join-Path $temporaryRoot 'skills/orca-project-delivery'
   Invoke-Check 'fixtures/stage-package-and-skills' {
@@ -284,6 +368,32 @@ try {
       Copy-Item -LiteralPath (Split-Path -Parent $skill.Path) -Destination $destination -Recurse
     }
     Assert-Condition ($resolvedSkills.Count -eq @((Read-PackageJson 'routing/skill-catalog.json').skills).Count) 'Cannot stage every declared skill'
+  }
+  Invoke-Check 'regression/skill-path-resolution' {
+    $sibling = Join-Path $temporaryRoot 'sibling-skill.md'
+    $installed = Join-Path $temporaryRoot 'installed-skill.md'
+    Assert-Rejected 'missing-both-skill-paths' { Resolve-SkillFile $sibling $installed } 'skill file missing:'
+    [void][IO.Directory]::CreateDirectory($sibling)
+    Assert-Rejected 'skill-path-is-directory' { Resolve-SkillFile $sibling $installed } 'skill file missing:'
+    Remove-Item -LiteralPath $sibling
+    [IO.File]::WriteAllText($installed, 'installed skill', $utf8)
+    Assert-Condition ((Resolve-SkillFile $sibling $installed).Origin -eq 'installed-home') 'Installed fallback failed'
+    [IO.File]::WriteAllText($sibling, 'sibling skill', $utf8)
+    Assert-Condition ((Resolve-SkillFile $sibling $installed).Origin -eq 'package-sibling') 'Sibling precedence failed'
+  }
+  Invoke-Check 'regression/forbidden-paths' {
+    $fixture = Join-Path $temporaryRoot 'forbidden-path-fixture'
+    [void][IO.Directory]::CreateDirectory($fixture)
+    $paths = @('agents', 'adapters', 'agents/role-compatibility.json', 'routing/agent-selection.json')
+    Assert-AbsentPaths $fixture $paths
+    foreach ($relative in $paths) {
+      $path = Join-Path $fixture $relative
+      [void][IO.Directory]::CreateDirectory((Split-Path -Parent $path))
+      if ([IO.Path]::GetExtension($path)) { [IO.File]::WriteAllText($path, '{}', $utf8) }
+      else { [void][IO.Directory]::CreateDirectory($path) }
+      Assert-Rejected $relative { Assert-AbsentPaths $fixture @($relative) } 'forbidden path:'
+      Remove-Item -LiteralPath $path -Recurse -Force
+    }
   }
   $healthyRepository = $null
   Invoke-Check 'runtime/bootstrap-create-validate-templates' {
@@ -310,6 +420,30 @@ try {
     # Check diagnostic topics independently of word order, quotes, or resolution details.
     $diagnostic = $result.Stdout + $result.Stderr
     Assert-Condition ($diagnostic -imatch '\bcontrol\s+branch\b' -and $diagnostic -imatch '\bdelivery\s+branch\b') 'Bootstrap refusal must name both the control branch and delivery branch'
+  }
+  Invoke-Check 'runtime/package-routing-negative-cases' {
+    $cases = @(
+      @{ Path = 'routing/model-routing.json'; Change = { param($document) $document.roles.Remove('codebase-scout') }; Diagnostic = "Catalog role 'codebase-scout'" },
+      @{ Path = 'routing/model-routing.json'; Change = { param($document) $document.roles['unknown-role'] = $document.roles['codebase-scout'] }; Diagnostic = "Routing role 'unknown-role'" },
+      @{ Path = 'routing/role-selection.json'; Change = { param($document) $document.deliverableRoutes['unknown-deliverable'] = 'unknown-role' }; Diagnostic = "unknown role 'unknown-role'" },
+      @{ Path = 'roles/catalog.json'; Change = { param($document) $document.roles[0].path = 'missing-role.md' }; Diagnostic = 'path not found' },
+      @{ Path = 'roles/catalog.json'; Change = { param($document) $document.roles[0].defaultSkills = @('unknown-skill') }; Diagnostic = "unknown skill 'unknown-skill'" }
+    )
+    foreach ($case in $cases) {
+      $path = Join-Path $stagedPackage $case.Path
+      $original = [IO.File]::ReadAllBytes($path)
+      try {
+        $document = [IO.File]::ReadAllText($path) | ConvertFrom-Json -AsHashtable
+        $null = & $case.Change $document
+        [IO.File]::WriteAllText($path, ($document | ConvertTo-Json -Depth 100), $utf8)
+        $result = Invoke-PackageScript 'validate-run.ps1' @('-ProjectRoot', $healthyRepository)
+        Assert-Condition ($result.ExitCode -eq 1) 'Expected package contract failure exit 1'
+        $validation = $result.Stdout | ConvertFrom-Json
+        Assert-Condition ($validation.ok -eq $false -and ($validation.errors -join ';').Contains($case.Diagnostic)) "Expected diagnostic $($case.Diagnostic)"
+        Write-Host "REJECTED runtime $($case.Diagnostic)"
+      } finally { [IO.File]::WriteAllBytes($path, $original) }
+    }
+    Assert-OkResult (Invoke-PackageScript 'validate-run.ps1' @('-ProjectRoot', $healthyRepository))
   }
   Invoke-Check 'runtime/schema-missing-evidence-path' {
     Assert-Condition ([bool]$healthyRepository) 'Healthy fixture unavailable'
