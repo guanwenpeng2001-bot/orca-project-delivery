@@ -47,6 +47,22 @@ function Read-JsonSafe {
   try { return (Get-Content $Path -Raw | ConvertFrom-Json) } catch { return $null }
 }
 
+# Per-invocation schema cache. This is a one-shot CLI and the package schemas are
+# read-only deliverables, so re-reading the same schema for every document is
+# wasted work. Only a successful, usable parse is cached: a missing or invalid
+# schema keeps taking the uncached Read-JsonSafe path, so every document still
+# reports its own error, in the same order and count, exactly as before. The
+# cache lives in this process only (no persistence, no cross-process sharing) and
+# holds at most the seven package schemas.
+$script:schemaCache = @{}
+function Get-CachedSchema {
+  param([string]$SchemaPath)
+  if ($script:schemaCache.Contains($SchemaPath)) { return $script:schemaCache[$SchemaPath] }
+  $schema = Read-JsonSafe $SchemaPath
+  if ($null -ne $schema) { $script:schemaCache[$SchemaPath] = $schema }
+  return $schema
+}
+
 # Dependency-free, recursive validator for the schema keywords this package uses:
 # type (a name or an array of names, including "null"), required, properties, items, enum,
 # const, minLength, uniqueItems, additionalProperties. It descends through properties and
@@ -214,7 +230,7 @@ function Test-Document {
   if (-not (Test-Path $SchemaPath)) { [void]$Errors.Add("$Label`: missing schema $SchemaPath"); return }
   $doc = Read-JsonSafe $DocumentPath
   if ($null -eq $doc) { [void]$Errors.Add("$Label`: invalid JSON in $DocumentPath"); return }
-  $schema = Read-JsonSafe $SchemaPath
+  $schema = Get-CachedSchema $SchemaPath
   if ($null -eq $schema) { [void]$Errors.Add("$Label`: invalid schema $SchemaPath"); return }
   Test-AgainstSchema -Document $doc -Schema $schema -Label $Label -Errors $Errors
 }
