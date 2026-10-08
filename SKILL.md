@@ -121,6 +121,8 @@ Every Task, including scout, audit, review and verification, receives its own br
 Override only for an explicit user base, a review of another branch, a true unintegrated prerequisite, or historical reproduction; record the reason.
 Prefer reviewing and merging prerequisites before creating dependent implementation Tasks. Encode only true dependencies; use parallel waves and avoid chains deeper than 3–4 steps.
 Workers commit authorized source changes on their task branches before reporting and never merge their own branches.
+Read-only Tasks must explicitly declare `branch.mergeTarget: null` in assignments; source Tasks name the delivery branch and `evidence.gitEvidencePath` under `runs/<run>/evidence/git/`.
+Follow `references/evidence-binding.md`: the coordinator records observations and writes evidence before each read-only validation; only `PASS` authorizes the applicable gate.
 
 ## Worker input order
 
@@ -146,10 +148,10 @@ Preserve project policy verbatim; `AGENTS.md` is always last.
 5. Dispatch every ready Task; ready means its real dependencies settled successfully through their existing gates — a source dependency counts only after its own review and integration, never on `worker_done` alone — write scope disjoint from in-flight Tasks, and a usable baseline and route. Verify the first `launch.effective` receipt and fill assignment runtime evidence.
 6. Wait using `check --wait`; process every question/escalation, confirm worker_done belongs to the active Dispatch, decide the terminal's next owner, then acknowledge. After each confirmed settle, immediately re-evaluate readiness and dispatch newly ready Tasks (rolling dispatch) without waiting for unrelated in-flight Tasks.
 7. After three consecutive empty waits, enumerate using `worker-list` and act on `projection.nextAction`; use bounded `worker-read` inspection where needed.
-8. When a source Task's `worker_done` is confirmed, immediately dispatch its independent review Task from an isolated worktree, in parallel with other in-flight implementation; review the actual implementation branch.
-9. Convert accepted findings into fix Tasks and re-review until resolved or explicitly unverifiable.
-10. As each review is approved, integrate that branch by explicit Git merge in the delivery worktree — serially, one merge at a time in dependency order, not a batch barrier; record diff/tests/artifact exclusions for every merge, base Tasks created afterwards on the updated delivery baseline, then reclaim eligible task worktrees.
-11. Only after all intended changes are integrated, verify the latest delivery state in a clean worktree with release-verifier; write reports, summarize user decisions, settle workers and release the coordinator. This final-verification barrier never moves earlier and is never skipped.
+8. After matching `worker_done` to the active Task/Dispatch, register `source.*` in its `source-registered` evidence; run `validate-git-evidence.ps1 -EvidencePath <task-json> -Phase sourceRegistered` with the control tree as `-ProjectRoot`. For a source Task, on PASS immediately dispatch independent review of the actual implementation branch in an isolated worktree, alongside other implementation.
+9. Record completed reviews in `reviews[]`, set `state: reviewed`, then validate `-Phase review`; convert accepted findings into fix Tasks and re-review. Validation failure is UNVERIFIABLE, never approval.
+10. After each approval, record admission/baseline and pass `-Phase preMerge`, then merge serially in the delivery worktree. Capture the merge and fresh checks at `headAfter`, write complete `integrated` evidence, and pass `-Phase postMerge` before treating the source dependency as integrated. Record diff/artifact exclusions, base later Tasks on updated delivery, then reclaim eligible worktrees.
+11. After all intended changes integrate, release-verifier verifies latest delivery in a clean independent worktree; the coordinator writes the unique run-final evidence and validates `-Run <run> -Phase final`. Write reports, summarize decisions, settle workers and release the coordinator. This final barrier never moves earlier and is never skipped.
 
 A nonzero start receipt alone does not prove a failed attempt: inspect `failedStage` and `residualResources` using `references/failure-taxonomy.md`.
 `outcome_unknown`, `turn_start_unobserved`, timeouts and unverifiable liveness do not authorize stop, abandon, retry or release.
@@ -160,10 +162,11 @@ Rolling dispatch changes no stage or gate: stages and gates are neither added no
 ## Review and integration
 
 Implementer self-check does not replace independent acceptance. Reviewers report `APPROVED`, `CHANGES_REQUIRED`, or `UNVERIFIABLE` and never edit source.
-Dispatch each independent review as soon as the source Task's `worker_done` is confirmed, in parallel with other in-flight work, always against the actual implementation branch.
+Dispatch independent review after source registration passes, in parallel with other in-flight work, always against the actual implementation branch; record target/baseline SHAs and clean status using `templates/review-report.md`.
 Findings become separate fix Tasks followed by re-review; unclear evidence remains explicitly unverifiable.
-After each approval, the coordinator immediately runs Git merge in the actual worktree with `delivery_branch` checked out; Orca has no merge primitive.
-With several approved branches, integrate serially — one merge at a time in dependency order — recording the baseline, diff, tests, Git status and exclusion of all process artifacts for every merge.
+After approval and pre-merge admission PASS, the coordinator runs Git merge in the actual delivery worktree; Orca has no merge primitive. Source HEAD must still equal the latest approved SHA and both trees must be clean; drift requires re-review.
+Integrate serially in dependency order. A clean three-way merge is valid with recorded parents/process evidence; conflicts require abort, an isolated resolution Task, independent re-review and renewed admission. Never repair unreviewed source in delivery.
+`mergeEvidence` proves only the Git operation; `checks[]` must include actual successful verification at `headAfter`, not source-branch test results. The validator checks records and Git; it never runs tests.
 New Tasks created afterwards base on the updated delivery baseline. Never integrate through the control branch or treat its HEAD as delivery evidence.
 Remove task worktrees and safe-to-delete branches only after integration or explicit abandonment and terminal ownership resolution.
 Final verification stays a global barrier: create it from the latest delivery branch in a clean worktree only after all intended changes are integrated, never earlier and never skipped; do not reuse stale test claims.
@@ -175,14 +178,17 @@ Escalation follows the chain for demonstrated complexity or quality shortfalls. 
 No available route above floor, an unavailable pinned choice, or repeated same-class failures reaching the circuit breaker (at most three recommended) suspends only the affected Task.
 Record time, Task/Dispatch, classification, evidence, original route and action in `degradation-events.json`; summarize pending decisions for the user.
 Authentication failures require diagnosis; silence and unknown observations do not trigger downgrades.
-Before replacing a writing worker, read `references/worker-handoff.md`: confirm stop/failure/fencing or explicit handoff, preserve Git status/diff/commits/untracked files, write handoff, settle the old attempt, then start its replacement sequentially.
+Before replacing a writing worker, read `references/worker-handoff.md`: require evidence the writer is stopped, fenced, isolated, or has completed an explicit handoff; its Dispatch (and Task if replaced) must settle separately. Preserve Git status/diff/commits/untracked files in handoff, then replace sequentially; `failed` alone never admits a writer.
 For read-only retries, preserve each attempt under a unique report path; the coordinator synthesizes the result.
 
 ## Completion
 
 Close only after required Tasks settle, accepted source enters delivery, final verification completes or is explicitly marked unverifiable, and reports/decisions are stored.
 Ensure the fleet has zero reclaimable resources; `retained`/`user_owned` terminals require recorded ownership decisions and are not leaks.
-Write `final-report.md` plus a separate user-decision report: what needs deciding, consequence of deferral, options and recommendation.
+Write `final-report.md` linked to the unique `evidence/git/run-final-verification.json`, plus a separate user-decision report: what needs deciding, consequence of deferral, options and recommendation.
+Final evidence must cover every intended integrated Task, with nonempty coverage/inputs, no uncovered Tasks and successful checks at the latest delivery SHA; never create per-task final records or equate historical `headAfter` with current delivery HEAD.
+Use `-Run <run> -Phase audit` for historical evidence; use run scope or the canonical run-final file for final acceptance, never a single Task's `-Phase final` result.
+Validator JSON `PASS` and `NOT_APPLICABLE` both exit 0; `FAIL` exits 1. NOT_APPLICABLE is not acceptance. New runs/Tasks require this evidence chain; old runs remain readable, but resumed merges require rebuilt evidence. `validate-run.ps1` remains a separate unchanged default gate.
 Recheck status/diff for process-artifact exclusion, then use `scripts/release-coordinator.ps1 -ConfirmRunClosed`; it archives active state and marks the lock released.
 Keep `.dev-work/runs/<run>/` as local history. Unverifiable acceptance must not be described as READY.
 

@@ -3,7 +3,9 @@
 ## Writing Task handoff
 
 A replacement writer may start only after the old worker is confirmed stopped, fenced,
-isolated, or has completed an explicit handoff, and its Dispatch has settled. `failed` alone
+isolated, or has completed an explicit handoff, and its Dispatch (and Task if replaced
+rather than retried) has settled. Confirmed means evidence for each admission term in
+`references/recovery-and-idempotency.md`; isolation proves inability to write, not exit. `failed` alone
 does not prove the writer stopped: an accepted `failed` completion settles the attempt, but
 the writer's terminal and process can still be live, and a silent or timed-out writer proves
 nothing. Retrying one proven `failed` or `stopped` attempt is a runtime decision — follow
@@ -26,7 +28,8 @@ Capture:
 
 Write a handoff report under `.dev-work/runs/<run>/handoffs/`.
 
-Settle or release the old worker before starting the replacement.
+Require the old Dispatch's settlement separately from writer admission before replacement;
+release is post-settlement cleanup and never substitutes for either gate.
 
 The replacement must read:
 
@@ -50,5 +53,5 @@ The coordinator validates and synthesizes a final report.
 - Two live writers in one worktree.
 - Deriving a second writer from `failed`, silence, or timeout alone.
 - Assuming timeout means the process exited.
-- Starting a new writer while the old worker is unverifiable.
+- Starting a new writer with unverifiable admission evidence; unobserved exit alone does not invalidate proven isolation.
 - Losing uncommitted work during fallback.

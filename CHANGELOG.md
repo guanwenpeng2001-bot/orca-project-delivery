@@ -4,6 +4,18 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## Unreleased
+
+### Orchestration adoption — 2026-10-08
+
+- Added the version-1 commit evidence schema, Task/run-final templates, optional assignment evidence pointer and read-only Git validator with sourceRegistered, review, preMerge, postMerge, final and audit phases; default run validation remains unchanged.
+- Bound independent reviews to target/baseline SHAs, pre-merge admission to the latest approved source and clean trees, and integration to actual merge results and fresh checks at headAfter. Accepted normal clean three-way merges, required independently reviewed resolution Tasks, and preserved historical ancestry rather than equating old evidence with current delivery HEAD.
+- Hardened evidence integrity with clean-merge parent binding, run-directory and assignment identity checks in both selector modes, nonempty unique run-final coverage, unchanged-outcome cases and scope-parity regression/mutation fixtures. Single-Task selection still requires peer evidence while limiting selected-entry membership to that Task.
+- Added recovery/idempotency principles for unknown mutations, duplicate/late completion, missing workers, proven-failure retry, writer replacement, cancellation and locks; linked failure taxonomy, handoff and lock guidance without duplicating Runtime commands. Distinguished retry authority from writer admission and visibility from settlement; corrected stale lock invariant references.
+- Embedded evidence duties in the existing coordinator loop and completion/review sections, retaining all 17 entry headings and the 250-line limit. Added `references/evidence-binding.md` documenting actual schema fields, selector coverage, six phases, exit semantics and old-run migration; updated branch/artifact models and review/final report templates.
+- Required explicit `branch.mergeTarget: null` for read-only Tasks. Unified writer admission as stopped/fenced/isolated/explicit handoff, clarified confirmed isolation as inability to write, and split writer admission from Dispatch settlement in the handoff checklist; failed alone never authorizes another writer.
+- Kept package VERSION and manifest at 2.0.0; runtime capability research remains process evidence and does not introduce a scheduler, database or lifecycle state machine.
+
 ## 2.0.0 — 2026-10-07
 
 - Rebuilt the coordinator entry for Claude Code workers only, retaining isolated Tasks, single writers, independent review, direct delivery integration, locks and evidence-based completion.

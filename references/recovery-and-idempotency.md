@@ -110,6 +110,9 @@ after both:
    untracked files — is captured in a handoff record under
    `.dev-work/runs/<run>/handoffs/`.
 
+Here, *confirmed* means evidence for each admission term as defined below;
+for isolation it proves inability to write, not process exit.
+
 Admission terms: *stopped* is a positively proven exit; *fenced* is the
 runtime's fenced consumer generation (`consumer_fenced` in
 `references/failure-taxonomy.md`); *isolated* means the original writer is

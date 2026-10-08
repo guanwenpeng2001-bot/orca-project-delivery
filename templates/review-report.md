@@ -12,6 +12,27 @@
 - Requirements:
 - Skills used:
 
+## Commit Binding
+
+Replace placeholders with observations from the actual review target. Set dirty from Git status; APPROVED requires false. This JSON mirrors one `reviews[]` entry; the coordinator writes accepted evidence and validates it. The validator checks report existence, not this block's contents, so reconcile both explicitly.
+
+```json
+{
+  "reviewTaskKey": "<review-task-key>",
+  "reviewer": { "taskId": "<reviewer-task-id>", "dispatchId": "<reviewer-dispatch-id>" },
+  "verdict": "<APPROVED-or-CHANGES_REQUIRED-or-UNVERIFIABLE>",
+  "reportPath": "runs/<run>/reviews/<review-task-key>.md",
+  "target": { "branch": "<reviewed-branch>", "commitSha": "<40-lowercase-hex-target-sha>", "dirty": false },
+  "baseline": { "branch": "<baseline-branch>", "commitSha": "<40-lowercase-hex-baseline-sha>" },
+  "recordedAt": "<ISO-8601-UTC>"
+}
+```
+
+- Target HEAD/status observation commands and results:
+- Baseline SHA and ancestry evidence:
+- Reviewer Task/Dispatch differs from the source worker's:
+- Source Task evidence path:
+
 ## Findings
 
 ### <severity>: <title>
