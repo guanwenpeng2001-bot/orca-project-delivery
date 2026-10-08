@@ -203,6 +203,206 @@ function New-FixtureRepository([string]$Name, [switch]$Delivery) {
   return $repository
 }
 
+function New-FixtureCommit {
+  param([string]$Worktree, [string]$FileName, [string]$Content, [string]$Message)
+  [IO.File]::WriteAllText((Join-Path $Worktree $FileName), $Content, $utf8)
+  $null = Invoke-FixtureGit @('-C', $Worktree, 'add', $FileName)
+  $null = Invoke-FixtureGit @('-C', $Worktree, 'commit', '-m', $Message)
+  return Invoke-FixtureGit @('-C', $Worktree, 'rev-parse', 'HEAD')
+}
+
+function New-EvidenceProject {
+  param([string]$Name, [string]$RunSlug = 'evidence-run', [string]$TaskBranch = 'evidence-contract')
+  $projectRoot = Join-Path $script:temporaryRoot "$Name-project"
+  $null = Invoke-FixtureGit @('init', '--initial-branch', 'main', '--template=', $projectRoot)
+  $null = Invoke-FixtureGit @('-C', $projectRoot, 'config', 'user.name', 'Package Verification')
+  $null = Invoke-FixtureGit @('-C', $projectRoot, 'config', 'user.email', 'verify@example.invalid')
+  $baselineCommit = New-FixtureCommit $projectRoot 'repository.txt' "baseline $Name`n" 'Baseline commit'
+  $null = Invoke-FixtureGit @('-C', $projectRoot, 'checkout', '-q', '-b', 'verification-control')
+  $deliveryWorktree = Join-Path $script:temporaryRoot "$Name-delivery"
+  $null = Invoke-FixtureGit @('-C', $projectRoot, 'worktree', 'add', '--quiet', $deliveryWorktree, 'main')
+  $taskWorktree = Join-Path $script:temporaryRoot "$Name-task"
+  $null = Invoke-FixtureGit @('-C', $projectRoot, 'worktree', 'add', '--quiet', '-b', $TaskBranch, $taskWorktree, 'main')
+  $evidenceDirectory = Join-Path $projectRoot ".dev-work/runs/$RunSlug/evidence/git"
+  $reviewsDirectory = Join-Path $projectRoot ".dev-work/runs/$RunSlug/reviews"
+  [void][IO.Directory]::CreateDirectory($evidenceDirectory)
+  [void][IO.Directory]::CreateDirectory($reviewsDirectory)
+  [IO.File]::WriteAllText((Join-Path $reviewsDirectory "$TaskBranch.md"), "# Review report`n", $utf8)
+  return [pscustomobject]@{
+    ProjectRoot = $projectRoot
+    DeliveryWorktree = $deliveryWorktree
+    TaskWorktree = $taskWorktree
+    EvidenceDirectory = $evidenceDirectory
+    RunSlug = $RunSlug
+    TaskBranch = $TaskBranch
+    BaselineCommit = $baselineCommit
+  }
+}
+
+function Write-EvidenceJson {
+  param([string]$Path, [object]$Document)
+  [IO.File]::WriteAllText($Path, ($Document | ConvertTo-Json -Depth 100), $utf8)
+}
+
+function Copy-EvidenceDocument {
+  param([object]$Document)
+  $Document | ConvertTo-Json -Depth 100 | ConvertFrom-Json -AsHashtable
+}
+
+function New-TaskEvidenceDocument {
+  param([string]$RunSlug, [string]$TaskKey, [string]$TaskBranch, [string]$TaskWorktree, [string]$TaskCommit)
+  [ordered]@{
+    schemaVersion = 1
+    run = $RunSlug
+    subject = [ordered]@{ kind = 'task'; taskKey = $TaskKey }
+    state = 'source-registered'
+    source = [ordered]@{
+      branch = $TaskBranch
+      worktree = $TaskWorktree
+      reportedCommit = $TaskCommit
+      workerDone = [ordered]@{ messageId = 'msg_source_0001'; taskId = 'task_source_0001'; dispatchId = 'ctx_source_0001' }
+    }
+  }
+}
+
+function Add-ReviewEvidence {
+  param([object]$Document, [string]$TargetCommit, [string]$BaselineCommit)
+  $Document.state = 'reviewed'
+  $review = [ordered]@{
+    reviewTaskKey = 'review-evidence-contract'
+    reviewer = [ordered]@{ taskId = 'task_review_0001'; dispatchId = 'ctx_review_0001' }
+    verdict = 'APPROVED'
+    reportPath = "runs/$($Document.run)/reviews/$($Document.subject.taskKey).md"
+    target = [ordered]@{ branch = $Document.source.branch; commitSha = $TargetCommit; dirty = $false }
+    baseline = [ordered]@{ branch = 'main'; commitSha = $BaselineCommit }
+    recordedAt = '2026-10-08T10:10:00Z'
+  }
+  $Document.reviews = @($review)
+}
+
+function Add-ResolutionReviewEvidence {
+  param([object]$Document, [string]$ResolutionCommit)
+  $second = [ordered]@{
+    reviewTaskKey = 'review-merge-resolution'
+    reviewer = [ordered]@{ taskId = 'task_review_0002'; dispatchId = 'ctx_review_0002' }
+    verdict = 'APPROVED'
+    reportPath = "runs/$($Document.run)/reviews/$($Document.subject.taskKey).md"
+    target = [ordered]@{ branch = 'merge-resolution'; commitSha = $ResolutionCommit; dirty = $false }
+    baseline = [ordered]@{ branch = 'main'; commitSha = $Document.integration.baselineBefore.commitSha }
+    recordedAt = '2026-10-08T10:15:00Z'
+  }
+  $Document.reviews = @(@($Document.reviews) + @($second))
+}
+
+function Add-AdmissionEvidence {
+  param([object]$Document, [string]$ApprovedCommit, [string]$MainCommit)
+  $Document.integration = [ordered]@{
+    sourceBranch = $Document.source.branch
+    review = [ordered]@{ reviewTaskKey = 'review-evidence-contract'; targetCommitSha = $ApprovedCommit }
+    admission = [ordered]@{ sourceHeadSha = $ApprovedCommit; sourceWorktreeClean = $true; deliveryWorktreeClean = $true; checkedAt = '2026-10-08T10:20:00Z' }
+    baselineBefore = [ordered]@{ branch = 'main'; commitSha = $MainCommit }
+  }
+}
+
+function Complete-IntegrationEvidence {
+  param([object]$Document, [string]$HeadAfter, [string]$Outcome, [string]$MergeCommand)
+  $Document.state = 'integrated'
+  $Document.integration.headAfter = [ordered]@{ branch = 'main'; commitSha = $HeadAfter }
+  $Document.integration.reviewedSourcePresent = $true
+  $Document.integration.outcome = $Outcome
+  $Document.integration.mergeEvidence = [ordered]@{ command = $MergeCommand; exitCode = 0; conflictFree = $true }
+  $Document.integration.resolution = $null
+  $null = Invoke-FixtureGit @('-C', $Document.source.worktree, 'diff', '--check', $Document.integration.baselineBefore.commitSha, $HeadAfter)
+  $approved = $Document.integration.review.targetCommitSha
+  $baseline = $Document.integration.baselineBefore.commitSha
+  $Document.integration.checks = @(
+    [ordered]@{ kind = 'observation'; command = 'git rev-parse main'; exitCode = 0; observed = $HeadAfter; commitSha = $HeadAfter; at = '2026-10-08T10:30:00Z' }
+    [ordered]@{ kind = 'observation'; command = 'git status --short'; exitCode = 0; observed = ''; commitSha = $HeadAfter; at = '2026-10-08T10:30:01Z' }
+    [ordered]@{ kind = 'observation'; command = "git rev-parse $($Document.integration.sourceBranch)"; exitCode = 0; observed = $approved; commitSha = $approved; at = '2026-10-08T10:20:00Z' }
+    [ordered]@{ kind = 'observation'; command = 'git rev-parse main'; exitCode = 0; observed = $baseline; commitSha = $baseline; at = '2026-10-08T10:20:00Z' }
+    [ordered]@{ kind = 'observation'; command = 'git status --short'; exitCode = 0; observed = ''; commitSha = $approved; at = '2026-10-08T10:20:00Z' }
+    [ordered]@{ kind = 'observation'; command = 'git status --short'; exitCode = 0; observed = ''; commitSha = $baseline; at = '2026-10-08T10:20:00Z' }
+    [ordered]@{ kind = 'verification'; command = "git diff --check $baseline $HeadAfter"; exitCode = 0; observed = 'No whitespace errors'; commitSha = $HeadAfter; at = '2026-10-08T10:30:01Z' }
+  )
+  $Document.integration.recordedAt = '2026-10-08T10:30:02Z'
+}
+
+function New-RunFinalDocument {
+  param([string]$RunSlug, [string]$TargetCommit, [string]$VerificationWorktree, [string[]]$TaskKeys)
+  $null = Invoke-FixtureGit @('-C', $VerificationWorktree, 'cat-file', '-e', $TargetCommit)
+  [ordered]@{
+    schemaVersion = 1
+    run = $RunSlug
+    subject = [ordered]@{ kind = 'run' }
+    target = [ordered]@{ branch = 'main'; commitSha = $TargetCommit }
+    worktree = $VerificationWorktree
+    status = 'verified'
+    coverage = [ordered]@{ integratedTaskKeys = @($TaskKeys); uncoveredTaskKeys = @() }
+    inputs = [ordered]@{ integratedEvidencePaths = @($TaskKeys | ForEach-Object { "evidence/git/$_.json" }) }
+    checks = @(
+      [ordered]@{ kind = 'observation'; command = 'git rev-parse main'; exitCode = 0; observed = $TargetCommit; commitSha = $TargetCommit; at = '2026-10-08T11:00:00Z' }
+      [ordered]@{ kind = 'observation'; command = 'git status --short'; exitCode = 0; observed = ''; commitSha = $TargetCommit; at = '2026-10-08T11:00:01Z' }
+      [ordered]@{ kind = 'verification'; command = "git cat-file -e $TargetCommit"; exitCode = 0; observed = 'Commit exists'; commitSha = $TargetCommit; at = '2026-10-08T11:00:01Z' }
+    )
+    verdict = 'READY'
+    recordedAt = '2026-10-08T11:00:02Z'
+  }
+}
+
+function Write-AssignmentFixture {
+  param([object]$Fixture, [string]$GitEvidencePath = "runs/$($Fixture.RunSlug)/evidence/git/$($Fixture.TaskBranch).json")
+  $assignmentsDirectory = Join-Path $Fixture.ProjectRoot ".dev-work/runs/$($Fixture.RunSlug)/assignments"
+  [void][IO.Directory]::CreateDirectory($assignmentsDirectory)
+  $assignment = [ordered]@{
+    schemaVersion = 1
+    taskKey = $Fixture.TaskBranch
+    role = 'software-implementer'
+    skills = [ordered]@{ required = @('test-driven-development', 'integration-verification'); conditional = @() }
+    runtime = [ordered]@{ requested = [ordered]@{ agent = 'claude' }; effective = [ordered]@{ agent = 'claude' } }
+    branch = [ordered]@{ base = 'main'; work = $Fixture.TaskBranch; mergeTarget = 'main'; worktree = $Fixture.TaskWorktree }
+    artifacts = [ordered]@{ reportPath = "runs/$($Fixture.RunSlug)/worker-reports/$($Fixture.TaskBranch).md"; evidencePath = "runs/$($Fixture.RunSlug)/evidence/$($Fixture.TaskBranch)" }
+    evidence = [ordered]@{ gitEvidencePath = $GitEvidencePath }
+    orca = [ordered]@{ runId = $null; taskId = $null; dispatchId = $null }
+    status = 'completed'
+  }
+  Write-EvidenceJson (Join-Path $assignmentsDirectory "$($Fixture.TaskBranch).json") $assignment
+}
+
+function Invoke-EvidenceValidator {
+  param([string[]]$Arguments)
+  Invoke-PackageScript 'validate-git-evidence.ps1' $Arguments
+}
+
+function Assert-EvidenceStatus {
+  param([object]$Result, [string]$Expected, [string]$Context, [string]$Diagnostic)
+  $document = $null
+  try { $document = $Result.Stdout | ConvertFrom-Json } catch {}
+  Assert-Condition ($null -ne $document -and $document.status) "No structured JSON status for ${Context}: $($Result.Stdout) $($Result.Stderr)"
+  Assert-Condition ($document.status -ceq $Expected) "${Context}: expected status $Expected, got '$($document.status)'; errors: $(@($document.errors) -join ' | ')"
+  Assert-Condition ([bool]$document.phase) "${Context}: phase echo missing from output"
+  if ($Expected -ceq 'FAIL') {
+    Assert-Condition ($Result.ExitCode -eq 1) "${Context}: expected exit 1, got $($Result.ExitCode)"
+    Assert-Condition (@($document.errors).Count -gt 0) "${Context}: FAIL without errors[]"
+    if ($Diagnostic) {
+      Assert-Condition ((@($document.errors) -join ' | ') -match $Diagnostic) "${Context}: expected a diagnostic matching /$Diagnostic/, got: $(@($document.errors) -join ' | ')"
+    }
+  } else {
+    Assert-Condition ($Result.ExitCode -eq 0) "${Context}: expected exit 0, got $($Result.ExitCode)"
+    Assert-Condition (@($document.errors).Count -eq 0) "${Context}: $($Expected) with errors[]: $(@($document.errors) -join ' | ')"
+    if ($Expected -ceq 'NOT_APPLICABLE') { Assert-Condition ([bool]$document.reason) "${Context}: NOT_APPLICABLE without reason" }
+  }
+}
+
+function Get-FileTreeSnapshot {
+  param([string[]]$Roots)
+  $entries = foreach ($rootDirectory in $Roots) {
+    foreach ($file in Get-ChildItem -LiteralPath $rootDirectory -Recurse -Force -File) {
+      $file.FullName + ':' + (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+    }
+  }
+  return @($entries | Sort-Object)
+}
+
 function Invoke-PackageScript([string]$Name, [string[]]$Arguments, [switch]$DirtyGit) {
   Invoke-Child $script:pwsh (@('-NoProfile', '-NonInteractive', '-File', (Join-Path $script:stagedPackage "scripts/$Name")) + $Arguments) -DirtyGit:$DirtyGit
 }
@@ -224,7 +424,7 @@ try {
   $pwsh = (Get-Command pwsh -CommandType Application | Select-Object -First 1).Source
   $git = (Get-Command git -CommandType Application | Select-Object -First 1).Source
   $files = @(Get-PackageFiles $root)
-  $scripts = @('assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'probe-claude-capabilities.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1', 'validate-run.ps1')
+  $scripts = @('assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'probe-claude-capabilities.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1', 'validate-run.ps1', 'validate-git-evidence.ps1')
   foreach ($name in $scripts + @('verify-package.ps1')) {
     Invoke-Check "parse/$name" {
       $path = Join-Path $root "scripts/$name"
@@ -464,6 +664,270 @@ try {
     Assert-Condition ($result.ExitCode -eq 1) "Expected schema failure exit 1, got $($result.ExitCode)"
     $document = $result.Stdout | ConvertFrom-Json
     Assert-Condition ($document.ok -eq $false -and ($document.errors -join '\n') -match 'artifacts\.evidencePath') "Missing evidence-path diagnostic: $($result.Stdout)"
+  }
+  Invoke-Check 'evidence/positive-full-chain' {
+    $fixture = New-EvidenceProject 'chain'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'sourceRegistered', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'sourceRegistered phase'
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'review phase without integration'
+    Add-AdmissionEvidence $document $taskCommit $fixture.BaselineCommit
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'preMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'preMerge phase'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'evidence-contract')
+    $headAfter = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    Complete-IntegrationEvidence $document $headAfter 'advanced-fast-forward' 'git merge --no-edit evidence-contract'
+    Write-EvidenceJson $evidencePath $document
+    # Read-only proof: the heaviest phase must not touch a single file in the fixture.
+    $snapshot = Get-FileTreeSnapshot @($fixture.ProjectRoot, $fixture.TaskWorktree, $fixture.DeliveryWorktree)
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'postMerge phase'
+    $afterSnapshot = Get-FileTreeSnapshot @($fixture.ProjectRoot, $fixture.TaskWorktree, $fixture.DeliveryWorktree)
+    Assert-Condition (-not (Compare-Object $snapshot $afterSnapshot)) 'Validator wrote to the fixture while validating postMerge'
+    # A read-only reporting task carries review evidence but no integration duty.
+    $readOnlyDocument = New-TaskEvidenceDocument $fixture.RunSlug 'read-only-report' 'evidence-contract' $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $readOnlyDocument $taskCommit $taskCommit
+    $assignmentDirectory = Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/assignments"
+    [void][IO.Directory]::CreateDirectory($assignmentDirectory)
+    Write-EvidenceJson (Join-Path $assignmentDirectory 'read-only-report.json') @{ taskKey = 'read-only-report'; role = 'code-reviewer'; status = 'completed'; branch = @{ mergeTarget = $null } }
+    Write-EvidenceJson (Join-Path $fixture.EvidenceDirectory 'read-only-report.json') $readOnlyDocument
+    [IO.File]::WriteAllText((Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/reviews/read-only-report.md"), "# Read-only report`n", $utf8)
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', (Join-Path $fixture.EvidenceDirectory 'read-only-report.json'), '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'read-only task with unchanged review baseline'
+    $verificationWorktree = Join-Path $script:temporaryRoot 'chain-verification'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '--detach', $verificationWorktree, 'main')
+    $runFinalPath = Join-Path $fixture.EvidenceDirectory 'run-final-verification.json'
+    Write-EvidenceJson $runFinalPath (New-RunFinalDocument $fixture.RunSlug $headAfter $verificationWorktree @('evidence-contract'))
+    Write-AssignmentFixture $fixture
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'final phase (run-final document)'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'final phase (run scope with read-only task present)'
+    # Historical re-validation: main advanced past headAfter; audit and final must
+    # check time-invariant relations only, never equate history with current main.
+    $null = New-FixtureCommit $fixture.DeliveryWorktree 'later.txt' "later main work`n" 'Later main commit'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'audit phase after main advanced'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'final phase on historical task evidence'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'historical run-final after main advanced'
+    $latestMain = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    $null = Invoke-FixtureGit @('-C', $verificationWorktree, 'checkout', '--detach', $latestMain)
+    Write-EvidenceJson $runFinalPath (New-RunFinalDocument $fixture.RunSlug $latestMain $verificationWorktree @('evidence-contract'))
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'latest final covering historical headAfter'
+  }
+  Invoke-Check 'evidence/positive-clean-merge' {
+    $fixture = New-EvidenceProject 'clean-merge'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $mainAdvance = New-FixtureCommit $fixture.DeliveryWorktree 'other.txt' "main advance`n" 'Main advance commit'
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $document $taskCommit $mainAdvance
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'preMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'clean-merge preMerge phase'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'evidence-contract')
+    $mergeHead = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    Complete-IntegrationEvidence $document $mergeHead 'advanced-clean-merge' 'git merge --no-edit evidence-contract'
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'clean-merge postMerge phase (QA-5)'
+    $broken = Copy-EvidenceDocument $document
+    $broken.integration.mergeEvidence.conflictFree = $false
+    $brokenPath = Join-Path $fixture.EvidenceDirectory 'clean-merge-broken-evidence.json'
+    Write-EvidenceJson $brokenPath $broken
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $brokenPath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'three-way merge without complete merge evidence' 'mergeEvidence'
+    $unresolved = Copy-EvidenceDocument $document
+    $unresolved.integration.outcome = 'advanced-with-resolution'
+    $unresolvedPath = Join-Path $fixture.EvidenceDirectory 'clean-merge-unresolved.json'
+    Write-EvidenceJson $unresolvedPath $unresolved
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $unresolvedPath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'clean-merge outcome claiming a missing resolution' 'requires resolution'
+  }
+  Invoke-Check 'evidence/positive-conflict-resolution' {
+    $fixture = New-EvidenceProject 'resolution'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'shared.txt' "task resolution`n" 'Task commit'
+    $mainAdvance = New-FixtureCommit $fixture.DeliveryWorktree 'shared.txt' "main resolution`n" 'Main advance commit'
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $document $taskCommit $mainAdvance
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'preMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'resolution preMerge phase'
+    $conflict = Invoke-Child $script:git @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'evidence-contract')
+    Assert-Condition ($conflict.ExitCode -ne 0) 'Expected the conflicting merge to fail'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--abort')
+    $resolverWorktree = Join-Path $script:temporaryRoot 'resolution-resolver'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '-b', 'merge-resolution', $resolverWorktree, 'evidence-contract')
+    $innerConflict = Invoke-Child $script:git @('-C', $resolverWorktree, 'merge', '--no-edit', 'main')
+    Assert-Condition ($innerConflict.ExitCode -ne 0) 'Expected the resolver merge to conflict'
+    [IO.File]::WriteAllText((Join-Path $resolverWorktree 'shared.txt'), "merged resolution`n", $utf8)
+    $null = Invoke-FixtureGit @('-C', $resolverWorktree, 'add', 'shared.txt')
+    $null = Invoke-FixtureGit @('-C', $resolverWorktree, 'commit', '-m', 'Resolve the conflicting merge')
+    $resolutionCommit = Invoke-FixtureGit @('-C', $resolverWorktree, 'rev-parse', 'HEAD')
+    Add-ResolutionReviewEvidence $document $resolutionCommit
+    $document.integration.sourceBranch = 'merge-resolution'
+    $document.integration.review = [ordered]@{ reviewTaskKey = 'review-merge-resolution'; targetCommitSha = $resolutionCommit }
+    $document.integration.admission.sourceHeadSha = $resolutionCommit
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'preMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'resolution re-admission preMerge phase'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'merge-resolution')
+    $headAfter = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    Complete-IntegrationEvidence $document $headAfter 'advanced-with-resolution' 'git merge --no-edit merge-resolution'
+    $document.integration.resolution = [ordered]@{
+      resolverTaskKey = 'merge-resolution'
+      resultCommitSha = $resolutionCommit
+      review = [ordered]@{ reviewTaskKey = 'review-merge-resolution'; targetCommitSha = $resolutionCommit }
+    }
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'resolution postMerge phase'
+    $mismatched = Copy-EvidenceDocument $document
+    $mismatched.integration.resolution.review.targetCommitSha = $taskCommit
+    $mismatchedPath = Join-Path $fixture.EvidenceDirectory 'resolution-review-mismatch.json'
+    Write-EvidenceJson $mismatchedPath $mismatched
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $mismatchedPath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'resolution review target mismatch' 'resolution.review.targetCommitSha'
+    $sideWorktree = Join-Path $script:temporaryRoot 'resolution-side'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '-b', 'side-branch', $sideWorktree, 'main')
+    $sideCommit = New-FixtureCommit $sideWorktree 'side.txt' "side work`n" 'Side branch commit'
+    $nonAncestor = Copy-EvidenceDocument $document
+    $nonAncestor.integration.resolution.resultCommitSha = $sideCommit
+    $nonAncestor.integration.resolution.review.targetCommitSha = $sideCommit
+    $nonAncestorPath = Join-Path $fixture.EvidenceDirectory 'resolution-not-ancestor.json'
+    Write-EvidenceJson $nonAncestorPath $nonAncestor
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $nonAncestorPath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'resolution result not an ancestor of headAfter' 'is not an ancestor'
+  }
+  Invoke-Check 'evidence/not-applicable-scope' {
+    $fixture = New-EvidenceProject 'not-applicable'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'NOT_APPLICABLE' 'run without an evidence lifecycle'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'NOT_APPLICABLE' 'no active run'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', 'missing-run', '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'explicit missing run' 'Run directory missing'
+    Remove-Item -LiteralPath $fixture.EvidenceDirectory
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot)) 'NOT_APPLICABLE' 'legacy run without evidence directory'
+    Write-AssignmentFixture $fixture
+    $assignmentPath = Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/assignments/$($fixture.TaskBranch).json"
+    $legacyAssignment = [IO.File]::ReadAllText($assignmentPath) | ConvertFrom-Json -AsHashtable
+    $legacyAssignment.Remove('evidence')
+    Write-EvidenceJson $assignmentPath $legacyAssignment
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'legacy formal task without rebuilt evidence' 'UNVERIFIABLE'
+  }
+  Invoke-Check 'evidence/negative-evidence-mutations' {
+    $fixture = New-EvidenceProject 'mutations'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'evidence-contract')
+    $headAfter = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $document $taskCommit $fixture.BaselineCommit
+    Complete-IntegrationEvidence $document $headAfter 'advanced-fast-forward' 'git merge --no-edit evidence-contract'
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'mutations baseline evidence'
+    $sideWorktree = Join-Path $script:temporaryRoot 'mutations-side'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '-b', 'side-branch', $sideWorktree, 'main')
+    $sideCommit = New-FixtureCommit $sideWorktree 'side.txt' "side work`n" 'Side branch commit'
+    $cases = @(
+      @{ Name = 'schema-version'; Fragment = 'schemaVersion'; Change = { param($d) $d.schemaVersion = 2 } }
+      @{ Name = 'sha-format'; Fragment = '/source/reportedCommit'; Change = { param($d) $d.source.reportedCommit = 'not-a-commit-sha' } }
+      @{ Name = 'unknown-commit'; Fragment = 'does not exist'; Change = { param($d) $d.reviews[0].target.commitSha = '1234567890123456789012345678901234567890' } }
+      @{ Name = 'reviewer-not-independent'; Fragment = 'independence'; Change = { param($d) $d.reviews[0].reviewer.taskId = 'task_source_0001'; $d.reviews[0].reviewer.dispatchId = 'ctx_source_0001' } }
+      @{ Name = 'approved-without-target-sha'; Fragment = 'Required properties.*commitSha'; Change = { param($d) $d.reviews[0].target.Remove('commitSha') } }
+      @{ Name = 'target-equals-baseline'; Fragment = 'target equals baseline'; Change = { param($d) $d.reviews[0].target.commitSha = $d.reviews[0].baseline.commitSha } }
+      @{ Name = 'baseline-not-ancestor'; Fragment = 'is not an ancestor'; Change = { param($d) $d.reviews[0].baseline.commitSha = $sideCommit } }
+      @{ Name = 'head-after-mismatch'; Fragment = 'headAfter does not equal'; Change = { param($d) $d.integration.headAfter.commitSha = $d.integration.baselineBefore.commitSha } }
+      @{ Name = 'merge-evidence-not-clean'; Fragment = 'mergeEvidence'; Change = { param($d) $d.integration.mergeEvidence.conflictFree = $false } }
+      @{ Name = 'resolution-missing'; Fragment = 'requires resolution'; Change = { param($d) $d.integration.outcome = 'advanced-with-resolution' } }
+      @{ Name = 'final-verification-field'; Fragment = 'finalVerification'; Change = { param($d) $d.finalVerification = @{ status = 'verified' } } }
+      @{ Name = 'checks-not-self-consistent'; Fragment = 'rev-parse observation'; Change = { param($d) $d.integration.checks[0].observed = $d.integration.baselineBefore.commitSha } }
+      @{ Name = 'uppercase-sha'; Fragment = 'reportedCommit'; Change = { param($d) $d.source.reportedCommit = 'ABCDEF0123456789ABCDEF0123456789ABCDEF01' } }
+      @{ Name = 'missing-dispatch'; Fragment = 'dispatchId'; Change = { param($d) $d.source.workerDone.Remove('dispatchId') } }
+      @{ Name = 'reviewer-same-task'; Fragment = 'independence'; Change = { param($d) $d.reviews[0].reviewer.taskId = $d.source.workerDone.taskId } }
+      @{ Name = 'reviewer-same-dispatch'; Fragment = 'independence'; Change = { param($d) $d.reviews[0].reviewer.dispatchId = $d.source.workerDone.dispatchId } }
+      @{ Name = 'missing-report'; Fragment = 'report missing'; Change = { param($d) $d.reviews[0].reportPath = 'missing-report.md' } }
+      @{ Name = 'later-review-rejects'; Fragment = 'latest review'; Change = { param($d) $latest = Copy-EvidenceDocument $d.reviews[0]; $latest.verdict = 'CHANGES_REQUIRED'; $d.reviews += @($latest) } }
+      @{ Name = 'missing-merge-command'; Fragment = 'command'; Change = { param($d) $d.integration.mergeEvidence.Remove('command') } }
+      @{ Name = 'failed-merge'; Fragment = 'mergeEvidence'; Change = { param($d) $d.integration.mergeEvidence.exitCode = 1 } }
+      @{ Name = 'interactive-merge'; Fragment = 'mergeEvidence'; Change = { param($d) $d.integration.mergeEvidence.command = 'git merge evidence-contract' } }
+      @{ Name = 'missing-verification'; Fragment = 'verification'; Change = { param($d) $d.integration.checks = @($d.integration.checks | Where-Object kind -CEQ 'observation') } }
+      @{ Name = 'old-verification-sha'; Fragment = 'verification'; Change = { param($d) $d.integration.checks[-1].commitSha = $d.integration.baselineBefore.commitSha } }
+      @{ Name = 'failed-verification'; Fragment = 'check failed'; Change = { param($d) $d.integration.checks[-1].exitCode = 1 } }
+      @{ Name = 'postmerge-incomplete-state'; Fragment = 'integrated state'; Change = { param($d) $d.state = 'reviewed' } }
+      @{ Name = 'invalid-task-state'; Fragment = 'state'; Change = { param($d) $d.state = 'final' } }
+    )
+    foreach ($case in $cases) {
+      $mutated = Copy-EvidenceDocument $document
+      $null = & $case.Change $mutated
+      $mutatedPath = Join-Path $fixture.EvidenceDirectory "mutation-$($case.Name).json"
+      Write-EvidenceJson $mutatedPath $mutated
+      Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $mutatedPath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' "mutation $($case.Name)" $case.Fragment
+    }
+  }
+  Invoke-Check 'evidence/negative-premerge-conditions' {
+    $fixture = New-EvidenceProject 'pre-merge'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $document $taskCommit $fixture.BaselineCommit
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'preMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'pre-merge baseline admission'
+    $null = New-FixtureCommit $fixture.TaskWorktree 'drift.txt' "unapproved drift`n" 'Unapproved drift commit'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'preMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'approved-target drift' 'drifted'
+    $null = Invoke-FixtureGit @('-C', $fixture.TaskWorktree, 'reset', '--hard', $taskCommit)
+    [IO.File]::WriteAllText((Join-Path $fixture.TaskWorktree 'stray-source.txt'), 'stray', $utf8)
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'preMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'dirty source worktree' 'source worktree is dirty'
+    Remove-Item -LiteralPath (Join-Path $fixture.TaskWorktree 'stray-source.txt')
+    [IO.File]::WriteAllText((Join-Path $fixture.DeliveryWorktree 'stray-delivery.txt'), 'stray', $utf8)
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'preMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'dirty delivery worktree' 'delivery worktree is dirty'
+    Remove-Item -LiteralPath (Join-Path $fixture.DeliveryWorktree 'stray-delivery.txt')
+  }
+  Invoke-Check 'evidence/negative-final-conditions' {
+    $fixture = New-EvidenceProject 'final-negative'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'evidence-contract')
+    $headAfter = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $document $taskCommit $fixture.BaselineCommit
+    Complete-IntegrationEvidence $document $headAfter 'advanced-fast-forward' 'git merge --no-edit evidence-contract'
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+    Write-EvidenceJson $evidencePath $document
+    $verificationWorktree = Join-Path $script:temporaryRoot 'final-negative-verification'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '--detach', $verificationWorktree, 'main')
+    $runFinalPath = Join-Path $fixture.EvidenceDirectory 'run-final-verification.json'
+    $runFinalDocument = New-RunFinalDocument $fixture.RunSlug $headAfter $verificationWorktree @('evidence-contract')
+    Write-EvidenceJson $runFinalPath $runFinalDocument
+    Write-AssignmentFixture $fixture
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'final baseline'
+    $runFinalJson = [IO.File]::ReadAllText($runFinalPath, $utf8)
+    $mutated = Copy-EvidenceDocument $runFinalDocument
+    $mutated.coverage.integratedTaskKeys = @()
+    Write-EvidenceJson $runFinalPath $mutated
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'coverage missing the integrated task' 'coverage'
+    $mutated = Copy-EvidenceDocument $runFinalDocument
+    $mutated.inputs.integratedEvidencePaths = @('evidence/git/missing-task.json')
+    Write-EvidenceJson $runFinalPath $mutated
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'integrated evidence path missing' 'integratedEvidencePaths'
+    [IO.File]::WriteAllText($runFinalPath, $runFinalJson, $utf8)
+    [IO.File]::WriteAllText((Join-Path $verificationWorktree 'stray-verification.txt'), 'stray', $utf8)
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'dirty verification worktree' 'verification worktree is dirty'
+    Remove-Item -LiteralPath (Join-Path $verificationWorktree 'stray-verification.txt')
+    Write-EvidenceJson (Join-Path $fixture.EvidenceDirectory 'run-final-verification-backup.json') (Copy-EvidenceDocument $runFinalDocument)
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'duplicate run-final document' 'unique'
+    Remove-Item -LiteralPath (Join-Path $fixture.EvidenceDirectory 'run-final-verification-backup.json')
+    $sideWorktree = Join-Path $script:temporaryRoot 'final-negative-side'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '-b', 'side-branch', $sideWorktree, 'main')
+    $sideCommit = New-FixtureCommit $sideWorktree 'side.txt' "side work`n" 'Side branch commit'
+    $taskEvidenceJson = [IO.File]::ReadAllText($evidencePath, $utf8)
+    $mutatedTask = Copy-EvidenceDocument $document
+    $mutatedTask.integration.headAfter.commitSha = $sideCommit
+    $mutatedTask.integration.checks[0].observed = $sideCommit
+    Write-EvidenceJson $evidencePath $mutatedTask
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'integrated headAfter not an ancestor of the final target' 'is not an ancestor'
+    [IO.File]::WriteAllText($evidencePath, $taskEvidenceJson, $utf8)
+    Write-AssignmentFixture $fixture "runs/$($fixture.RunSlug)/evidence/git/missing-evidence.json"
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'assignment evidence path missing' 'gitEvidencePath'
+    Write-AssignmentFixture $fixture
+    Remove-Item -LiteralPath $runFinalPath
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'integrated tasks without run-final evidence' 'UNVERIFIABLE'
+    [IO.File]::WriteAllText($runFinalPath, $runFinalJson, $utf8)
+    $null = New-FixtureCommit $fixture.DeliveryWorktree 'advance.txt' "final advance`n" 'Final main advance'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'final target not current main' 'target does not equal'
   }
 } catch {
   $failed++

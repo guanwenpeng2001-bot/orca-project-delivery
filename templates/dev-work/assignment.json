@@ -34,6 +34,9 @@
     "reportPath": "<absolute-path>",
     "evidencePath": "<absolute-path>"
   },
+  "evidence": {
+    "gitEvidencePath": "runs/<run>/evidence/git/<task-key>.json"
+  },
   "orca": {
     "runId": null,
     "taskId": null,
