@@ -1186,122 +1186,35 @@ try {
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'vacuous run-final audit with empty coverage' 'integratedTaskKeys must not be empty'
   }
   Invoke-Check 'evidence/ancestor-probe-success-cache' {
+    $fixture = New-EvidenceProject 'ancestor-cache'
+    $descendant = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
     $validatorPath = Join-Path $stagedPackage 'scripts/validate-git-evidence.ps1'
-    $originalValidator = [IO.File]::ReadAllText($validatorPath, $utf8)
-    $gitLog = (Join-Path $script:temporaryRoot 'ancestor-probe-calls.log').Replace('\', '/')
-    $needle = 'function Invoke-GitRead([string]$Root, [string[]]$Arguments, [switch]$Probe) {'
-    $instrumented = $originalValidator.Replace($needle, @"
-function Invoke-GitRead([string]`$Root, [string[]]`$Arguments, [switch]`$Probe) {
-  if (`$Arguments.Count -ge 3 -and `$Arguments[0] -ceq 'merge-base' -and `$Arguments[1] -ceq '--is-ancestor') {
-    Add-Content -LiteralPath '$gitLog' -Value (`$Arguments[2] + ' ' + `$Arguments[3]) -Encoding utf8NoBOM
-  }
-"@)
-    Assert-Condition ($instrumented.Contains("LiteralPath '$gitLog'")) 'Ancestor-probe instrumentation insertion failed'
-    function Get-AncestorProbes {
-      if (Test-Path -LiteralPath $gitLog) { @([IO.File]::ReadAllLines($gitLog) | Where-Object { $_ }) } else { @() }
-    }
-    function Reset-AncestorProbes { [IO.File]::WriteAllText($gitLog, '', $utf8) }
-    try {
-      [IO.File]::WriteAllText($validatorPath, $instrumented, $utf8)
-      $runSlug = 'ancestor-cache-run'
-      $fixture = New-EvidenceProject 'ancestor-cache' $runSlug 'task-1'
-      $projectRoot = $fixture.ProjectRoot
-      $delivery = $fixture.DeliveryWorktree
-      $evidenceDir = $fixture.EvidenceDirectory
-      $reviewsDir = Join-Path $projectRoot ".dev-work/runs/$runSlug/reviews"
-      $assignmentsDir = Join-Path $projectRoot ".dev-work/runs/$runSlug/assignments"
-      [void][IO.Directory]::CreateDirectory($assignmentsDir)
-      [IO.File]::WriteAllText((Join-Path $projectRoot ".dev-work/runs/$runSlug/run-state.json"), '{"deliveryBranch":"main"}', $utf8)
-      $taskKeys = @('task-1', 'task-2')
-      $baseline = $fixture.BaselineCommit
-      $commits = [ordered]@{}
-      foreach ($key in $taskKeys) {
-        $worktree = if ($key -ceq 'task-1') { $fixture.TaskWorktree } else {
-          $added = Join-Path $script:temporaryRoot "ancestor-cache-$key"
-          $null = Invoke-FixtureGit @('-C', $projectRoot, 'worktree', 'add', '--quiet', '-b', $key, $added, 'main')
-          $added
-        }
-        $commit = New-FixtureCommit $worktree "$key.txt" "$key work`n" "$key commit"
-        $commits[$key] = $commit
-        $null = Invoke-FixtureGit @('-C', $delivery, 'merge', '--no-edit', $key)
-        $headAfter = Invoke-FixtureGit @('-C', $delivery, 'rev-parse', 'HEAD')
-        $document = New-TaskEvidenceDocument $runSlug $key $key $worktree $commit
-        Add-ReviewEvidence $document $commit $baseline
-        Add-AdmissionEvidence $document $commit $baseline
-        Complete-IntegrationEvidence $document $headAfter 'advanced-fast-forward' "git merge --no-edit $key"
-        Write-EvidenceJson (Join-Path $evidenceDir "$key.json") $document
-        [IO.File]::WriteAllText((Join-Path $reviewsDir "$key.md"), "# Review $key`n", $utf8)
-        Write-EvidenceJson (Join-Path $assignmentsDir "$key.json") ([ordered]@{
-          schemaVersion = 1; taskKey = $key; role = 'software-implementer'; status = 'integrated'
-          branch = [ordered]@{ base = 'main'; work = $key; mergeTarget = 'main'; worktree = $worktree }
-          evidence = [ordered]@{ gitEvidencePath = "runs/$runSlug/evidence/git/$key.json" }
-        })
-        $baseline = $headAfter
-      }
-      Write-EvidenceJson (Join-Path $assignmentsDir 'rework-round.json') ([ordered]@{
-        schemaVersion = 1; taskKey = 'rework-round'; role = 'software-implementer'; status = 'superseded'
-        supersededBy = 'task-1'
-        branch = [ordered]@{ base = 'main'; work = 'task-1'; mergeTarget = 'main'; worktree = $fixture.TaskWorktree }
-      })
-      $verificationWorktree = Join-Path $script:temporaryRoot 'ancestor-cache-verification'
-      $null = Invoke-FixtureGit @('-C', $projectRoot, 'worktree', 'add', '--quiet', '--detach', $verificationWorktree, 'main')
-      $latestMain = Invoke-FixtureGit @('-C', $delivery, 'rev-parse', 'HEAD')
-      Write-EvidenceJson (Join-Path $evidenceDir 'run-final-verification.json') (New-RunFinalDocument $runSlug $latestMain $verificationWorktree $taskKeys)
-
-      Reset-AncestorProbes
-      $first = Invoke-EvidenceValidator @('-Run', $runSlug, '-Phase', 'audit', '-ProjectRoot', $projectRoot)
-      Assert-EvidenceStatus $first 'PASS' 'ancestor-cache audit first invocation'
-      $firstProbes = Get-AncestorProbes
-      $firstUnique = @($firstProbes | Sort-Object -Unique)
-      Assert-Condition ($firstUnique.Count -ge 4) "Expected several unique ancestor pairs, got $($firstUnique.Count)"
-      Assert-Condition ($firstProbes.Count -eq $firstUnique.Count) "Successful ancestor pairs must be probed once per invocation; probes=$($firstProbes.Count) unique=$($firstUnique.Count)"
-
-      Reset-AncestorProbes
-      $second = Invoke-EvidenceValidator @('-Run', $runSlug, '-Phase', 'audit', '-ProjectRoot', $projectRoot)
-      Assert-EvidenceStatus $second 'PASS' 'ancestor-cache audit second invocation'
-      $secondProbes = Get-AncestorProbes
-      Assert-Condition ($secondProbes.Count -eq $firstProbes.Count) "Ancestor cache must reset across script invocations; second=$($secondProbes.Count) first=$($firstProbes.Count)"
-      Assert-Condition ($first.Stdout -ceq $second.Stdout) 'Repeated success audit JSON must be byte-identical'
-
-      $task2Path = Join-Path $evidenceDir 'task-2.json'
-      $task2Original = [IO.File]::ReadAllText($task2Path, $utf8)
-      $task2Document = $task2Original | ConvertFrom-Json -AsHashtable
-      $forwardAncestor = $commits['task-1']
-      $forwardDescendant = $commits['task-2']
-      $task2Document.reviews[0].baseline.commitSha = $forwardDescendant
-      $task2Document.reviews[0].target.commitSha = $forwardAncestor
-      Write-EvidenceJson $task2Path $task2Document
-      Reset-AncestorProbes
-      $reverseResult = Invoke-EvidenceValidator @('-Run', $runSlug, '-Phase', 'audit', '-ProjectRoot', $projectRoot)
-      Assert-EvidenceStatus $reverseResult 'FAIL' 'reverse ancestor pair' 'is not an ancestor'
-      $reversePair = "$forwardDescendant $forwardAncestor"
-      $reverseHits = @((Get-AncestorProbes) | Where-Object { $_ -ceq $reversePair }).Count
-      $reverseErrors = @((($reverseResult.Stdout | ConvertFrom-Json).errors) | Where-Object { $_ -match ([regex]::Escape($forwardDescendant) + ' is not an ancestor of ' + [regex]::Escape($forwardAncestor)) })
-      Assert-Condition ($reverseHits -gt 0) "Reverse pair must be probed rather than reused from the forward success cache"
-      Assert-Condition ($reverseErrors.Count -eq $reverseHits) "Failed reverse pair must re-probe each occurrence; errors=$($reverseErrors.Count) probes=$reverseHits"
-      [IO.File]::WriteAllText($task2Path, $task2Original, $utf8)
-
-      $sideWorktree = Join-Path $script:temporaryRoot 'ancestor-cache-side'
-      $null = Invoke-FixtureGit @('-C', $projectRoot, 'worktree', 'add', '--quiet', '-b', 'side-branch', $sideWorktree, 'main')
-      $sideCommit = New-FixtureCommit $sideWorktree 'side.txt' "side work`n" 'Side branch commit'
-      $task1Path = Join-Path $evidenceDir 'task-1.json'
-      $task1Original = [IO.File]::ReadAllText($task1Path, $utf8)
-      $task1Document = $task1Original | ConvertFrom-Json -AsHashtable
-      $task1Target = $task1Document.reviews[0].target.commitSha
-      $task1Document.reviews[0].baseline.commitSha = $sideCommit
-      Write-EvidenceJson $task1Path $task1Document
-      Reset-AncestorProbes
-      $failResult = Invoke-EvidenceValidator @('-Run', $runSlug, '-Phase', 'audit', '-ProjectRoot', $projectRoot)
-      Assert-EvidenceStatus $failResult 'FAIL' 'failed ancestor pair' 'is not an ancestor'
-      $failPair = "$sideCommit $task1Target"
-      $failHits = @((Get-AncestorProbes) | Where-Object { $_ -ceq $failPair }).Count
-      $failErrors = @((($failResult.Stdout | ConvertFrom-Json).errors) | Where-Object { $_ -match ([regex]::Escape($sideCommit) + ' is not an ancestor of ' + [regex]::Escape($task1Target)) })
-      Assert-Condition ($failHits -ge 2) "Failed ancestor pair must be re-probed on every occurrence; hits=$failHits"
-      Assert-Condition ($failErrors.Count -eq $failHits) "Failed pair error count must match probe count; errors=$($failErrors.Count) probes=$failHits"
-      [IO.File]::WriteAllText($task1Path, $task1Original, $utf8)
-    } finally {
-      [IO.File]::WriteAllText($validatorPath, $originalValidator, $utf8)
-    }
+    $tokens = $null
+    $parseErrors = $null
+    $syntax = [Management.Automation.Language.Parser]::ParseFile($validatorPath, [ref]$tokens, [ref]$parseErrors)
+    Assert-Condition ($parseErrors.Count -eq 0) 'Ancestor regression validator parse failed'
+    $entrypoint = @($syntax.EndBlock.Statements | Where-Object { $_ -is [Management.Automation.Language.TryStatementAst] })[0]
+    $definitions = [IO.File]::ReadAllText($validatorPath, $utf8).Substring(0, $entrypoint.Extent.StartOffset)
+    $gitRead = $syntax.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Invoke-GitRead' }, $true)
+    $definitions = $definitions.Insert($gitRead.Body.Extent.StartOffset + 1, "`n  if (`$Arguments[0] -ceq 'merge-base') { `$script:ancestorProbeCount++ }`n")
+    $probePath = Join-Path $script:temporaryRoot 'ancestor-probe.ps1'
+    [IO.File]::WriteAllText($probePath, ($definitions + @'
+$script:root = $ProjectRoot
+$script:ancestorProbeCount = 0
+$baseline = Get-BranchHead 'main'
+$target = Get-BranchHead 'evidence-contract'
+Test-Ancestor $baseline $target 'forward first'
+Test-Ancestor $baseline $target 'forward repeated'
+Assert-Condition ($script:ancestorProbeCount -eq 1) "Successful pair must probe once; actual=$script:ancestorProbeCount"
+Test-Ancestor $target $baseline 'reverse first'
+Test-Ancestor $target $baseline 'reverse repeated'
+Test-Ancestor $baseline $target 'forward after failures'
+Assert-Condition ($script:ancestorProbeCount -eq 3) "Reverse failures must probe twice without evicting success; actual=$script:ancestorProbeCount"
+$expectedErrors = @("reverse first $target is not an ancestor of $baseline", "reverse repeated $target is not an ancestor of $baseline")
+Assert-Condition (($problems.ToArray() -join "`n") -ceq ($expectedErrors -join "`n")) 'Failed pair labels, count and order changed'
+'@), $utf8)
+    & $probePath -ProjectRoot $fixture.ProjectRoot
+    & $probePath -ProjectRoot $fixture.ProjectRoot
   }
 } catch {
   $failed++
