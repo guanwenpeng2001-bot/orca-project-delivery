@@ -35,7 +35,7 @@ Written by `scripts/bootstrap-project.ps1`; `activeRun` is updated by `scripts/c
 | --- | --- | --- |
 | `live` | `orca terminal show --terminal <handle> --json` returns `ok` | Refuse: a live coordinator owns this worktree |
 | `dead` | a handle is recorded and the probe returns non-zero | Warn, archive the old lock, take over |
-| `unknown` | no recorded handle, no `orca` on PATH, or an unparsable response | Refuse (absence is not proof — invariant 14) |
+| `unknown` | no recorded handle, no `orca` on PATH, or an unparsable response | Refuse (absence is not proof — invariants 4 and 7) |
 
 `-ForceLock` archives the existing lock into `.dev-work/archive/coordinator-lock-<timestamp>.json`
 and writes a new one regardless of state. Use it only after the holder is confirmed gone.

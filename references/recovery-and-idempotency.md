@@ -59,8 +59,11 @@ failure circuit breaker twice. Do not open a replacement Dispatch to
 terminal.
 
 **Principle.** Absence is a checkpoint, not a verdict. Keep waiting, or
-inspect within a bounded window, until a positive signal arrives: observed
-exit, proven liveness, or an authoritative settlement.
+inspect within a bounded window, and distinguish what each positive signal
+ends: proven liveness ends the *invisibility* — the worker is alive, so
+keep waiting — while only observed exit, a final transcript whose last
+agent turn sent no `worker_done`, or an authoritative settlement ends the
+*wait*.
 
 **Prohibited.** No stop, abandon, retry, release, or model downgrade from
 absence alone. Do not treat a timeout as process exit. Do not classify
@@ -75,7 +78,9 @@ exit, or an explicit runtime failure receipt.
 Task context, with explicit placement, and respect the runtime circuit
 breaker: once one Task's consecutive failures trip the breaker, the Task is
 failed and the next decision is suspension or re-planning — not another
-attempt.
+attempt. When the failed worker is a writer on a task branch, this section
+governs only the retry of the attempt — the replacement writer must still
+pass the writer-replacement gate below.
 
 **Prohibited.** Do not re-dispatch from unproven failure (`unknown`,
 `missing_status`, timeout). Do not route around the breaker with a new Run, a
@@ -86,24 +91,44 @@ silently.
 
 The failed or silent worker is a **writer** on a task branch.
 
-**Principle.** `failed`, silence, and timeout each fail to prove that the
-original writer has stopped. A replacement writer may start only after both:
+**Principle.** Two decisions must not be conflated. Retrying one proven
+`failed` or `stopped` attempt is a runtime decision: when a mutation
+receipt or an authoritative projection proves that state, its own
+next-action guidance authorizes the retry. Whether a **new writer** may
+take over the same task branch is a separate decision, and this package
+deliberately holds it to a stricter local convention, in the same spirit as
+the coordinator-lock convention in `references/coordinator-lock.md`:
+`failed`, silence, and timeout each fail to prove that the original writer
+has stopped — an accepted `failed` settles the attempt while the writer's
+terminal and process can still be live. A replacement writer may start only
+after both:
 
-1. the original writer is confirmed stopped, isolated, or has completed an
-   explicit handoff, **and** its Dispatch (and Task, if the Task itself is
-   being replaced rather than retried) has settled; and
+1. the original writer is confirmed stopped, fenced, isolated, or has
+   completed an explicit handoff, **and** its Dispatch (and Task, if the
+   Task itself is being replaced rather than retried) has settled; and
 2. the task worktree's Git state — branch, HEAD, commits, status, diff,
    untracked files — is captured in a handoff record under
    `.dev-work/runs/<run>/handoffs/`.
+
+Admission terms: *stopped* is a positively proven exit; *fenced* is the
+runtime's fenced consumer generation (`consumer_fenced` in
+`references/failure-taxonomy.md`); *isolated* means the original writer is
+provably unable to write the task branch even though its exit is
+unobserved, for example its terminal or process has been taken over or cut
+off from the worktree; an *explicit handoff* is the original writer's own
+recorded handoff. A proven `stopped` attempt already carries the stop-side
+evidence; a proven `failed` attempt does not, and that gap is the
+intentional difference between this package-local gate and the runtime's
+own proven-state guidance.
 
 The replacement then takes over sequentially: it reads the original Task,
 Role, Skills, project rules, prior reports and handoff, and the current Git
 state before writing anything.
 
 **Prohibited.** Never run a second concurrent writer on one task branch. Do
-not derive a writer from `failed` alone. Do not skip the handoff capture
-because the branch "looks clean". See `references/worker-handoff.md` for the
-capture and takeover procedure.
+not derive a writer from `failed`, silence, or timeout alone. Do not skip
+the handoff capture because the branch "looks clean". See
+`references/worker-handoff.md` for the capture and takeover procedure.
 
 ### Task cancellation
 

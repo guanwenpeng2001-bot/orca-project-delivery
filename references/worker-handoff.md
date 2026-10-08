@@ -2,12 +2,14 @@
 
 ## Writing Task handoff
 
-A replacement writer may start only after the old worker is confirmed stopped, fenced, or
-explicitly handing off. `failed` alone does not prove the writer stopped: an accepted `failed`
-completion settles the attempt, but the writer's terminal and process can still be live, and a
-silent or timed-out writer proves nothing. Confirm the writer itself has stopped or been
-isolated and its Dispatch has settled first — see the writer-replacement gate in
-`references/recovery-and-idempotency.md`.
+A replacement writer may start only after the old worker is confirmed stopped, fenced,
+isolated, or has completed an explicit handoff, and its Dispatch has settled. `failed` alone
+does not prove the writer stopped: an accepted `failed` completion settles the attempt, but
+the writer's terminal and process can still be live, and a silent or timed-out writer proves
+nothing. Retrying one proven `failed` or `stopped` attempt is a runtime decision — follow
+the receipt's own next-action guidance; a retry of a writing task still makes its worker
+the branch's new writer, so the stricter package-local writer-replacement gate in
+`references/recovery-and-idempotency.md` applies.
 
 Capture:
 
