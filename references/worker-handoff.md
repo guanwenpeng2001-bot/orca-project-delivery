@@ -2,7 +2,12 @@
 
 ## Writing Task handoff
 
-A replacement writer may start only after the old worker is confirmed stopped, failed, fenced, or explicitly handing off.
+A replacement writer may start only after the old worker is confirmed stopped, fenced, or
+explicitly handing off. `failed` alone does not prove the writer stopped: an accepted `failed`
+completion settles the attempt, but the writer's terminal and process can still be live, and a
+silent or timed-out writer proves nothing. Confirm the writer itself has stopped or been
+isolated and its Dispatch has settled first — see the writer-replacement gate in
+`references/recovery-and-idempotency.md`.
 
 Capture:
 
@@ -41,6 +46,7 @@ The coordinator validates and synthesizes a final report.
 ## Prohibited
 
 - Two live writers in one worktree.
+- Deriving a second writer from `failed`, silence, or timeout alone.
 - Assuming timeout means the process exited.
 - Starting a new writer while the old worker is unverifiable.
 - Losing uncommitted work during fallback.

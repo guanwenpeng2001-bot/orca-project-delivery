@@ -56,6 +56,9 @@ projection (`worker-show`, `worker-list` with `projection.liveness` / `projectio
 an observed process exit, fencing, or an explicit handoff. Stop, abandon, retry, and release
 must follow the installed Orca contract and authoritative state; `unverifiable` alone
 authorizes none of them. Before replacing a writer, follow `references/worker-handoff.md`.
+For the scenario-level recovery principles behind these rules — unknown mutation outcomes,
+duplicate or late completions, invisible workers, re-dispatch, cancellation, and unknown
+coordinator locks — read `references/recovery-and-idempotency.md`.
 
 ## Action
 

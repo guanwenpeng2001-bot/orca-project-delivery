@@ -39,6 +39,8 @@ Written by `scripts/bootstrap-project.ps1`; `activeRun` is updated by `scripts/c
 
 `-ForceLock` archives the existing lock into `.dev-work/archive/coordinator-lock-<timestamp>.json`
 and writes a new one regardless of state. Use it only after the holder is confirmed gone.
+The `unknown` refusal follows the shared recovery principles in
+`references/recovery-and-idempotency.md`: absence is never proof of holder death.
 
 ## Release
 
