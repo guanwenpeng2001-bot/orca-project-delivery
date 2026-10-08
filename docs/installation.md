@@ -58,12 +58,14 @@ sections recorded. Naming a Skill alone is not proof that it was loaded.
 
 ## Installation steps
 
-First obtain the 16 professional Skills from your existing Skill distribution
-or its maintainer and place each directory under `~/.agents/skills/` with its
-`SKILL.md` intact. This repository does not distribute those files or provide
-a downloader or public source URL for them. A clone alone is not a complete
-installation; if you cannot obtain the dependencies, stop before starting a
-delivery. The catalog names and paths are the dependency contract.
+Clone the companion repository
+[orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills),
+then copy each of the sixteen skill directories from that clone into
+`~/.agents/skills/` so they sit beside this package as siblings (matching
+`routing/skill-catalog.json`, which resolves `..\<skill-id>\SKILL.md` from the
+package root). Full steps are in
+[Professional Skills](professional-skills.md). A clone of this package alone is
+not a complete installation.
 
 ```powershell
 # 1. Clone the package into your skills root (adjust if your root differs)

@@ -2,7 +2,7 @@
 
 A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
@@ -89,7 +89,9 @@ and user decisions.
 ## Quick start
 
 Requirements: Windows, PowerShell 7+, Git, Claude Code, the Orca Runtime, and
-the 16 professional sibling Skills. Full details and troubleshooting:
+the [16 professional Skills](docs/professional-skills.md) from
+[orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills).
+Full details and troubleshooting:
 [docs/installation.md](docs/installation.md).
 
 ```powershell
@@ -111,7 +113,7 @@ integrate, and close. The walkthrough lives in
 orca-project-delivery/
 ├── SKILL.md                  # Coordinator entry point (17 sections, <= 250 lines)
 ├── LICENSE                   # MIT
-├── VERSION                   # 2.1.0
+├── VERSION                   # 2.2.0
 ├── PACKAGE-MANIFEST.json     # Package metadata and deliverable counts
 ├── CHANGELOG.md
 ├── docs/
@@ -133,6 +135,7 @@ orca-project-delivery/
 | Document | Contents |
 | --- | --- |
 | [Installation](docs/installation.md) | Prerequisites, directory conventions, install steps, verification, upgrade, uninstall, common install failures |
+| [Professional Skills](docs/professional-skills.md) | The 16 worker Skills, source repository, install layout, and troubleshooting |
 | [Usage](docs/usage.md) | Starting a delivery from the coordinator entry, the full stage sequence, role/model routing, branch and worktree rules, evidence and reports, worker receipts, Q&A |
 | [Architecture](docs/architecture.md) | Control vs. delivery plane, authority sources, role/workflow/skill tables, evidence model, coordinator lock, the 12 invariants |
 | [FAQ](docs/faq.md) | Common questions and failure-mode troubleshooting |

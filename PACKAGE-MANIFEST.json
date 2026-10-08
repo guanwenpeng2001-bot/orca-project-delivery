@@ -1,10 +1,10 @@
 {
   "name": "orca-project-delivery",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-09",
   "releasedAt": "2026-10-09",
-  "revisionNote": "Claude-only delivery with a single role-to-model/effort routing authority, 12 roles, explicit Skill delivery, conservative capability evidence, and offline package regression checks. 2.1.0 adds the public documentation set for the open-source GitHub release. See CHANGELOG.md.",
+  "revisionNote": "Claude-only delivery with a single role-to-model/effort routing authority, 12 roles, explicit Skill delivery, conservative capability evidence, and offline package regression checks. 2.2.0 links the public orca-professional-skills repository and clarifies Git evidence path placeholders. See CHANGELOG.md.",
   "deliverables": {
     "roles": 12,
     "professionalSkills": 16,

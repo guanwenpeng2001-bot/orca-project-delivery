@@ -6,6 +6,15 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 
 ## Unreleased
 
+## 2.2.0 — 2026-10-09
+
+Documentation and cross-repository linking for the public professional Skills distribution. No runtime behavior, routing, schema, or workflow changes.
+
+- Added [docs/professional-skills.md](docs/professional-skills.md): lists all 16 Skills, points to [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills), documents the sibling install layout under `~/.agents/skills/`, and describes missing-Skill symptoms.
+- Updated [docs/installation.md](docs/installation.md) and [README.md](README.md) with reciprocal links to the professional Skills repository and install guidance.
+- Clarified `-EvidencePath` placeholders in `SKILL.md` and `docs/usage.md`: use `<evidence-json>` for the Git evidence file at `runs/<run>/evidence/git/<task-key>.json` (Minor-1).
+- Bumped `VERSION`, `PACKAGE-MANIFEST.json`, and the release assertion in `scripts/verify-package.ps1` to 2.2.0.
+
 ### Evidence integrity closure — 2026-10-08
 
 - Constrained source workerDone message/Task/Dispatch IDs to Runtime prefixes plus 12 lowercase hexadecimal characters; clarified in the entry Skill and evidence reference that message authenticity is an unverifiable recorder honesty declaration, and made evidence template placeholders explicit.

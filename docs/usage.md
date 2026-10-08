@@ -130,8 +130,10 @@ action, using bounded worker reads where needed.
 
 For a source Task whose `worker_done` is confirmed: register `source.*` in
 its `source-registered` evidence, then run
-`scripts/validate-git-evidence.ps1 -EvidencePath <task-json> -Phase
-sourceRegistered` with the control tree as `-ProjectRoot`.
+`scripts/validate-git-evidence.ps1 -EvidencePath <evidence-json> -Phase
+sourceRegistered` with the control tree as `-ProjectRoot`, where
+`<evidence-json>` is the Git evidence file at
+`runs/<run>/evidence/git/<task-key>.json`.
 
 ### 7. Review
 
