@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "run": "<run>",
+  "subject": { "kind": "task", "taskKey": "<task-key>" },
+  "state": "source-registered",
+  "source": {
+    "branch": "<task-branch>",
+    "worktree": "<absolute-path>",
+    "reportedCommit": "<40-hex-or-null>",
+    "workerDone": { "messageId": "msg_...", "taskId": "task_...", "dispatchId": "ctx_..." }
+  }
+}
