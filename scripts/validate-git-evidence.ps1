@@ -238,7 +238,7 @@ function Get-RunEvidence {
   }
 }
 
-function Test-Assignments($Entries) {
+function Test-Assignments($Entries, [string]$CoverageTaskKey) {
   $directory = Join-Path $script:runDirectory 'assignments'
   if (-not (Test-Path -LiteralPath $directory -PathType Container)) { return }
   foreach ($file in Get-ChildItem -LiteralPath $directory -Filter '*.json' -File) {
@@ -254,7 +254,9 @@ function Test-Assignments($Entries) {
         $evidence = Get-Evidence $resolved
         Assert-Evidence ($evidence.subject.kind -ceq 'task' -and $evidence.subject.taskKey -ceq $assignment.taskKey) "Assignment gitEvidencePath task identity mismatch"
         if ($script:Phase -ceq 'final' -and $entered) { Assert-Evidence ($evidence.state -ceq 'integrated') "Final coverage lacks intended integrated task $($assignment.taskKey); UNVERIFIABLE" }
-        Assert-Evidence (@($Entries | Where-Object { [IO.Path]::GetFullPath($_.Path) -eq $resolved }).Count -eq 1) 'Assignment gitEvidencePath must be in the run evidence/git directory'
+        if (-not $CoverageTaskKey -or $assignment.taskKey -ceq $CoverageTaskKey) {
+          Assert-Evidence (@($Entries | Where-Object { [IO.Path]::GetFullPath($_.Path) -eq $resolved }).Count -eq 1) 'Assignment gitEvidencePath must be in the run evidence/git directory'
+        }
       }
     }
   }
@@ -333,13 +335,13 @@ try {
       $selected = Get-Evidence $EvidencePath
       if ($selected.subject.kind -ceq 'task') {
         $entries = @([pscustomobject]@{ Path = [IO.Path]::GetFullPath($EvidencePath); Document = $selected })
-        Test-Assignments $entries
+        Test-Assignments $entries $selected.subject.taskKey
         Test-TaskEvidence $selected $Phase
       }
       else {
         if ($Phase -notin @('final', 'audit')) { throw 'Run evidence only supports final or audit phase.' }
         $entries = @(Get-RunEvidence)
-        Test-Assignments $entries
+        Test-Assignments $entries $selected.subject.taskKey
         Test-RunFinal $selected $entries ($Phase -ceq 'final')
       }
     } else {

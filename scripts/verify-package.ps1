@@ -943,6 +943,34 @@ try {
     Write-EvidenceJson $evidencePath $document
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'unchanged outcome postMerge'
   }
+  Invoke-Check 'evidence/negative-unchanged-outcome' {
+    $fixture = New-EvidenceProject 'unchanged-negative'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'evidence-contract')
+    $afterMerge = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $document $taskCommit $fixture.BaselineCommit
+    Complete-IntegrationEvidence $document $afterMerge 'unchanged' 'git merge --no-edit evidence-contract'
+    $document.integration.explanation = 'Claimed unchanged but headAfter differs from baselineBefore.'
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'unchanged with unequal commits' 'unchanged requires equal commits and explanation'
+    $equalDoc = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract-equal' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $equalDoc $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $equalDoc $taskCommit $afterMerge
+    Complete-IntegrationEvidence $equalDoc $afterMerge 'unchanged' 'git merge --no-edit evidence-contract'
+    $equalDoc.integration.baselineBefore.commitSha = $afterMerge
+    $equalDoc.integration.headAfter.commitSha = $afterMerge
+    $equalDoc.integration.checks[0].observed = $afterMerge
+    $equalDoc.integration.checks[0].commitSha = $afterMerge
+    $equalDoc.integration.checks[4].observed = $afterMerge
+    $equalDoc.integration.checks[4].commitSha = $afterMerge
+    $equalDoc.subject.taskKey = 'evidence-contract-equal'
+    $noExplanationPath = Join-Path $fixture.EvidenceDirectory 'unchanged-no-explanation.json'
+    Write-EvidenceJson $noExplanationPath $equalDoc
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $noExplanationPath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'unchanged without explanation' 'unchanged requires equal commits and explanation'
+  }
   Invoke-Check 'evidence/negative-clean-merge-parent-binding' {
     $fixture = New-EvidenceProject 'parent-binding'
     $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
@@ -998,6 +1026,7 @@ try {
     $misplacedPath = Join-Path $fixture.EvidenceDirectory 'misplaced-run-field.json'
     Write-EvidenceJson $misplacedPath $misplaced
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $misplacedPath, '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'evidence file outside declared run directory' 'must live under runs/scope-run-b/evidence/git'
+    Remove-Item -LiteralPath $misplacedPath -Force
     $secondTask = Join-Path $script:temporaryRoot 'scope-parity-second-task'
     $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '-b', 'other-formal', $secondTask, 'main')
     $null = New-FixtureCommit $secondTask 'other.txt' "other`n" 'Other formal task'
@@ -1010,6 +1039,38 @@ try {
     })
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', 'scope-run-a', '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' '-Run mode missing second formal evidence' 'gitEvidencePath missing'
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' '-EvidencePath mode must match assignment coverage' 'gitEvidencePath missing'
+    Remove-Item -LiteralPath (Join-Path $assignmentsDirectory 'other-formal.json') -Force
+    $otherWorktree = Join-Path $script:temporaryRoot 'scope-parity-other-integrated'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '-b', 'other-formal-integrated', $otherWorktree, 'main')
+    $otherCommit = New-FixtureCommit $otherWorktree 'integrated.txt' "integrated`n" 'Integrated other task'
+    [IO.File]::WriteAllText((Join-Path $fixture.ProjectRoot '.dev-work/runs/scope-run-a/reviews/other-formal-integrated.md'), "# Review`n", $utf8)
+    $otherEvidencePath = Join-Path $fixture.EvidenceDirectory 'other-formal-integrated.json'
+    $otherDocument = New-TaskEvidenceDocument $fixture.RunSlug 'other-formal-integrated' 'other-formal-integrated' $otherWorktree $otherCommit
+    Add-ReviewEvidence $otherDocument $otherCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $otherDocument $otherCommit $fixture.BaselineCommit
+    Complete-IntegrationEvidence $otherDocument $otherCommit 'advanced-fast-forward' 'git merge --no-edit other-formal-integrated'
+    Write-EvidenceJson $otherEvidencePath $otherDocument
+    Write-EvidenceJson (Join-Path $assignmentsDirectory 'other-formal-integrated.json') ([ordered]@{
+      schemaVersion = 1; taskKey = 'other-formal-integrated'; role = 'software-implementer'; status = 'integrated'
+      branch = [ordered]@{ base = 'main'; work = 'other-formal-integrated'; mergeTarget = 'main'; worktree = $otherWorktree }
+      evidence = [ordered]@{ gitEvidencePath = "runs/$($fixture.RunSlug)/evidence/git/other-formal-integrated.json" }
+    })
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', 'scope-run-a', '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' '-Run with integrated peer evidence present'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' '-EvidencePath parity when integrated peer evidence exists'
+    Remove-Item -LiteralPath $otherEvidencePath -Force
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' '-EvidencePath still requires peer gitEvidencePath file' 'other-formal-integrated gitEvidencePath missing'
+    Write-EvidenceJson $otherEvidencePath $otherDocument
+    $validatorPath = Join-Path $stagedPackage 'scripts/validate-git-evidence.ps1'
+    $validatorLines = [IO.File]::ReadAllLines($validatorPath, $utf8)
+    $mutatedLines = @($validatorLines | ForEach-Object { if ($_ -match 'if \(-not \$CoverageTaskKey') { $_ -replace 'if \(-not \$CoverageTaskKey -or \$assignment\.taskKey -ceq \$CoverageTaskKey\)', 'if ($true)' } else { $_ } })
+    Assert-Condition ((Compare-Object $validatorLines $mutatedLines).Count -gt 0) 'CoverageTaskKey guard mutation did not change validator'
+    [IO.File]::WriteAllText($validatorPath, (($mutatedLines | ForEach-Object { $_ + "`n" }) -join ''), $utf8)
+    try {
+      $mutantResult = Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)
+      Assert-Condition (((($mutantResult.Stdout | ConvertFrom-Json).status) -ceq 'FAIL')) 'Removing CoverageTaskKey guard must restore over-strict -EvidencePath rejection'
+    } finally {
+      [IO.File]::WriteAllText($validatorPath, (($validatorLines | ForEach-Object { $_ + "`n" }) -join ''), $utf8)
+    }
   }
   Invoke-Check 'evidence/negative-vacuous-run-final' {
     $fixture = New-EvidenceProject 'vacuous-final'
