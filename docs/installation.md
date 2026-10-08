@@ -218,6 +218,6 @@ A lower check count is not sufficient evidence of success. Missing sibling
 Skills can prevent fixture staging, and setup problems can truncate the
 run. Inspect every `FAIL` line and the `skills: ... resolved` line before
 checking whether you invoked an older or different package copy. Confirm you are running `scripts/verify-package.ps1` from the
-directory you just installed, that `VERSION` matches the release you expect
-(2.1.0), and that no `FAIL` line scrolled past. Any `FAIL` line means the
+directory you just installed, that `VERSION` matches the release you expect,
+and that no `FAIL` line scrolled past. Any `FAIL` line means the
 installation is not accepted, regardless of the PASS count.
