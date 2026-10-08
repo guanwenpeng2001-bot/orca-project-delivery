@@ -12,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 $problems = [Collections.Generic.List[string]]::new()
 $documents = @{}
 $knownCommits = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+$knownAncestorPairs = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 
 function Assert-Evidence([bool]$Condition, [string]$Message) {
   if (-not $Condition) { $script:problems.Add($Message) }
@@ -98,7 +99,15 @@ function Get-Evidence([string]$Path) {
 
 function Test-Ancestor([string]$Ancestor, [string]$Descendant, [string]$Label) {
   if ($Ancestor -and $Descendant) {
-    Assert-Evidence (Invoke-GitRead $script:root @('merge-base', '--is-ancestor', $Ancestor, $Descendant) -Probe) "$Label $Ancestor is not an ancestor of $Descendant"
+    # Keys are immutable commit SHAs; only successful probes are cached so
+    # failures re-probe per occurrence and keep their per-occurrence errors.
+    $pairKey = $Ancestor + ' ' + $Descendant
+    if (-not $script:knownAncestorPairs.Contains($pairKey)) {
+      if (Invoke-GitRead $script:root @('merge-base', '--is-ancestor', $Ancestor, $Descendant) -Probe) {
+        [void]$script:knownAncestorPairs.Add($pairKey)
+      }
+    }
+    Assert-Evidence ($script:knownAncestorPairs.Contains($pairKey)) "$Label $Ancestor is not an ancestor of $Descendant"
   }
 }
 
