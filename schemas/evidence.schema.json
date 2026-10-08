@@ -91,7 +91,11 @@
             "reportedCommit": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
             "workerDone": {
               "type": "object", "required": ["messageId", "taskId", "dispatchId"], "additionalProperties": false,
-              "properties": { "messageId": { "$ref": "#/$defs/text" }, "taskId": { "$ref": "#/$defs/text" }, "dispatchId": { "$ref": "#/$defs/text" } }
+              "properties": {
+                "messageId": { "type": "string", "pattern": "^msg_[0-9a-f]{12}$" },
+                "taskId": { "type": "string", "pattern": "^task_[0-9a-f]{12}$" },
+                "dispatchId": { "type": "string", "pattern": "^ctx_[0-9a-f]{12}$" }
+              }
             }
           }
         },

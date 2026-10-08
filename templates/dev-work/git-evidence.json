@@ -7,6 +7,6 @@
     "branch": "<task-branch>",
     "worktree": "<absolute-path>",
     "reportedCommit": "<40-hex-or-null>",
-    "workerDone": { "messageId": "msg_...", "taskId": "task_...", "dispatchId": "ctx_..." }
+    "workerDone": { "messageId": "msg_<12-lowercase-hex>", "taskId": "task_<12-lowercase-hex>", "dispatchId": "ctx_<12-lowercase-hex>" }
   }
 }

@@ -6,6 +6,12 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 
 ## Unreleased
 
+### Evidence integrity closure — 2026-10-08
+
+- Constrained source workerDone message/Task/Dispatch IDs to Runtime prefixes plus 12 lowercase hexadecimal characters; clarified in the entry Skill and evidence reference that message authenticity is an unverifiable recorder honesty declaration, and made evidence template placeholders explicit.
+- Added assignment statuses integrating, integrated and superseded, with optional nonempty supersededBy/supersedes logical-task pointers. Superseded formal rounds waive their own evidence obligation only after a unique different same-run formal successor has entered the lifecycle and passes integrated-history validation for the same delivery branch; missing, cyclic, cross-run and unintegrated targets fail closed.
+- Added ID/schema regressions, isolated superseded positive/negative fixtures and mutation checks; retained all existing phase assertions, default run gates, entry headings and package version 2.0.0. Assignment template remains planned with optional replacement pointers omitted.
+
 ### Orchestration adoption — 2026-10-08
 
 - Added the version-1 commit evidence schema, Task/run-final templates, optional assignment evidence pointer and read-only Git validator with sourceRegistered, review, preMerge, postMerge, final and audit phases; default run validation remains unchanged.

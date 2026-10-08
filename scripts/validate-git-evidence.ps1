@@ -238,13 +238,47 @@ function Get-RunEvidence {
   }
 }
 
+function Test-SupersededAssignment($Assignment, $Assignments, $EnteredStatuses) {
+  $label = "Assignment $($Assignment.taskKey) supersededBy"
+  $key = $Assignment.supersededBy
+  if ($key -isnot [string] -or [string]::IsNullOrWhiteSpace($key) -or $key -ceq $Assignment.taskKey) {
+    Assert-Evidence $false "$label must name a different logical task in this run"
+    return
+  }
+  $matches = @($Assignments | Where-Object { $_.taskKey -ceq $key })
+  if ($matches.Count -ne 1) {
+    Assert-Evidence $false "$label must identify exactly one existing assignment in this run"
+    return
+  }
+  $successor = $matches[0]
+  if ($successor.status -cnotin $EnteredStatuses -or [string]::IsNullOrWhiteSpace($successor.branch.mergeTarget)) {
+    Assert-Evidence $false "$label must identify a formal task that entered the evidence lifecycle"
+    return
+  }
+  Assert-Evidence ($successor.branch.mergeTarget -ceq $Assignment.branch.mergeTarget) "$label delivery branch mismatch"
+  $path = $successor.evidence.gitEvidencePath
+  if (-not $path) { $path = "runs/$script:runName/evidence/git/$key.json" }
+  $evidence = Get-Evidence (Resolve-EvidencePath $path $script:devWork)
+  Assert-Evidence ($evidence.subject.kind -ceq 'task' -and $evidence.subject.taskKey -ceq $key) "$label evidence task identity mismatch"
+  Assert-Evidence ($evidence.state -ceq 'integrated') "$label requires integrated successor evidence"
+  if ($evidence.state -ceq 'integrated') {
+    Assert-Evidence ($evidence.integration.headAfter.branch -ceq $successor.branch.mergeTarget) "$label integrated delivery branch mismatch"
+    Test-TaskEvidence $evidence 'audit'
+  }
+}
+
 function Test-Assignments($Entries, [string]$CoverageTaskKey) {
   $directory = Join-Path $script:runDirectory 'assignments'
   if (-not (Test-Path -LiteralPath $directory -PathType Container)) { return }
-  foreach ($file in Get-ChildItem -LiteralPath $directory -Filter '*.json' -File) {
-    $assignment = Read-Json $file.FullName
+  $assignments = @(Get-ChildItem -LiteralPath $directory -Filter '*.json' -File | ForEach-Object { Read-Json $_.FullName })
+  $enteredStatuses = @('review', 'completed', 'integrating', 'integrated')
+  foreach ($assignment in $assignments) {
     $formal = -not [string]::IsNullOrWhiteSpace($assignment.branch.mergeTarget)
-    $entered = $assignment.status -in @('review', 'completed', 'integrating', 'integrated')
+    if ($formal -and $assignment.status -ceq 'superseded') {
+      Test-SupersededAssignment $assignment $assignments $enteredStatuses
+      continue
+    }
+    $entered = $assignment.status -in $enteredStatuses
     $path = $assignment.evidence.gitEvidencePath
     if ($formal -and ($entered -or $path)) {
       if (-not $path) { $path = "runs/$script:runName/evidence/git/$($assignment.taskKey).json" }

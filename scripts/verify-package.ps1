@@ -260,7 +260,7 @@ function New-TaskEvidenceDocument {
       branch = $TaskBranch
       worktree = $TaskWorktree
       reportedCommit = $TaskCommit
-      workerDone = [ordered]@{ messageId = 'msg_source_0001'; taskId = 'task_source_0001'; dispatchId = 'ctx_source_0001' }
+      workerDone = [ordered]@{ messageId = 'msg_000000000001'; taskId = 'task_000000000001'; dispatchId = 'ctx_000000000001' }
     }
   }
 }
@@ -665,6 +665,108 @@ try {
     $document = $result.Stdout | ConvertFrom-Json
     Assert-Condition ($document.ok -eq $false -and ($document.errors -join '\n') -match 'artifacts\.evidencePath') "Missing evidence-path diagnostic: $($result.Stdout)"
   }
+  Invoke-Check 'evidence/worker-done-id-format' {
+    $document = New-TaskEvidenceDocument 'format-run' 'format-task' 'format-task' '<worktree>' $null
+    $document.source.reportedCommit = $null
+    $schema = [IO.File]::ReadAllText((Join-Path $stagedPackage 'schemas/evidence.schema.json'))
+    Assert-Condition (Test-Json -Json ($document | ConvertTo-Json -Depth 100) -Schema $schema) 'Valid 12-hex workerDone IDs must pass'
+    foreach ($case in @(
+      @{ Field = 'messageId'; Value = 'msg_scope-parity-fix-done' }
+      @{ Field = 'messageId'; Value = 'msg_ABCDEF012345' }
+      @{ Field = 'taskId'; Value = 'task_123' }
+      @{ Field = 'dispatchId'; Value = 'ctx_00000000000g' }
+    )) {
+      $invalid = Copy-EvidenceDocument $document
+      $invalid.source.workerDone[$case.Field] = $case.Value
+      Assert-Condition (-not (Test-Json -Json ($invalid | ConvertTo-Json -Depth 100) -Schema $schema -ErrorAction SilentlyContinue)) "Invalid workerDone $($case.Field) accepted: $($case.Value)"
+    }
+  }
+  Invoke-Check 'evidence/assignment-status-schema' {
+    $assignment = Read-PackageJson 'templates/dev-work/assignment.json'
+    $schema = [IO.File]::ReadAllText((Join-Path $stagedPackage 'schemas/assignment.schema.json'))
+    foreach ($status in @('integrating', 'integrated', 'superseded')) {
+      $assignment.status = $status
+      $assignment.supersededBy = 'logical-task'
+      $assignment.supersedes = 'earlier-round'
+      Assert-Condition (Test-Json -Json ($assignment | ConvertTo-Json -Depth 100) -Schema $schema -ErrorAction SilentlyContinue) "Assignment status $status must pass schema"
+    }
+    $assignment.supersededBy = 42
+    Assert-Condition (-not (Test-Json -Json ($assignment | ConvertTo-Json -Depth 100) -Schema $schema -ErrorAction SilentlyContinue)) 'Non-string supersededBy accepted'
+  }
+  foreach ($supersededCase in @('valid', 'missing-pointer', 'missing-task', 'missing-evidence', 'not-integrated', 'not-entered', 'duplicate-task', 'self', 'cycle', 'other-run', 'identity-mismatch', 'invalid-integration')) {
+    Invoke-Check "evidence/superseded-$supersededCase" {
+      $fixture = New-EvidenceProject "superseded-$supersededCase"
+      $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+      $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', $fixture.TaskBranch)
+      $document = New-TaskEvidenceDocument $fixture.RunSlug $fixture.TaskBranch $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+      Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+      Add-AdmissionEvidence $document $taskCommit $fixture.BaselineCommit
+      Complete-IntegrationEvidence $document $taskCommit 'advanced-fast-forward' "git merge --no-edit $($fixture.TaskBranch)"
+      $evidencePath = Join-Path $fixture.EvidenceDirectory "$($fixture.TaskBranch).json"
+      Write-AssignmentFixture $fixture
+      $assignmentDirectory = Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/assignments"
+      $successorPath = Join-Path $assignmentDirectory "$($fixture.TaskBranch).json"
+      $successor = [IO.File]::ReadAllText($successorPath) | ConvertFrom-Json -AsHashtable
+      $rework = Copy-EvidenceDocument $successor
+      $rework.taskKey = 'rework-round'
+      $rework.status = 'superseded'
+      $rework.supersededBy = $fixture.TaskBranch
+      $rework.evidence.gitEvidencePath = "runs/$($fixture.RunSlug)/evidence/git/rework-round.json"
+      $diagnostic = 'supersededBy'
+      switch ($supersededCase) {
+        'missing-pointer' { $rework.Remove('supersededBy') }
+        'missing-task' { $rework.supersededBy = 'absent-task' }
+        'missing-evidence' { $successor.evidence.gitEvidencePath = "runs/$($fixture.RunSlug)/evidence/git/missing.json"; $diagnostic = 'Missing evidence file|gitEvidencePath missing' }
+        'duplicate-task' { Write-EvidenceJson (Join-Path $assignmentDirectory 'duplicate.json') $successor }
+        'identity-mismatch' { $document.subject.taskKey = 'different-task'; $diagnostic = 'identity mismatch' }
+        'not-integrated' { $document.state = 'reviewed'; $document.Remove('integration') }
+        'not-entered' { $successor.status = 'planned' }
+        'self' { $rework.supersededBy = $rework.taskKey }
+        'cycle' { $successor.status = 'superseded'; $successor.supersededBy = $rework.taskKey }
+        'other-run' { $successor.evidence.gitEvidencePath = 'runs/other-run/evidence/git/foreign.json'; $diagnostic = 'must live under' }
+        'invalid-integration' { $document.integration.mergeEvidence.exitCode = 1; $diagnostic = 'mergeEvidence' }
+      }
+      Write-EvidenceJson $evidencePath $document
+      if ($supersededCase -ceq 'other-run') {
+        $foreignPath = Join-Path $fixture.ProjectRoot ".dev-work/$($successor.evidence.gitEvidencePath)"
+        [void][IO.Directory]::CreateDirectory((Split-Path -Parent $foreignPath))
+        Write-EvidenceJson $foreignPath $document
+      }
+      Write-EvidenceJson $successorPath $successor
+      Write-EvidenceJson (Join-Path $assignmentDirectory 'rework-round.json') $rework
+      $expected = if ($supersededCase -ceq 'valid') { 'PASS' } else { 'FAIL' }
+      foreach ($selector in @('task', 'run')) {
+        $arguments = if ($selector -ceq 'task') { @('-EvidencePath', $evidencePath) } else { @('-Run', $fixture.RunSlug) }
+        Assert-EvidenceStatus (Invoke-EvidenceValidator ($arguments + @('-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot))) $expected "superseded $supersededCase $selector" $diagnostic
+      }
+      if ($supersededCase -ceq 'valid') {
+        $finalPath = Join-Path $fixture.EvidenceDirectory 'run-final-verification.json'
+        Write-EvidenceJson $finalPath (New-RunFinalDocument $fixture.RunSlug $taskCommit $fixture.DeliveryWorktree @($fixture.TaskBranch))
+        Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'superseded final coverage'
+        $validatorPath = Join-Path $stagedPackage 'scripts/validate-git-evidence.ps1'
+        $original = [IO.File]::ReadAllText($validatorPath, $utf8)
+        $exemption = "if (`$formal -and `$assignment.status -ceq 'superseded')"
+        $pointerCheck = 'Test-SupersededAssignment $assignment $assignments $enteredStatuses'
+        Assert-Condition ($original.Contains($exemption) -and $original.Contains($pointerCheck)) 'Superseded mutation targets missing'
+        try {
+          [IO.File]::WriteAllText($validatorPath, $original.Replace($exemption, 'if ($false)'), $utf8)
+          $result = Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)
+          Assert-Rejected 'removed superseded exemption' { Assert-EvidenceStatus $result 'PASS' 'superseded positive assertion' } 'expected status PASS'
+          [IO.File]::WriteAllText($validatorPath, $original.Replace($pointerCheck, ''), $utf8)
+          $rework.Remove('supersededBy')
+          Write-EvidenceJson (Join-Path $assignmentDirectory 'rework-round.json') $rework
+          $result = Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)
+          Assert-Rejected 'removed superseded pointer check' { Assert-EvidenceStatus $result 'FAIL' 'superseded negative assertion' } 'expected status FAIL'
+        } finally { [IO.File]::WriteAllText($validatorPath, $original, $utf8) }
+        $rework.Remove('evidence')
+        Write-EvidenceJson (Join-Path $assignmentDirectory 'rework-round.json') $rework
+        Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'missing supersededBy without own evidence pointer' 'supersededBy'
+        $rework.supersededBy = $fixture.TaskBranch
+        Write-EvidenceJson (Join-Path $assignmentDirectory 'rework-round.json') $rework
+        Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'valid supersededBy without own evidence pointer'
+      }
+    }
+  }
   Invoke-Check 'evidence/positive-full-chain' {
     $fixture = New-EvidenceProject 'chain'
     $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
@@ -825,7 +927,7 @@ try {
       @{ Name = 'schema-version'; Fragment = 'schemaVersion'; Change = { param($d) $d.schemaVersion = 2 } }
       @{ Name = 'sha-format'; Fragment = '/source/reportedCommit'; Change = { param($d) $d.source.reportedCommit = 'not-a-commit-sha' } }
       @{ Name = 'unknown-commit'; Fragment = 'does not exist'; Change = { param($d) $d.reviews[0].target.commitSha = '1234567890123456789012345678901234567890' } }
-      @{ Name = 'reviewer-not-independent'; Fragment = 'independence'; Change = { param($d) $d.reviews[0].reviewer.taskId = 'task_source_0001'; $d.reviews[0].reviewer.dispatchId = 'ctx_source_0001' } }
+      @{ Name = 'reviewer-not-independent'; Fragment = 'independence'; Change = { param($d) $d.reviews[0].reviewer.taskId = 'task_000000000001'; $d.reviews[0].reviewer.dispatchId = 'ctx_000000000001' } }
       @{ Name = 'approved-without-target-sha'; Fragment = 'Required properties.*commitSha'; Change = { param($d) $d.reviews[0].target.Remove('commitSha') } }
       @{ Name = 'target-equals-baseline'; Fragment = 'target equals baseline'; Change = { param($d) $d.reviews[0].target.commitSha = $d.reviews[0].baseline.commitSha } }
       @{ Name = 'baseline-not-ancestor'; Fragment = 'is not an ancestor'; Change = { param($d) $d.reviews[0].baseline.commitSha = $sideCommit } }

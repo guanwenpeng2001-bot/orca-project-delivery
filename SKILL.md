@@ -122,6 +122,7 @@ Override only for an explicit user base, a review of another branch, a true unin
 Prefer reviewing and merging prerequisites before creating dependent implementation Tasks. Encode only true dependencies; use parallel waves and avoid chains deeper than 3–4 steps.
 Workers commit authorized source changes on their task branches before reporting and never merge their own branches.
 Read-only Tasks must explicitly declare `branch.mergeTarget: null` in assignments; source Tasks name the delivery branch and `evidence.gitEvidencePath` under `runs/<run>/evidence/git/`.
+Assignment status also permits `integrating`, `integrated` and `superseded`. Replaced repair rounds retain assignments with `status: superseded` and `supersededBy` naming the integrated logical task in the same run; optional `supersedes` is a descriptive backlink. The validator waives the replaced round's own evidence obligation only after verifying a unique different formal successor in an entered status, matching delivery branch and valid integrated evidence; missing/invalid/unintegrated successors fail.
 Follow `references/evidence-binding.md`: the coordinator records observations and writes evidence before each read-only validation; only `PASS` authorizes the applicable gate.
 
 ## Worker input order
@@ -152,6 +153,8 @@ Preserve project policy verbatim; `AGENTS.md` is always last.
 9. Record completed reviews in `reviews[]`, set `state: reviewed`, then validate `-Phase review`; convert accepted findings into fix Tasks and re-review. Validation failure is UNVERIFIABLE, never approval.
 10. After each approval, record admission/baseline and pass `-Phase preMerge`, then merge serially in the delivery worktree. Capture the merge and fresh checks at `headAfter`, write complete `integrated` evidence, and pass `-Phase postMerge` before treating the source dependency as integrated. Record diff/artifact exclusions, base later Tasks on updated delivery, then reclaim eligible worktrees.
 11. After all intended changes integrate, release-verifier verifies latest delivery in a clean independent worktree; the coordinator writes the unique run-final evidence and validates `-Run <run> -Phase final`. Write reports, summarize decisions, settle workers and release the coordinator. This final barrier never moves earlier and is never skipped.
+
+`source.workerDone` IDs require `msg_` / `task_` / `ctx_` plus 12 lowercase hexadecimal characters. `messageId` authenticity cannot be mechanically verified by the local validator: it is the recorder's honesty declaration, with credibility no higher than the recorder; format validation cannot prove message existence or ownership.
 
 A nonzero start receipt alone does not prove a failed attempt: inspect `failedStage` and `residualResources` using `references/failure-taxonomy.md`.
 `outcome_unknown`, `turn_start_unobserved`, timeouts and unverifiable liveness do not authorize stop, abandon, retry or release.
