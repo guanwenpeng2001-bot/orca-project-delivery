@@ -929,6 +929,99 @@ try {
     $null = New-FixtureCommit $fixture.DeliveryWorktree 'advance.txt' "final advance`n" 'Final main advance'
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'final target not current main' 'target does not equal'
   }
+  Invoke-Check 'evidence/positive-unchanged-outcome' {
+    $fixture = New-EvidenceProject 'unchanged-outcome'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'evidence-contract')
+    $afterMerge = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $document $taskCommit $afterMerge
+    Complete-IntegrationEvidence $document $afterMerge 'unchanged' 'git merge --no-edit evidence-contract'
+    $document.integration.explanation = 'Already up to date: the reviewed target was already an ancestor of main.'
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'unchanged outcome postMerge'
+  }
+  Invoke-Check 'evidence/negative-clean-merge-parent-binding' {
+    $fixture = New-EvidenceProject 'parent-binding'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $mainAdvance = New-FixtureCommit $fixture.DeliveryWorktree 'other.txt' "main advance`n" 'Main advance commit'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'checkout', '-q', '-b', 'other-main')
+    $null = New-FixtureCommit $fixture.DeliveryWorktree 'side.txt' "side`n" 'Side on other-main'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'evidence-contract')
+    $wrongMerge = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'checkout', '-q', 'main')
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'other-main')
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', 'evidence-contract')
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $document $taskCommit $mainAdvance
+    Complete-IntegrationEvidence $document $wrongMerge 'advanced-clean-merge' 'git merge --no-edit evidence-contract'
+    Write-EvidenceJson $evidencePath $document
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'wrong merge parents for clean-merge' 'requires the recorded merge parents'
+    $parents = (Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'show', '-s', '--format=%P', $wrongMerge)) -split ' '
+    $swapped = Copy-EvidenceDocument $document
+    $swapped.integration.baselineBefore.commitSha = $parents[1]
+    $swapped.integration.review.targetCommitSha = $parents[0]
+    $swappedPath = Join-Path $fixture.EvidenceDirectory 'parent-order-swapped.json'
+    Write-EvidenceJson $swappedPath $swapped
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $swappedPath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'swapped recorded parents' 'requires the recorded merge parents'
+    $validatorPath = Join-Path $stagedPackage 'scripts/validate-git-evidence.ps1'
+    $validatorLines = [IO.File]::ReadAllLines($validatorPath, $utf8)
+    $mutatedLines = @($validatorLines | Where-Object { $_ -notmatch 'requires the recorded merge parents' })
+    Assert-Condition ($mutatedLines.Count -lt $validatorLines.Count) 'Parent-binding mutation did not remove the assertion'
+    [IO.File]::WriteAllText($validatorPath, (($mutatedLines | ForEach-Object { $_ + "`n" }) -join ''), $utf8)
+    try {
+      $mutantResult = Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)
+      Assert-Condition (((($mutantResult.Stdout | ConvertFrom-Json).status) -ceq 'PASS')) 'Removing parent-binding assertion must allow wrong-parent evidence (mutation should fail suite if assertion removed)'
+    } finally {
+      [IO.File]::WriteAllText($validatorPath, (($validatorLines | ForEach-Object { $_ + "`n" }) -join ''), $utf8)
+    }
+  }
+  Invoke-Check 'evidence/evidence-path-run-scope-and-assignments' {
+    $fixture = New-EvidenceProject 'scope-parity' 'scope-run-a' 'formal-task'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'formal-task.json'
+    $document = New-TaskEvidenceDocument $fixture.RunSlug 'formal-task' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Write-EvidenceJson $evidencePath $document
+    $runBDirectory = Join-Path $fixture.ProjectRoot '.dev-work/runs/scope-run-b'
+    $runBEvidence = Join-Path $runBDirectory 'evidence/git'
+    [void][IO.Directory]::CreateDirectory($runBEvidence)
+    [void][IO.Directory]::CreateDirectory((Join-Path $runBDirectory 'reviews'))
+    [IO.File]::WriteAllText((Join-Path $runBDirectory 'reviews/formal-task.md'), "# Review`n", $utf8)
+    [IO.File]::WriteAllText((Join-Path $runBDirectory 'run-state.json'), '{"deliveryBranch":"main"}', $utf8)
+    $misplaced = Copy-EvidenceDocument $document
+    $misplaced.run = 'scope-run-b'
+    $misplacedPath = Join-Path $fixture.EvidenceDirectory 'misplaced-run-field.json'
+    Write-EvidenceJson $misplacedPath $misplaced
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $misplacedPath, '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'evidence file outside declared run directory' 'must live under runs/scope-run-b/evidence/git'
+    $secondTask = Join-Path $script:temporaryRoot 'scope-parity-second-task'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '-b', 'other-formal', $secondTask, 'main')
+    $null = New-FixtureCommit $secondTask 'other.txt' "other`n" 'Other formal task'
+    $assignmentsDirectory = Join-Path $fixture.ProjectRoot '.dev-work/runs/scope-run-a/assignments'
+    [void][IO.Directory]::CreateDirectory($assignmentsDirectory)
+    Write-EvidenceJson (Join-Path $assignmentsDirectory 'other-formal.json') ([ordered]@{
+      schemaVersion = 1; taskKey = 'other-formal'; role = 'software-implementer'; status = 'review'
+      branch = [ordered]@{ base = 'main'; work = 'other-formal'; mergeTarget = 'main'; worktree = $secondTask }
+      evidence = [ordered]@{ gitEvidencePath = 'runs/scope-run-a/evidence/git/other-formal.json' }
+    })
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', 'scope-run-a', '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' '-Run mode missing second formal evidence' 'gitEvidencePath missing'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'review', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' '-EvidencePath mode must match assignment coverage' 'gitEvidencePath missing'
+  }
+  Invoke-Check 'evidence/negative-vacuous-run-final' {
+    $fixture = New-EvidenceProject 'vacuous-final'
+    $verificationWorktree = Join-Path $script:temporaryRoot 'vacuous-final-verification'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '--detach', $verificationWorktree, 'main')
+    $head = Invoke-FixtureGit @('-C', $verificationWorktree, 'rev-parse', 'HEAD')
+    $runFinalPath = Join-Path $fixture.EvidenceDirectory 'run-final-verification.json'
+    Write-EvidenceJson $runFinalPath (New-RunFinalDocument $fixture.RunSlug $head $verificationWorktree @())
+    [IO.File]::WriteAllText((Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/run-state.json"), '{"deliveryBranch":"main"}', $utf8)
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'vacuous final with empty coverage' 'integratedTaskKeys must not be empty'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'vacuous run-final audit with empty coverage' 'integratedTaskKeys must not be empty'
+  }
 } catch {
   $failed++
   Write-Host "FAIL harness/setup: $($_.Exception.Message)"

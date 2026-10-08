@@ -74,8 +74,17 @@ function Test-RecordedCommits($Value, [string]$Label) {
   }
 }
 
+function Test-EvidencePathInRun([string]$Path) {
+  if (-not $script:runDirectory) { return }
+  $fullPath = [IO.Path]::GetFullPath($Path)
+  $expectedRoot = [IO.Path]::GetFullPath((Join-Path $script:runDirectory 'evidence/git'))
+  $prefix = $expectedRoot + [IO.Path]::DirectorySeparatorChar
+  Assert-Evidence ($fullPath.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) -or $fullPath -ceq $expectedRoot) "Evidence file must live under runs/$($script:runName)/evidence/git: $Path"
+}
+
 function Get-Evidence([string]$Path) {
   $Path = [IO.Path]::GetFullPath($Path)
+  Test-EvidencePathInRun $Path
   if ($script:documents.ContainsKey($Path)) { return $script:documents[$Path] }
   $document = Read-Json $Path
   $validationErrors = @()
@@ -265,6 +274,11 @@ function Test-RunFinal($Document, $Entries, [bool]$Current) {
   Assert-Evidence ($Document.status -ceq 'verified' -and $Document.verdict -ceq 'READY') 'run-final must be verified and READY'
   Assert-Evidence (@($Document.coverage.uncoveredTaskKeys).Count -eq 0) 'Final coverage contains uncovered tasks'
   $coverage = @($Document.coverage.integratedTaskKeys)
+  $inputPaths = @($Document.inputs.integratedEvidencePaths)
+  if ($Current -or $script:Phase -ceq 'audit') {
+    Assert-Evidence ($coverage.Count -gt 0) 'Final coverage integratedTaskKeys must not be empty'
+    Assert-Evidence ($inputPaths.Count -gt 0) 'Final coverage integratedEvidencePaths must not be empty'
+  }
   Assert-Evidence (($keys.Count -eq $coverage.Count) -and @($keys | Where-Object { $coverage -cnotcontains $_ }).Count -eq 0) 'Final coverage must contain every integrated task exactly once'
   $inputKeys = [Collections.Generic.List[string]]::new()
   foreach ($inputPath in $Document.inputs.integratedEvidencePaths) {
@@ -317,7 +331,11 @@ try {
     if (Test-Path -LiteralPath $statePath -PathType Leaf) { $deliveryBranch = (Read-Json $statePath).deliveryBranch }
     if ($EvidencePath) {
       $selected = Get-Evidence $EvidencePath
-      if ($selected.subject.kind -ceq 'task') { Test-TaskEvidence $selected $Phase }
+      if ($selected.subject.kind -ceq 'task') {
+        $entries = @([pscustomobject]@{ Path = [IO.Path]::GetFullPath($EvidencePath); Document = $selected })
+        Test-Assignments $entries
+        Test-TaskEvidence $selected $Phase
+      }
       else {
         if ($Phase -notin @('final', 'audit')) { throw 'Run evidence only supports final or audit phase.' }
         $entries = @(Get-RunEvidence)
