@@ -1,0 +1,110 @@
+# FAQ and troubleshooting
+
+## General
+
+**What exactly does this package give me?**
+A coordinator Skill (`SKILL.md`) plus the routing tables, role contracts,
+schemas, templates, and PowerShell scripts needed to run software delivery
+with Claude Code workers: intake, dynamic reconnaissance, planning, a task
+graph, isolated implementation, independent review, evidence-gated
+integration into one delivery branch, and final verification.
+
+**Do I need Orca and Claude Code, or just Claude Code?**
+Both. Workers are Claude Code agents, and the Orca Runtime owns the
+Run/Task/Dispatch/Worker lifecycle. This package supplies the delivery
+workflow on top; it is not a standalone orchestrator.
+
+**Can a worker load this Skill?**
+No. It is coordinator-only. A worker carrying a dispatch preamble executes
+its assigned Task, Role, Skills, and contracts — unless its Task explicitly
+authorizes nested coordination.
+
+**Does it run on Linux or macOS?**
+It has only been exercised on Windows with PowerShell 7+. The scripts are
+PowerShell, and nothing on other platforms is tested or supported.
+
+**How do I update the package?**
+Pull the latest revision and re-run `scripts/verify-package.ps1` — see
+[installation.md](installation.md#upgrade). Per-project `.dev-work/` state is
+schema-validated, and old runs stay readable.
+
+## Operating a run
+
+**A `worker-start` receipt says `outcome_unknown` / `turn_start_unobserved`.
+Did the dispatch fail?**
+This is *unobserved*, not proof of failure or successful submission. Inspect
+the receipt, authoritative worker projection, and bounded terminal output
+first. Only when the task was accepted but remains unsubmitted in the
+composer should you submit it in the **same** terminal (a bare Enter), using
+the installed runtime guidance. Never re-dispatch, stop, or abandon merely
+because the turn start was unobserved.
+
+**The worker is silent, a wait came back empty, or liveness is
+`unverifiable`. Is the worker dead?**
+No. Absence is a checkpoint, not a verdict. Silence, timeouts, and
+unverifiable observations prove neither failure, quota exhaustion, nor
+process exit. Keep waiting or inspect within a bounded window; only an
+observed exit, an authoritative settlement, or equivalent positive evidence
+ends the wait. No stop, abandon, retry, release, or model downgrade follows
+from absence alone.
+
+**`worker-list` shows a terminal as `retained` or `user_owned` after
+release. Is that a leak?**
+No. Worker release is post-settlement cleanup, not cancellation. On hosts
+whose new-tab mode is a terminal, the runtime can legitimately answer
+`retained` / `user_takeover` / `user_owned` and keep the terminal alive. The
+completion accounting still holds when the reclaimable list is empty. Decide
+explicitly between reuse, retain, and close — and close a terminal explicitly
+when you remove its worktree, or you leave a dead pane behind.
+
+**A historical run fails `-Phase final` now, but it passed when it was
+recorded. Why?**
+The live phases assert moment equations — the delivery HEAD equals the
+recorded target, the trees are clean — that hold only at validation time.
+Once the delivery branch advances, the old run-final target no longer equals
+its current HEAD, so run-scoped `final` legitimately FAILs without implying
+the original integration was wrong. Use `-Phase audit` for historical
+evidence. Current acceptance requires fresh verification and the canonical
+run-final record at the current target. A Task selected alone with `final`
+uses historical Task checks and cannot establish run completion; branch
+advancement alone does not invalidate that Task's historical evidence.
+
+**A review returned `UNVERIFIABLE`. Is that a failed review?**
+It is neither approval nor failure — it is an explicit statement that the
+reviewer could not verify something. Keep the evidence unclear-marked;
+re-run, gather the missing evidence, or mark the acceptance unverifiable.
+Never describe unverifiable acceptance as READY.
+
+**The first `worker-start` receipt's effective model differs from what I
+requested. Do I downgrade?**
+Not automatically. Record `mismatch`, do not infer quota or model
+unavailability, and apply the model-tier rule from
+`routing/model-routing.json` — or, if the user pinned the choice, suspend the
+Task and ask. Requested values are never treated as effective.
+
+**A worker reports it cannot read its Skill path.**
+That is a `skill_unavailable` condition: repair the path, or switch to a
+recorded `inline-extract` (include the required sections and record the
+source path and hash). A Skill name alone is not loading evidence.
+
+**Two coordinators might be running in the same worktree. What do I do?**
+Read `.dev-work/coordinator-lock.json` and probe the recorded handle. `live`
+means refuse; `dead` means archive and take over; `unknown` means refuse —
+absence is not proof the holder is gone. Never delete the lock file and
+never use a global orchestration reset to dissolve one worktree's
+uncertainty.
+
+**The delivery merge conflicts. Can I resolve it myself in the delivery
+worktree?**
+No. Abort the merge, create an isolated resolution Task (merge-resolver
+role), review its result independently, update the review/admission to that
+result, and retry the gate. Unreviewed changes are never repaired directly
+in the delivery branch.
+
+**`verify-package.ps1` prints FAIL lines on my fresh clone.**
+Read the first FAIL line: a missing sibling Skill points at
+`metadata/skill-paths`; encoding failures identify invalid UTF-8, a BOM, or CR
+bytes; content failures identify a disallowed reference. A FAIL can reflect
+a missing dependency, environment problem, or package defect, and does not
+by itself prove the checkout was modified — see
+[installation.md](installation.md#troubleshooting-installation-failures).

@@ -1,0 +1,11 @@
+# Local process state - normally kept out of Git per project policy
+/AGENTS.md
+/.dev-work/
+/.env
+
+# Editor and OS artifacts
+*.swp
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

@@ -504,7 +504,7 @@ try {
       professionalSkills = @((Read-PackageJson 'routing/skill-catalog.json').skills).Count
       workflows = @(Get-ChildItem -LiteralPath (Join-Path $root 'workflows') -Filter '*.md' -File).Count
     }
-    Assert-Condition ($version -ceq '2.0.0') 'Expected release 2.0.0'
+    Assert-Condition ($version -ceq '2.1.0') 'Expected release 2.1.0'
     Assert-Condition (-not $manifest.deliverables.Contains('orcaAgents') -and -not $manifest.Contains('inPlaceFixes')) 'Obsolete manifest fields remain'
     Assert-Condition ($counts.roles -eq 12 -and $counts.professionalSkills -eq 16 -and $counts.workflows -eq 4) 'Expected 12 roles, 16 professional skills, 4 workflows'
     foreach ($key in $counts.Keys) {

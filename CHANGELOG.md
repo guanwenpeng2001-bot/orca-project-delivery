@@ -22,6 +22,15 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 - Required explicit `branch.mergeTarget: null` for read-only Tasks. Unified writer admission as stopped/fenced/isolated/explicit handoff, clarified confirmed isolation as inability to write, and split writer admission from Dispatch settlement in the handoff checklist; failed alone never authorizes another writer.
 - Kept package VERSION and manifest at 2.0.0; runtime capability research remains process evidence and does not introduce a scheduler, database or lifecycle state machine.
 
+## 2.1.0 — 2026-10-09
+
+Public documentation release for the open-source GitHub repository. No runtime behavior, routing, schema or workflow changes.
+
+- Added the public documentation set: `README.md` (project positioning, what it is and is not, capability overview, quick start, repository structure, documentation index, license), `docs/installation.md` (prerequisites, directory conventions, install/verify/upgrade/uninstall, installation troubleshooting), `docs/usage.md` (coordinator walkthrough of the full delivery sequence, role and model routing, branch and worktree conventions, evidence and report locations, worker receipts, usage Q&A), `docs/architecture.md` (control/delivery/task planes, authority boundaries, 12-role, 4-workflow and 16-skill tables, the six-phase evidence model, coordinator lock, the 12 invariants) and `docs/faq.md` (FAQ plus real failure-mode troubleshooting).
+- Added the MIT `LICENSE` (copyright guanwenpeng2001-bot) and a `.gitignore` covering local process state and editor artifacts.
+- Bumped `VERSION` and `PACKAGE-MANIFEST.json` to 2.1.0 and synchronized the release assertion in `scripts/verify-package.ps1`. All documentation is English, UTF-8 without BOM with LF endings, free of disallowed agent references, and uses portable paths only.
+- All facts stated in the new documents are sourced from repository files; the offline acceptance suite passes 55/55 checks with the new files included in its encoding and content scans.
+
 ## 2.0.0 — 2026-10-07
 
 - Rebuilt the coordinator entry for Claude Code workers only, retaining isolated Tasks, single writers, independent review, direct delivery integration, locks and evidence-based completion.
