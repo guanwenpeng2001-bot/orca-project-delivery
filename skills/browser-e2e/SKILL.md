@@ -19,7 +19,7 @@ Every regression needs one successful journey and one deliberate failure. The fa
 
 Keep the test deterministic. Control clock, network delay, and seeded data explicitly. A wait for an arbitrary timeout hides ordering bugs; wait for the observable state instead.
 
-Node.js is the declared host for the project’s browser runner. The package does not install or invoke a browser by itself.
+Node.js is the declared host for the project’s browser runner. The package never installs a browser and never launches one on its own. Running `run-tide-journeys.mjs` launches an already installed local Chromium through the caller’s Python Playwright. If Python, Python Playwright, or that Chromium is missing, the caller gets a named missing-dependency error and the optional browser test skips with that reason. A skip is not browser coverage.
 
 ### Reference
 
@@ -36,6 +36,14 @@ The method is original. Accessible-role locators follow the W3C ARIA role model:
 ## Worked example
 
 A tide-entry journey submits a valid time and expects the new row. A second journey submits a blank time and expects the field error. With validation absent, the blank submission creates a row and the second test fails; its trace shows the row count increasing. After the server rejects the blank value, the same test passes and the valid submission still creates one row.
+
+`skills/browser-e2e/scripts/run-tide-journeys.mjs` runs both journeys in the installed local Chromium: one that saves a tide reading and one that refuses a blank tide time, using the keyboard. It opens the fixture through a `file:` URL, so it does not need the server. Serve the fixture on loopback only when a caller needs HTTP:
+
+```
+node skills/browser-e2e/scripts/serve-fixture.mjs
+```
+
+It prints `listening http://127.0.0.1:<port>` and stops when its input ends. Pass `seedDefect: true` to `runTideJourneys` to add a row before validation. Both journeys then fail: the saved reading is preceded by an empty row, and the blank submission leaves that row. Keep that failing result even after the suite is green. A fixture address must be a local path or `http://127.0.0.1`; any other address is refused.
 
 ## Failure signals
 

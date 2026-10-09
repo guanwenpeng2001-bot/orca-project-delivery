@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tide readings</title>
+<style>
+  body { font-family: sans-serif; font-size: 16px; margin: 16px; color: #000000; background: #ffffff; }
+  h1 { font-size: 28px; }
+  label { display: block; margin-top: 16px; }
+  input { font-size: 16px; padding: 8px; border: 1px solid #000000; }
+  button { font-size: 16px; margin-top: 16px; color: #ffffff; background: #0b3a5b; border: 0; padding: 8px 16px; }
+  button:focus, input:focus { outline: 2px solid #000000; outline-offset: 2px; }
+  .error { color: #000000; }
+  .hint { color: #777777; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tide readings</h1>
+  <p class="hint" data-contrast="#777777 #FFFFFF 4.48">Readings are kept for this session.</p>
+  <form id="reading">
+    <label for="tide-time">Tide time</label>
+    <input id="tide-time" name="tide-time" type="text" autocomplete="off">
+    <p id="tide-error" class="error" role="alert" hidden>Tide time is required.</p>
+    <button type="submit" data-contrast="#FFFFFF #0B3A5B 11.86">Save reading</button>
+  </form>
+  <h2>Saved readings</h2>
+  <p id="empty">No readings today.</p>
+  <ul id="readings"></ul>
+</main>
+<script>
+  const form = document.getElementById('reading');
+  const input = document.getElementById('tide-time');
+  const error = document.getElementById('tide-error');
+  const list = document.getElementById('readings');
+  const empty = document.getElementById('empty');
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const value = input.value.trim();
+    if (value === '') {
+      error.hidden = false;
+      input.setAttribute('aria-invalid', 'true');
+      input.setAttribute('aria-describedby', 'tide-error');
+      input.focus();
+      return;
+    }
+    error.hidden = true;
+    input.removeAttribute('aria-invalid');
+    const item = document.createElement('li');
+    item.textContent = value;
+    list.appendChild(item);
+    empty.hidden = true;
+    input.value = '';
+  });
+</script>
+</body>
+</html>

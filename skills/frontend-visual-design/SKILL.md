@@ -33,7 +33,14 @@ The method is original. Contrast thresholds come from W3C WCAG 2.2 success crite
 
 ## Worked example
 
-A harbor-status form uses 16px body text, a 20px section heading, and a 28px page title. The submit button uses `#0B3A5B` on white, measured above 4.5:1, and the error puts “Tide time is required.” beside the field instead of only turning the border red. At 320px the line length stays under 40 characters and the button remains full width. The empty state says “No readings today.” rather than leaving a blank table.
+A harbor-status form uses 16px body text, a 20px section heading, and a 28px page title. The submit button uses `#FFFFFF` on `#0B3A5B`, and the muted hint uses `#777777` on `#FFFFFF`. Measure both instead of estimating:
+
+```
+node skills/frontend-visual-design/scripts/contrast-ratio.mjs --foreground "#FFFFFF" --background "#0B3A5B"
+node skills/frontend-visual-design/scripts/contrast-ratio.mjs --foreground "#777777" --background "#FFFFFF" --threshold 4.5
+```
+
+The first reports an unrounded ratio near 11.86 and exits 0. The second reports an unrounded ratio near 4.48 and exits 2, because the requested 4.5 text threshold is missed, so that hint is limited to large text and boundaries. `ratio` is the value the gate uses; `ratioRounded` is only the two-decimal display. The error puts "Tide time is required." beside the field instead of only turning the border red. At 320px the line length stays under 40 characters and the button remains full width. The empty state says "No readings today." rather than leaving a blank table.
 
 ## Failure signals
 
@@ -41,10 +48,11 @@ A harbor-status form uses 16px body text, a 20px section heading, and a 28px pag
 - Status is communicated only by red or green.
 - Mobile layout is a shrunk desktop layout with text below the specified body size.
 - A state removes the label, focus outline, or recovery instruction.
+- A contrast figure is copied from a palette card instead of measured for the pair actually rendered.
 
 ## Evaluation scenario
 
-Given one form at desktop and 320px, the result states four type roles, one measured accent contrast, spacing steps, and copy for empty and error states. It fails if the conclusion rests only on preference or checks one viewport.
+Given one form at desktop and 320px, the result states four type roles, one measured accent contrast, spacing steps, and copy for empty and error states. It fails if the conclusion rests only on preference or checks one viewport. The accent measurement names the command above and the ratio it printed.
 
 ## Boundary
 
