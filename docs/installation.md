@@ -89,7 +89,7 @@ Expected shape of the output on a healthy install:
 - many `PASS <check>` lines (parse, encoding, routing, metadata, runtime
   fixtures, evidence fixtures, ...);
 - a `skills: 16/16 resolved (... package-bundled)` summary line;
-- a final line: `SUMMARY PASS=59 FAIL=0`;
+- a final line: `SUMMARY PASS=65 FAIL=0`;
 - process exit code 0.
 
 The suite is read-only with respect to the package: all fixtures and copies
@@ -101,6 +101,12 @@ A note on the sibling evidence validator: when you use
 `scripts/validate-git-evidence.ps1` separately at runtime, read the JSON
 `status` field it prints, not only the exit code — both `PASS` and
 `NOT_APPLICABLE` exit 0, and `NOT_APPLICABLE` is not acceptance.
+
+## Extensions and local execution configuration
+
+For new methods or responsibilities, use the native catalog recipe in [Extending](extending.md), including current-content hashes, manifest counts and model routes. Bundled Skills are maintained MIT adaptations; preserve their license and review intentional edits before updating hashes. `verify-package.ps1 -MetadataOnly` is a quick structural check, not a substitute for the full suite. The 65-check summary above describes the current bundled package; success requires no failures, not a permanently fixed count.
+
+Bootstrap creates `.env.example` and `project-config.example.json` only when missing, preserving existing files. It adds `/.env` to local Git `info/exclude`, shared by this clone's worktrees. Keep populated `.env` untracked on the actual execution host. Workers must supply their own explicit `ProjectRoot`; helpers neither copy coordinator config nor create worker `.dev-work/` state. Current bundled entries declare no credential requirements.
 
 ## Upgrade
 
@@ -150,10 +156,11 @@ FAIL metadata/skill-paths: skill file missing: <...>\skills\code-review\SKILL.md
 
 or a hash failure under `metadata/bundled-skill-integrity`.
 
-Cause: a vendored `skills/<skill-id>/SKILL.md` is missing, was deleted locally,
-or no longer matches the SHA256 table in `skills/README.md`. Fix: restore the
-file from Git (`git checkout -- skills/`) or re-clone the package, then re-run
-the suite.
+Cause: a bundled `skills/<skill-id>/SKILL.md` is missing, was deleted locally,
+or no longer matches the current SHA256 table in `skills/README.md`. Inspect and
+preserve local changes first. Restore accidental damage from package Git; for an
+intentional adaptation, review the body and update its hash as described in
+[Extending](extending.md), then re-run the suite.
 
 ### PowerShell 7 not found
 

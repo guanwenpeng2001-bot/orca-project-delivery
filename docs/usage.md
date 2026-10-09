@@ -25,8 +25,7 @@ Bootstrap sequence (from `SKILL.md`):
 3. Initialize or validate `.dev-work/` with `scripts/bootstrap-project.ps1`.
    The script resolves and records the delivery branch, writes the
    coordinator lock, and refuses to run on the delivery branch itself.
-4. Locally exclude `/AGENTS.md` and `/.dev-work/` from Git for the control
-   worktree.
+4. Bootstrap preserves existing `.env.example` and `project-config.example.json`, creating missing examples only; it excludes `/AGENTS.md`, `/.dev-work/` and `/.env` through local Git `info/exclude`, shared across the clone's worktrees.
 5. Create or resume the run record with `scripts/create-run.ps1`, then create
    or bind the Orca Run.
 6. Run `scripts/probe-claude-capabilities.ps1` and inspect its JSON and
@@ -114,6 +113,8 @@ Assembly resolves only those paths (`explicit-path`) or inlines the same bodies
 `scripts/verify-package.ps1`. See [professional-skills.md](professional-skills.md)
 and [installation.md](installation.md).
 
+Assembly places catalog `requires` names/purposes under Inputs and Dependencies, separating Role plus required-Skill dependencies from conditional Skills. Conditional dependencies activate only when the Task calls for them. On the execution host, run `check-requirements.ps1` with explicit `-ProjectRoot`, `-Role`, and an in-session `-Skills @(...)` array of selected IDs. Helpers do not select Role defaults for you. File configuration does not mean the current shell has those values; an authorized child can receive selected file additions through `invoke-with-requirements.ps1`, preserving its parent's environment. See [Extending and configuration](extending.md) for exact interfaces and an offline walkthrough. The ten-part Task order and applicable `AGENTS.md` last are unchanged.
+
 ### 5. Dispatch
 
 A Task is **ready** when its real dependencies have settled successfully
@@ -189,7 +190,7 @@ the delivery branch, then release with
 ## Choosing roles and model routes
 
 Select exactly one Primary Role per Task by deliverable, using
-`routing/role-selection.json`; select 1–3 required Skills from the 16 in
+`routing/role-selection.json`; select 1–3 required Skills from the current catalog in
 `routing/skill-catalog.json` following `routing/skill-selection.json`, plus
 0–2 conditional Skills for material risk. The role's model route comes from
 `routing/model-routing.json`: pick the chain, start at the default, never go

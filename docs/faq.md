@@ -30,6 +30,20 @@ Pull the latest revision and re-run `scripts/verify-package.ps1` — see
 [installation.md](installation.md#upgrade). Per-project `.dev-work/` state is
 schema-validated, and old runs stay readable.
 
+## Extensions and configuration
+
+**Can I add a Skill or Role, or edit a bundled method?**
+Yes. Use native catalogs, matching files, current hashes and manifest counts; a new Role also needs a model route. Bundled bodies are maintained MIT adaptations, not frozen upstream copies. Follow [Extending](extending.md) and run both metadata and full verification.
+
+**Why does a configured API still show unavailable, or fail later?**
+`configured` only describes file presence. An empty process value overrides a nonempty file value and blocks the child. API checks never authenticate or access the network; a passing presence check says nothing about a real service's response.
+
+**Does the helper load all my `.env` into every worker?**
+No. It reads the explicit execution-host root, adds only selected declared file variables to an authorized child, and preserves the parent. Existing process variables remain inherited, even undeclared ones. No coordinator `.env` copy or generic `.dev-work` override loader exists. JSON config is opt-in and non-secret only. Child programs can print values; their output is not redacted.
+
+**Can the executable live outside ProjectRoot?**
+Yes, when authorized by the user/Task. The confinement rule applies to config paths. Prefer a real executable/interpreter plus a PowerShell argument array; Windows batch launchers are not guaranteed by direct process execution.
+
 ## Operating a run
 
 **A `worker-start` receipt says `outcome_unknown` / `turn_start_unobserved`.

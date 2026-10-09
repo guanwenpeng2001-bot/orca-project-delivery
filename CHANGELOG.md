@@ -6,6 +6,10 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 
 ## Unreleased
 
+- Added bilingual [extension and configuration recipes](docs/extending.md) for native Skill/Role authoring, catalog registration, model and selection routes, current hashes, manifest counts, and metadata/full verification. Added offline synthetic dependency and child-execution examples; refreshed public indexes and the concise coordinator entry without changing the 17-section contract.
+- Documented optional catalog `requires` and the accepted dependency helpers: explicit execution-host roots, literal dotenv, optional non-secret JSON, process-over-file precedence including empty overrides, selected file additions to inherited child environment, unchanged parent, presence-only API checks, and direct-executable limitations. No generic project override loader is implied.
+- Enriched the 16 professional Skills with domain methods, decision criteria, worked examples, failure signals and evaluation scenarios. Public provenance now describes package-maintained MIT adaptations and current-content hashes; the upstream MIT notice is unchanged. Package version remains 2.2.0.
+
 - Added Simplified Chinese public documentation: `README.zh-CN.md` and `docs/zh-CN/` (`installation`, `usage`, `architecture`, `faq`, `professional-skills`). English remains the default; root READMEs and the five public guides carry reciprocal English / 简体中文 links. No runtime, routing, schema, or workflow changes.
 - Vendored all 16 professional Skills under package `skills/` from [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) at commit `d9a174c7143bfb4c76ed042f457fb7785c35cea3`, with MIT `LICENSE`, provenance and SHA256 table in `skills/README.md`.
 - Retired installed-home fallback for Skill resolution: `routing/skill-catalog.json`, `scripts/assemble-task.ps1`, and `scripts/verify-package.ps1` resolve only bundled paths (`skills/<skill-id>/SKILL.md`); verification fails closed when a bundled file is missing or its hash diverges.

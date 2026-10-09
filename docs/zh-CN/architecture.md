@@ -86,6 +86,12 @@ Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `
 | integration-verification | 用命令和运行时证据验证任务与最终交付的验收 |
 | merge-conflict-resolution | 依据分支意图、历史和测试解决 Git 合并冲突 |
 
+## 原生扩展与执行配置
+
+Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由、清单数量及当前 Skill 哈希。数量由目录驱动。Skill 正文是包内维护的 MIT 改编版，包含领域方法和评估用例；上游许可声明保留。不新增项目覆盖注册表或目录可执行 hook。
+
+可选 `requires` 元数据声明 CLI、env 和 API 依赖名称。组装标出必需与条件集合，不新增顶层合同段。在实际执行主机上，辅助脚本使用显式选择器和 ProjectRoot。配置优先级为继承进程值（包括空值）、根 `.env`、显式非秘密 JSON。只有所选声明的文件变量补入子进程；已有变量继承，父进程不变。API 检查仅判断存在性。配置路径留在根内，授权可执行文件可以在外；直接批处理启动不保证兼容。注册与可运行示例见[扩展](extending.md)。
+
 ## 证据模型
 
 `scripts/validate-git-evidence.ps1` 是一个**只读**校验器，校验协调者根据观察写出的 JSON 证据文档。协调者先收集并书写，再校验，并且只在相关范围得到 `PASS` 之后才行动。校验器从不写 JSON、不跑测试、不合并，也不查询运行时。PASS 不能认证一条工作者消息，也不能证明记录的测试命令真的跑过；协调者必须核验 Runtime 归属并收集实际命令结果。一条结论为 CHANGES_REQUIRED 或 UNVERIFIABLE 的有效审查记录仍可以通过 `review` 阶段，所以校验 PASS 本身不是审查批准。

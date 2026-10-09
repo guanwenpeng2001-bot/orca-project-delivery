@@ -113,6 +113,12 @@ method — it cannot expand Task scope or grant orchestration control.
 | integration-verification | Verify Task and final-delivery acceptance with commands and runtime evidence |
 | merge-conflict-resolution | Resolve Git merge conflicts from branch intent, history, and tests |
 
+## Native extension and execution configuration
+
+Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes, manifest counts and current Skill hashes. Counts are catalog-driven. Skill bodies are package-maintained MIT adaptations with domain methods and evaluation cases; the upstream license remains intact. No project overlay registry or executable catalog hooks are added.
+
+Optional `requires` metadata names CLI, env and API dependencies. Assembly labels required and conditional sets without adding a new top-level contract section. On the actual execution host, helpers use explicit selectors and ProjectRoot. Configuration precedence is inherited process values (even empty), root `.env`, then explicit non-secret JSON. Only selected declared file variables are added to the child; inherited variables remain and the parent is unchanged. API checks are presence-only. Config paths stay inside the root, while an authorized executable may be outside; direct batch-launch compatibility is not guaranteed. See [Extending](extending.md) for registration and runnable examples.
+
 ## The evidence model
 
 `scripts/validate-git-evidence.ps1` is a **read-only** validator over

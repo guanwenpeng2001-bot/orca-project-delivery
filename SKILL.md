@@ -48,7 +48,7 @@ When unsure where an artifact belongs, read `references/artifact-model.md`.
 2. Refuse a second live coordinator; preserve unknown liveness for investigation instead of taking over.
 3. Preserve existing `AGENTS.md`; only when absent create it from `templates/AGENTS.md`.
 4. Initialize missing `.dev-work/` using `scripts/bootstrap-project.ps1`; otherwise validate and reuse it. Templates are schema references, not copies to overwrite state with.
-5. Locally exclude `/AGENTS.md` and `/.dev-work/` from Git unless the user explicitly tracks them.
+5. Bootstrap preserves existing `.env.example` and `project-config.example.json`, creating only missing examples; locally excludes `/AGENTS.md`, `/.dev-work/` and `/.env` through clone-shared `info/exclude`.
 6. Resolve and record `delivery_branch` and its source using the invariant's chain; choose a distinct control branch before bootstrap. Detached HEAD and control=delivery are refused. The explicit override acknowledges a violation, not a normal integration path.
 7. Create or resume a run record using `scripts/create-run.ps1`; forced reuse archives prior state.
 8. Create or bind the Orca Run using current global Skill instructions.
@@ -84,7 +84,7 @@ Stop when remaining unknowns cannot change the approach, or explicitly record th
 ## Role and Skill routing
 
 1. Select exactly one Primary Role from `roles/catalog.json`, by deliverable using `routing/role-selection.json`.
-2. Select 1–3 required Skills from the 16 in `routing/skill-catalog.json`, following `routing/skill-selection.json`.
+2. Select 1–3 required Skills from the current `routing/skill-catalog.json`, following Role defaults and `routing/skill-selection.json`; explain irrelevant defaults in the Task.
 3. Add 0–2 conditional Skills only for material risk.
 4. Derive capability, permission, scope, branch, input, output and completion contracts from the role and Task.
 5. Choose the role's model/effort route, then assemble the input.
@@ -109,10 +109,15 @@ Upgrade, downgrade, suspension, trivial read-only adjustment and user-pinned beh
 
 ## Skill delivery
 
-Professional Skills are vendored under this package's `skills/` directory.
+Professional Skills are package-maintained MIT adaptations under `skills/`; `skills/README.md` records provenance and current hashes. See `docs/extending.md` for native authoring/registration and metadata/full verification.
 - `explicit-path` is the default: give the absolute `SKILL.md` path in the Task and require reading it.
 - `inline-extract` is the fallback: include the required sections and record source path and hash.
 A Skill name alone is not loading evidence. Skills supply method and cannot expand Task scope or grant orchestration control.
+Catalog `requires` declares CLI/env/API names and purposes only. Assembly lists required and conditional requirements inside Inputs and Dependencies, preserving the ten-part order and AGENTS last.
+On the execution host, use `check-requirements.ps1` with explicit `-ProjectRoot`, `-Role` and in-session `-Skills @(...)` for required plus activated conditional IDs; helpers do not infer Role defaults.
+File configuration is not process availability. Process values (including empty) override root `.env`, then explicit non-secret `-ConfigPath`; no `.dev-work` resolver or coordinator `.env` copying exists.
+For authorized local execution, use `invoke-with-requirements.ps1` with those selectors, `-Executable` and `-Arguments @(...)`; file additions are selected declarations only, inherited process variables remain, and the parent stays unchanged.
+API checks are presence-only, without network/install actions. Child output is not redacted. Config paths stay under the root; authorized executables may be outside it. Prefer real executables/interpreters over batch launchers.
 
 ## Task and branch creation
 

@@ -14,4 +14,10 @@ Use the global `orca-project-delivery` Skill from the coordinator control worktr
 
 Deliver professional Skills to Claude Code workers with `explicit-path`: include each selected Skill's exact readable `SKILL.md` path in the Task (paths under this package's `skills/` directory). If the Worker cannot reliably read that path, use `inline-extract` and record the source path, hash/version, included headings, and omitted sections. A Skill name alone does not prove it was loaded; require evidence of the path read or method applied.
 
-For prerequisites, verification (`scripts/verify-package.ps1`, expect `SUMMARY PASS=59 FAIL=0`), upgrade, uninstall, and troubleshooting, read `docs/installation.md`.
+Bundled bodies are package-maintained MIT adaptations; `skills/README.md` hashes track current content and the upstream license notice is retained. For native Role/Skill registration, dependency declarations, execution-host configuration and offline examples, read [docs/extending.md](../docs/extending.md).
+
+Bootstrap creates only missing `.env.example` and `project-config.example.json`, preserves existing examples, and locally excludes `/.env` through clone-shared Git `info/exclude`. It never copies coordinator values to workers or creates a populated `.env`. Keep `.dev-work/` in the control tree.
+
+Use `scripts/verify-package.ps1 -MetadataOnly` for a quick structural check after extension; run the full suite before acceptance. Counts follow the catalogs and manifest rather than a fixed extension limit.
+
+For prerequisites, verification (`scripts/verify-package.ps1`, expect `SUMMARY PASS=65 FAIL=0`), upgrade, uninstall, and troubleshooting, read `docs/installation.md`.

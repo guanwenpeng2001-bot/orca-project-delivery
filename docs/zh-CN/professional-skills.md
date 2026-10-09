@@ -14,7 +14,7 @@ Orca Project Delivery 协调的工作者会加载**专业 Skill** — 只提供�
 | 许可证 | MIT — `skills/LICENSE`（亦见包根目录 `LICENSE`） |
 | 完整性表 | `skills/README.md`（每个文件的 SHA256） |
 
-有意刷新内容时从上游重新导入；不要就地编辑随包的 `SKILL.md` 正文。
+记录的提交是上游基线。当前正文是包内维护的 MIT 改编版，已补充领域方法、判断标准、完整示例、失败信号与评估场景。可以有意识地就地编辑，并重新计算 `skills/README.md` 中当前内容的 SHA256 表；保留 `skills/LICENSE` 中未改动的上游 MIT 声明。哈希跟踪当前改编内容，不表示与上游逐字节一致。编写、注册与校验见[扩展指南](extending.md)。
 
 ## 十六个 Skill
 
@@ -57,6 +57,6 @@ Orca Project Delivery 协调的工作者会加载**专业 Skill** — 只提供�
 | `verify-package.ps1` 的 Skill 路径 FAIL | 随包文件缺失或损坏 | `Test-Path <package>/skills/<skill-id>/SKILL.md`；对照 `skills/README.md` 中的哈希 |
 | 工作者读不到分配的 Skill | 任务中的路径错误，或沙箱限制 | 任务的 `explicit-path` 指向一个实际存在的随包 `SKILL.md` |
 | 目录列出了 Skill 但文件不在 | 检出不完整或本地删除 | 从 Git 恢复；重跑完整性检查 |
-| 手工编辑后哈希不匹配 | 就地改了随包正文 | 按记录的提交从上游重新导入 |
+| 手工编辑后哈希不匹配 | 当前正文与完整性表不一致 | 审阅有意改编，重新计算 SHA256 并更新表；意外修改从包 Git 恢复 |
 
 协调者行为与证据路径见 [usage.md](usage.md) 和 `references/evidence-binding.md`。

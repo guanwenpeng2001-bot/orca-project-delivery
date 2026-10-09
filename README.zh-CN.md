@@ -53,8 +53,9 @@ Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 
 | 自适应深度 | light / standard / high-risk 阶段链 | `routing/workflow-selection.json` |
 | 模型路由 | 按角色在 haiku / sonnet / opus / fable 上排链，含推理档、默认档与最低档 | `routing/model-routing.json` |
 | 必守不变量 | 12 条关于隔离、审查、证据与集成的约束 | `SKILL.md` |
-| 辅助脚本 | 9 个 PowerShell 脚本（引导、创建运行、组装任务、探测、校验、释放） | `scripts/` |
-| 离线验收 | 59 项自检套件，成功时退出码为 0 | `scripts/verify-package.ps1` |
+| 辅助脚本 | PowerShell 引导、组装、依赖检查、限定子进程执行、校验和释放 | `scripts/` |
+| 离线验收 | 完整合成包套件；要求退出 0 且 `FAIL=0` | `scripts/verify-package.ps1` |
+| 原生扩展 | 注册 Role 和 Skill，声明可选 CLI/env/API 依赖 | [扩展指南](docs/zh-CN/extending.md) |
 | Git 证据 | 6 个校验阶段：sourceRegistered、review、preMerge、postMerge、final、audit | `scripts/validate-git-evidence.ps1` |
 
 ## 快速开始
@@ -65,7 +66,7 @@ Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 
 # 1. 把包克隆到技能根目录
 git clone https://github.com/guanwenpeng2001-bot/orca-project-delivery.git "$env:USERPROFILE\.agents\skills\orca-project-delivery"
 
-# 2. 离线校验包（期望：SUMMARY PASS=59 FAIL=0，退出码 0）
+# 2. 离线校验包（期望：SUMMARY PASS=65 FAIL=0，退出码 0）
 pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scripts\verify-package.ps1"
 ```
 
@@ -86,16 +87,17 @@ orca-project-delivery/
 │   ├── installation.md       # 安装、校验、升级、卸载、排障（英文）
 │   ├── usage.md              # 端到端协调者走读（英文）
 │   ├── architecture.md       # 设计：平面、角色、工作流、证据、不变量（英文）
+│   ├── extending.md          # 原生 Role/Skill 扩展与执行配置（英文）
 │   ├── professional-skills.md
 │   ├── faq.md                # 常见问题与排障（英文）
-│   └── zh-CN/                # 上述五篇的简体中文译本
+│   └── zh-CN/                # 上述六篇的简体中文译本
 ├── references/               # 11 篇深入参考（运行时、分支模型、证据等）
 ├── roles/                    # 12 份角色合同 + catalog.json
 ├── routing/                  # 模型、角色、Skill、工作流路由表
 ├── skills/                   # 16 个随包专业 Skill + LICENSE + README
 ├── workflows/                # 4 个工作流定义
-├── schemas/                  # 8 个 .dev-work 状态与证据的 JSON schema
-├── scripts/                  # 9 个 PowerShell 脚本
+├── schemas/                  # 状态、证据、依赖与配置的 JSON schema
+├── scripts/                  # 交付与配置的 PowerShell 辅助脚本
 └── templates/                # AGENTS.md、任务/审查/报告模板、.dev-work 种子
 ```
 
@@ -105,6 +107,7 @@ orca-project-delivery/
 | --- | --- |
 | [安装](docs/zh-CN/installation.md) | 前置条件、目录约定、安装步骤、校验、升级、卸载、常见安装失败 |
 | [专业 Skill](docs/zh-CN/professional-skills.md) | 16 个工作者 Skill、来源仓库、安装布局与排障 |
+| [扩展与配置](docs/zh-CN/extending.md) | 原生 Role/Skill 编写、依赖声明、字面配置及离线子进程执行走读 |
 | [使用](docs/zh-CN/usage.md) | 从协调者入口开始一次交付、完整阶段顺序、角色/模型路由、分支与工作树规则、证据与报告、工作者回执、问答 |
 | [架构](docs/zh-CN/architecture.md) | 控制平面与交付平面、权威来源、角色/工作流/Skill 表、证据模型、协调者锁、12 条不变量 |
 | [常见问题](docs/zh-CN/faq.md) | 常见问题与失败模式排障 |

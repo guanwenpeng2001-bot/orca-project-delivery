@@ -17,8 +17,13 @@ architecture, implementation, review, and verification. All sixteen Skills ship
 | License | MIT — `skills/LICENSE` (see also package root `LICENSE`) |
 | Integrity table | `skills/README.md` (SHA256 per file) |
 
-Re-import from upstream when you intentionally refresh content; do not edit vendored
-`SKILL.md` bodies in place.
+The recorded commit is the upstream baseline. Current bodies are package-maintained
+MIT adaptations, enriched with domain methods, decision criteria, worked examples,
+failure signals and evaluation scenarios. Edit them deliberately in place and
+recompute the current-content SHA256 table in `skills/README.md`; retain the
+unchanged upstream MIT notice in `skills/LICENSE`. The hashes track today's
+adaptations, not byte-identical upstream copies. See [Extending](extending.md)
+for authoring, registration and validation.
 
 ## The sixteen Skills
 
@@ -67,7 +72,7 @@ Paths in `routing/skill-catalog.json` are relative to this package and resolve a
 | `verify-package.ps1` skill-path FAIL | Bundled file missing or corrupt | `Test-Path <package>/skills/<skill-id>/SKILL.md`; compare hashes in `skills/README.md` |
 | Worker cannot read assigned Skill | Wrong path in Task or sandbox | Task `explicit-path` matches an existing bundled `SKILL.md` |
 | Catalog lists Skill but file missing | Incomplete checkout or local deletion | Restore from Git; re-run integrity check |
-| Hash mismatch after manual edit | In-place edit of vendored body | Re-import from upstream at the recorded commit |
+| Hash mismatch after manual edit | Current body and integrity table disagree | Review intentional adaptations, recompute SHA256 and update the table; restore accidental changes from package Git |
 
 For coordinator behavior and evidence paths, see [usage.md](usage.md) and
 `references/evidence-binding.md`.

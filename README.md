@@ -84,8 +84,9 @@ and user decisions.
 | Adaptive depth | light / standard / high-risk stage chains | `routing/workflow-selection.json` |
 | Model routing | per-role chains over haiku / sonnet / opus / fable with effort levels, defaults, floors | `routing/model-routing.json` |
 | Required invariants | 12 binding rules for isolation, review, evidence, and integration | `SKILL.md` |
-| Helper scripts | 9 PowerShell scripts (bootstrap, run creation, task assembly, probes, validation, release) | `scripts/` |
-| Offline acceptance | 59-check self-verification suite, exit 0 on success | `scripts/verify-package.ps1` |
+| Helper scripts | PowerShell bootstrap, assembly, dependency checks, scoped child execution, validation and release | `scripts/` |
+| Offline acceptance | Full synthetic package suite; require exit 0 and `FAIL=0` | `scripts/verify-package.ps1` |
+| Native extensions | Register Roles and Skills, declare optional CLI/env/API requirements | [Extension guide](docs/extending.md) |
 | Git evidence | 6 validation phases: sourceRegistered, review, preMerge, postMerge, final, audit | `scripts/validate-git-evidence.ps1` |
 
 ## Quick start
@@ -100,7 +101,7 @@ Full details and troubleshooting:
 # 1. Clone the package into your skills root
 git clone https://github.com/guanwenpeng2001-bot/orca-project-delivery.git "$env:USERPROFILE\.agents\skills\orca-project-delivery"
 
-# 2. Verify the package offline (expects: SUMMARY PASS=59 FAIL=0, exit 0)
+# 2. Verify the package offline (expects: SUMMARY PASS=65 FAIL=0, exit 0)
 pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scripts\verify-package.ps1"
 ```
 
@@ -124,16 +125,17 @@ orca-project-delivery/
 │   ├── installation.md       # Install, verify, upgrade, uninstall, troubleshooting
 │   ├── usage.md              # End-to-end coordinator walkthrough
 │   ├── architecture.md       # Design: planes, roles, workflows, evidence, invariants
+│   ├── extending.md          # Native Role/Skill extensions and execution configuration
 │   ├── professional-skills.md
 │   ├── faq.md                # FAQ and troubleshooting
-│   └── zh-CN/                # Simplified Chinese translations of the five guides above
+│   └── zh-CN/                # Simplified Chinese translations of the six guides above
 ├── references/               # 11 deep-dive references (runtime, branch model, evidence, ...)
 ├── roles/                    # 12 role contracts + catalog.json
 ├── routing/                  # Model, role, skill, and workflow routing tables
-├── skills/                   # 16 vendored professional Skills + LICENSE + README
+├── skills/                   # 16 maintained professional Skills + LICENSE + README
 ├── workflows/                # 4 workflow definitions
-├── schemas/                  # 8 JSON schemas for .dev-work state and evidence
-├── scripts/                  # 9 PowerShell scripts
+├── schemas/                  # State, evidence, requirements and configuration schemas
+├── scripts/                  # Delivery and configuration PowerShell helpers
 └── templates/                # AGENTS.md, task/review/report templates, .dev-work seeds
 ```
 
@@ -143,6 +145,7 @@ orca-project-delivery/
 | --- | --- |
 | [Installation](docs/installation.md) | Prerequisites, directory conventions, install steps, verification, upgrade, uninstall, common install failures |
 | [Professional Skills](docs/professional-skills.md) | The 16 worker Skills, source repository, install layout, and troubleshooting |
+| [Extending and configuration](docs/extending.md) | Native Role/Skill recipes, dependency declarations, literal configuration, offline child-execution walkthrough |
 | [Usage](docs/usage.md) | Starting a delivery from the coordinator entry, the full stage sequence, role/model routing, branch and worktree rules, evidence and reports, worker receipts, Q&A |
 | [Architecture](docs/architecture.md) | Control vs. delivery plane, authority sources, role/workflow/skill tables, evidence model, coordinator lock, the 12 invariants |
 | [FAQ](docs/faq.md) | Common questions and failure-mode troubleshooting |

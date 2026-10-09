@@ -66,12 +66,18 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 
 - 许多 `PASS <check>` 行（解析、编码、路由、元数据、运行时夹具、证据夹具等）；
 - 一行 `skills: 16/16 resolved (... package-bundled)` 汇总；
-- 最后一行：`SUMMARY PASS=59 FAIL=0`；
+- 最后一行：`SUMMARY PASS=65 FAIL=0`；
 - 进程退出码为 0。
 
 套件对包本身是只读的：所有夹具和副本都建在临时目录（`orca-package-verification-*`）下，结束时删除。结论看 `SUMMARY` 行和退出码；任何 `FAIL` 行都表示安装不被接受。
 
 关于同级证据校验器：单独在运行时使用 `scripts/validate-git-evidence.ps1` 时，读它打印的 JSON `status` 字段，不要只看退出码 — `PASS` 和 `NOT_APPLICABLE` 都以 0 退出，而 `NOT_APPLICABLE` 不是验收。
+
+## 扩展与本地执行配置
+
+新增方法或职责时，按[扩展指南](extending.md)使用原生目录，包括当前内容哈希、清单数量与模型路由。随包 Skill 是维护中的 MIT 改编版；保留许可证，有意修改须先审阅再更新哈希。`verify-package.ps1 -MetadataOnly` 是快速结构检查，不能替代完整套件。上面的 65 项汇总描述当前随包版本；成功要求没有失败，不是永远固定数量。
+
+引导仅在缺失时创建 `.env.example` 与 `project-config.example.json`，已有文件保持不变。它把 `/.env` 加入本地 Git `info/exclude`，同一克隆的工作树共享此文件。实际执行主机上填有值的 `.env` 保持不跟踪。工作者必须显式提供自己的 `ProjectRoot`；辅助脚本不复制协调者配置，也不创建工作者 `.dev-work/` 状态。当前随包条目不声明凭据依赖。
 
 ## 升级
 
@@ -109,7 +115,7 @@ FAIL metadata/skill-paths: skill file missing: <...>\skills\code-review\SKILL.md
 
 或 `metadata/bundled-skill-integrity` 下的哈希失败。
 
-原因：某个随包的 `skills/<skill-id>/SKILL.md` 缺失、被本地删除，或不再匹配 `skills/README.md` 里的 SHA256 表。修复：从 Git 恢复文件（`git checkout -- skills/`）或重新克隆本包，然后重跑套件。
+原因：某个随包的 `skills/<skill-id>/SKILL.md` 缺失、被本地删除，或不再匹配 `skills/README.md` 里的当前 SHA256 表。先检查并保留本地改动。意外损坏从包 Git 恢复；有意改编则按[扩展指南](extending.md)审阅正文并更新哈希，然后重跑套件。
 
 ### 找不到 PowerShell 7
 

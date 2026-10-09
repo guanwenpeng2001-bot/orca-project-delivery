@@ -13,7 +13,7 @@
 1. 定位协调者控制工作树。若怀疑已有第二个协调者，先按 `references/coordinator-lock.md` 处理，再做其他事：存活的协调者会被拒绝；未知的锁状态保留待查，绝不绕过。
 2. 保留已有的项目 `AGENTS.md`；仅当不存在时才从 `templates/AGENTS.md` 创建。
 3. 用 `scripts/bootstrap-project.ps1` 初始化或校验 `.dev-work/`。脚本会解析并记录交付分支、写入协调者锁，并拒绝在交付分支本身上运行。
-4. 在控制工作树本地把 `/AGENTS.md` 和 `/.dev-work/` 排除出 Git。
+4. 引导保留已有 `.env.example` 和 `project-config.example.json`，仅创建缺失示例；通过同一克隆各工作树共享的本地 Git `info/exclude` 排除 `/AGENTS.md`、`/.dev-work/` 和 `/.env`。
 5. 用 `scripts/create-run.ps1` 创建或恢复运行记录，然后创建或绑定 Orca Run。
 6. 运行 `scripts/probe-claude-capabilities.ps1`，检查它的 JSON 和警告，而不只是退出码。任何 `launched` 结论都是异常的哨兵启动：停止、标为未验证，并升级。
 7. 在控制树中记录协调者、交付分支、Orca Run id、schema 版本和探测证据。
@@ -66,6 +66,8 @@ intake -> reconnaissance -> plan -> task graph -> dispatch
 
 专业 Skill 随本包位于 `skills/<skill-id>/SKILL.md`。组装只解析这些路径（`explicit-path`），或内联同一正文（`inline-extract`）；随包文件缺失时组装失败，不回退到 `~/.agents/skills`。出处与 SHA256 检查写在 `skills/README.md`，并由 `scripts/verify-package.ps1` 中的 `metadata/bundled-skill-integrity` 离线强制。见 [professional-skills.md](professional-skills.md) 和 [installation.md](installation.md)。
 
+组装把目录 `requires` 的名称/用途放在 Inputs and Dependencies 内，区分 Role 加必需 Skill 的依赖与条件 Skill。条件依赖仅在 Task 要求时激活。在执行主机上，以显式 `-ProjectRoot`、`-Role` 和会话内 `-Skills @(...)` 所选 ID 数组运行 `check-requirements.ps1`。辅助脚本不会代选 Role 默认 Skill。文件配置不代表当前 shell 已有这些值；授权子进程可以通过 `invoke-with-requirements.ps1` 接收所选文件变量，父进程环境保持不变。精确接口及离线走读见[扩展与配置](extending.md)。十段 Task 顺序及适用 `AGENTS.md` 最后保持不变。
+
 ### 5. 派发
 
 任务**就绪**的条件是：真实依赖已通过各自的门成功结算 — 源码依赖只在它自己的审查*和*集成之后才算数，绝不只凭 `worker_done` — 写入范围与在途任务不相交，并且基线与路由可用。立即派发就绪任务（滚动派发）；不要为无关的在途工作设置批次屏障。
@@ -98,7 +100,7 @@ intake -> reconnaissance -> plan -> task graph -> dispatch
 
 ## 选择角色与模型路由
 
-按交付物为每个任务恰好选择一个主角色，使用 `routing/role-selection.json`；按 `routing/skill-selection.json` 从 `routing/skill-catalog.json` 的 16 个中选 1–3 个必需 Skill，再为实质风险加 0–2 个条件 Skill。角色的模型路由来自 `routing/model-routing.json`：选定链，从默认档开始，绝不低于最低档。
+按交付物为每个任务恰好选择一个主角色，使用 `routing/role-selection.json`；按 `routing/skill-selection.json` 从当前 `routing/skill-catalog.json` 目录中选 1–3 个必需 Skill，再为实质风险加 0–2 个条件 Skill。角色的模型路由来自 `routing/model-routing.json`：选定链，从默认档开始，绝不低于最低档。
 
 默认路由（每个角色链的索引 1）：
 
