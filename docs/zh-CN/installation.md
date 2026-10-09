@@ -4,7 +4,7 @@
 
 本指南安装 `orca-project-delivery` 协调者 Skill，使 Claude Code 协调者会话能从控制工作树加载它。本包是一个普通文件目录 — 没有安装程序、没有包注册表，也没有构建步骤。
 
-本指南描述计划中的 2.4.0 包（46 个 Skill / 16 个角色 / 4 个工作流）。安装完整且匹配的版本。运行示例前先做[教程中的版本及目录检查](professional-capability-tutorial.md#1-确认你安装的是什么)。版本不匹配就不是本版本。
+本指南描述2.4.0 包（46 个 Skill / 16 个角色 / 4 个工作流）。安装完整且匹配的版本。运行示例前先做[教程中的版本及目录检查](professional-capability-tutorial.md#1-确认你安装的是什么)。版本不匹配就不是本版本。
 
 ## 前置条件
 
@@ -23,7 +23,7 @@
 
 | 选定功能 | 运行时 / 依赖 | 缺失时行为 |
 | --- | --- | --- |
-| 对比度、字幕、合成/探测、manifest、Markdown | Node.js；完整教程及使用 `node:zlib` CRC32 的 PNG 工具采用 22.16+ | 先解决具名可执行文件缺失或 Node 版本不支持。 |
+| 对比度、字幕、合成/探测、manifest、Markdown | Node.js 22.15+，随包 Skill 文档规定的基线，适用于含 PNG 工具的完整教程 | 先解决具名可执行文件缺失或 Node 版本不支持。 |
 | 浏览器示例 | Node 调用器、带 Playwright 的 Python、已安装的 Chromium | runner 按名报告缺失依赖，仅对应可选测试跳过。 |
 | DOCX/PPTX/XLSX/PDF | Python 3.10+ 及 `skills/document-production/scripts/requirements.txt` 的固定版本 | 缺库退出 2，无效/不支持内容退出 1；非 ASCII PDF 还需 `--font`。 |
 | 真实转码 | 本地 `ffmpeg`、`ffprobe`，可能不在 PATH | 必要时使用显式可执行文件路径；已保存探测结果的比较只需 Node。 |

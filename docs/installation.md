@@ -7,7 +7,7 @@ Code coordinator session can load it from your control worktree. The package
 is a plain directory of files — there is no installer, no package registry,
 and no build step.
 
-This guide describes the planned 2.4.0 package (46 Skills / 16 Roles / 4 workflows). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
+This guide describes the 2.4.0 package (46 Skills / 16 Roles / 4 workflows). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ this Skill does not install them. Check the tools on the actual execution host.
 
 | Selected feature | Runtime / dependency | Missing dependency behavior |
 | --- | --- | --- |
-| Contrast, subtitles, composition/probes, manifest, Markdown | Node.js; use 22.16+ for the complete tutorial and PNG tools using `node:zlib` CRC32 | Fix the named missing executable or unsupported Node version before running. |
+| Contrast, subtitles, composition/probes, manifest, Markdown | Node.js 22.15+, the baseline documented by the bundled Skills, for the complete tutorial including PNG tools | Fix the named missing executable or unsupported Node version before running. |
 | Browser sample | Node host, Python with Playwright, existing Chromium executable | Runner names the missing dependency; only relevant optional tests skip. |
 | DOCX/PPTX/XLSX/PDF | Python 3.10+ and versions in `skills/document-production/scripts/requirements.txt` | Missing library exits 2; invalid/unsupported content exits 1. Non-ASCII PDF additionally needs `--font`. |
 | Real transcoding | Local `ffmpeg` and `ffprobe`; they may exist outside PATH | Use explicit executable paths if needed. The saved-probe comparison itself needs only Node. |

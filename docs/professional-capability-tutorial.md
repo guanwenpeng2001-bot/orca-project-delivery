@@ -9,7 +9,7 @@ provider or paid call is made; offline simulation does not verify generation
 quality.
 
 Run the PowerShell blocks in order in a PowerShell 7 session from the package
-root, with Node.js 22.16+ (for `node:zlib` CRC32) and Python 3.10+ available
+root, with Node.js 22.15+ (the baseline documented by the bundled Skills) and Python 3.10+ available
 for the examples that use them.
 Install the complete matching 2.4.0 release first. A version that does not
 match lacks the scripts these commands use. The guard rejects an incomplete or mismatched installation.
@@ -234,7 +234,7 @@ python -I ./skills/document-production/scripts/office-document.py --input "$work
 ## 6. Run the 2.4.0 local tools
 
 These commands are new in 2.4.0. The file-processing commands run offline and write only under `$work`.
-They require Node.js 22.16+; the optional browser test also needs Python
+They require Node.js 22.15+; the optional browser test also needs Python
 Playwright and a local Chromium. No command contacts a provider.
 
 Contrast of black on white is 21:1, which passes both the 4.5:1 text threshold
