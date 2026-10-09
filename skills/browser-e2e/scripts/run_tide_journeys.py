@@ -3,7 +3,11 @@ import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from playwright.sync_api import sync_playwright
+try:
+    from playwright.sync_api import sync_playwright
+except ModuleNotFoundError as error:
+    sys.stderr.write("missing dependency: Python Playwright (" + error.name + ")\n")
+    sys.exit(1)
 
 JOURNEYS = ("saves a tide reading", "refuses a blank tide time")
 
@@ -11,6 +15,8 @@ JOURNEYS = ("saves a tide reading", "refuses a blank tide time")
 def run(fixture, executable, html=None, journeys=None, seed_defect=False):
     selected = list(journeys or JOURNEYS)
     results = []
+    if not Path(executable).is_file():
+        return {"ok": False, "journeys": [], "failures": ["missing dependency: Chromium executable was not found at " + executable]}
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(executable_path=executable, headless=True)
         try:

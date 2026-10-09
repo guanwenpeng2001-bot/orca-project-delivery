@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const script = path.join(root, 'skills', 'frontend-visual-design', 'scripts', 'contrast-ratio.mjs');
@@ -164,7 +164,7 @@ test('the fixture server binds to loopback and serves the page', async () => {
   }
 });
 
-test('removing a journey or its fixture role makes the journey runner report a failure', async () => {
+test('removing a journey or its fixture role makes the journey runner report a failure', { skip: browserUnavailable() }, async () => {
   const runnerPath = path.join(root, 'skills', 'browser-e2e', 'scripts', 'run-tide-journeys.mjs');
   const runner = await import(pathToFileURL(runnerPath).href);
   const fixture = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-page.html');
@@ -197,13 +197,83 @@ test('removing a journey or its fixture role makes the journey runner report a f
   assert.match(refusal.detail, /items=\[''\]/);
 });
 
-function chromiumPath() {
-  const rootDir = process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'ms-playwright');
-  if (!rootDir) return undefined;
+test('a missing Python interpreter is a named dependency failure, not an exited null', async () => {
+  const runnerPath = path.join(root, 'skills', 'browser-e2e', 'scripts', 'run-tide-journeys.mjs');
+  const runner = await import(pathToFileURL(runnerPath).href);
+  const fixture = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-page.html');
+  assert.throws(
+    () => runner.runTideJourneys({ fixturePath: fixture, executablePath: 'C:\\missing\\chrome.exe', pythonPath: 'C:\\missing\\python.exe' }),
+    (error) => {
+      assert.match(error.message, /missing dependency: Python/);
+      assert.doesNotMatch(error.message, /exited null/);
+      assert.doesNotMatch(error.message, /KeyError/);
+      return true;
+    },
+  );
+});
+
+test('a Python without Playwright is a named dependency failure, not a traceback', async () => {
+  const runnerPath = path.join(root, 'skills', 'browser-e2e', 'scripts', 'run-tide-journeys.mjs');
+  const runner = await import(pathToFileURL(runnerPath).href);
+  const fixture = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-page.html');
+  assert.throws(
+    () => runner.runTideJourneys({
+      fixturePath: fixture,
+      executablePath: 'C:\\missing\\chrome.exe',
+      pythonPath: 'python',
+      pythonArgs: ['-I', '-S'],
+    }),
+    (error) => {
+      assert.match(error.message, /missing dependency: Python Playwright/);
+      assert.doesNotMatch(error.message, /Traceback/);
+      assert.doesNotMatch(error.message, /ModuleNotFoundError/);
+      return true;
+    },
+  );
+});
+
+test('the installed Chromium revision is chosen numerically, not by directory name', () => {
+  const rootDir = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-chromium-order');
+  mkdirSync(path.join(rootDir, 'chromium-9', 'chrome-win64'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'chromium-1234', 'chrome-win64'), { recursive: true });
+  try {
+    const chosen = chromiumPath(rootDir);
+    assert.equal(chosen, path.join(rootDir, 'chromium-1234', 'chrome-win64', 'chrome.exe'));
+  } finally {
+    rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('a missing Chromium executable is a named dependency failure, not a KeyError', async () => {
+  const runnerPath = path.join(root, 'skills', 'browser-e2e', 'scripts', 'run-tide-journeys.mjs');
+  const runner = await import(pathToFileURL(runnerPath).href);
+  const fixture = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-page.html');
+  assert.throws(
+    () => runner.runTideJourneys({ fixturePath: fixture }),
+    (error) => {
+      assert.match(error.message, /missing dependency: Chromium/);
+      assert.doesNotMatch(error.message, /KeyError/);
+      assert.doesNotMatch(error.message, /exited null/);
+      return true;
+    },
+  );
+});
+
+function browserUnavailable() {
+  const python = spawnSync('python', ['-I', '-c', 'import playwright'], { encoding: 'utf8', timeout: 15000 });
+  if (python.error && python.error.code === 'ENOENT') return 'missing dependency: Python interpreter was not found on PATH';
+  if (python.status === null) return 'missing dependency: Python interpreter did not exit';
+  if (python.status !== 0) return 'missing dependency: Python Playwright is not importable';
+  if (!chromiumPath(process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'ms-playwright'))) return 'missing dependency: Chromium executable was not found';
+  return false;
+}
+
+function chromiumPath(rootDir = process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'ms-playwright')) {
+  if (!rootDir || !existsSync(rootDir)) return undefined;
   const installs = readdirSync(rootDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && entry.name.startsWith('chromium-'))
+    .filter((entry) => entry.isDirectory() && /^chromium-\d+$/.test(entry.name))
     .map((entry) => entry.name)
-    .sort();
+    .sort((left, right) => Number(left.slice('chromium-'.length)) - Number(right.slice('chromium-'.length)));
   const latest = installs.at(-1);
   return latest ? path.join(rootDir, latest, 'chrome-win64', 'chrome.exe') : undefined;
 }

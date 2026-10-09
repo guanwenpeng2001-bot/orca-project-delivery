@@ -19,7 +19,7 @@ Every regression needs one successful journey and one deliberate failure. The fa
 
 Keep the test deterministic. Control clock, network delay, and seeded data explicitly. A wait for an arbitrary timeout hides ordering bugs; wait for the observable state instead.
 
-Node.js is the declared host for the project’s browser runner. The package does not install or invoke a browser by itself.
+Node.js is the declared host for the project’s browser runner. The package never installs a browser and never launches one on its own. Running `run-tide-journeys.mjs` launches an already installed local Chromium through the caller’s Python Playwright. If Python, Python Playwright, or that Chromium is missing, the caller gets a named missing-dependency error and the optional browser test skips with that reason. A skip is not browser coverage.
 
 ### Reference
 
