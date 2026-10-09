@@ -1,0 +1,5 @@
+sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: GET /orders (Accept-Version: 2)
+    Server-->>Client: 200 nested body

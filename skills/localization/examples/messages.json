@@ -1,0 +1,22 @@
+{
+  "glossary": {
+    "file": { "en": "file", "ar": "ملف" },
+    "folder": { "en": "folder", "ar": "مجلد" }
+  },
+  "locales": {
+    "en": {
+      "save.summary": "{count, plural, one {Saved # file to {folder}} other {Saved # files to {folder}}}"
+    },
+    "ar": {
+      "save.summary": "{count, plural, zero {لم يُحفظ أي ملف في {folder}} one {حُفظ ملف واحد في {folder}} two {حُفظ ملفان في {folder}} few {حُفظت # ملفات في {folder}} many {حُفظ # ملفًا في {folder}} other {حُفظ # ملف في {folder}}}"
+    }
+  },
+  "broken": {
+    "ar": {
+      "save.summary": "{count, plural, other {حُفظ # ملف}}"
+    }
+  },
+  "pseudo": {
+    "save.summary": "[Šävëð # fïlë tö {folder}]"
+  }
+}

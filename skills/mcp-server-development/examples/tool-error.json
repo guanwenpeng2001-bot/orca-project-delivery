@@ -1,0 +1,21 @@
+{
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "tools/call",
+    "params": {
+      "name": "record_reading",
+      "arguments": { "sensor": "dock-1", "celsius": 400 }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "result": {
+      "content": [
+        { "type": "text", "text": "celsius must be between -89.2 and 56.7." }
+      ],
+      "isError": true
+    }
+  }
+}

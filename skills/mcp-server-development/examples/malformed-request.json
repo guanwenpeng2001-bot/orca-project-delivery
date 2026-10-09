@@ -1,0 +1,13 @@
+{
+  "request": {
+    "jsonrpc": "2.0",
+    "id": 5,
+    "method": "tools/call",
+    "params": { "arguments": { "sensor": "dock-1" } }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 5,
+    "error": { "code": -32602, "message": "Invalid params: missing tool name." }
+  }
+}

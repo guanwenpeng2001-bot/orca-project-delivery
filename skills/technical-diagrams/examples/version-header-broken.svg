@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="640" height="160">
+  <title>diagram</title>
+  <rect x="40" y="30" width="200" height="64" fill="#ffffff" stroke="#888888"/>
+  <path d="M70 62 H150" stroke="#888888"/>
+  <text x="520" y="150" font-size="9" fill="#888888">Accept-Version: 2 leaves the canvas</text>
+  <image href="https://cdn.example.com/arrow.png" x="300" y="40" width="16" height="16"/>
+</svg>
