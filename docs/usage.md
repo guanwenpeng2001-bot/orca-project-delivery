@@ -104,6 +104,14 @@ the Orca Worker Contract. Record the machine-readable assignment under
 runtime values — even when a Markdown brief exists. Encode only true
 dependencies; use parallel waves and avoid chains deeper than 3–4 steps.
 
+Professional Skills are bundled under `skills/<skill-id>/SKILL.md` in this package.
+Assembly resolves only those paths (`explicit-path`) or inlines the same bodies
+(`inline-extract`); a missing bundled file fails at assembly with no fallback to
+`~/.agents/skills`. Provenance and SHA256 checks are documented in
+`skills/README.md` and enforced offline by `metadata/bundled-skill-integrity` in
+`scripts/verify-package.ps1`. See [professional-skills.md](professional-skills.md)
+and [installation.md](installation.md).
+
 ### 5. Dispatch
 
 A Task is **ready** when its real dependencies have settled successfully
