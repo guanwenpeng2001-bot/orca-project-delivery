@@ -9,7 +9,7 @@ carries **46 professional Skills**, **16 Roles**, and **4 workflows**. This
 guide explains what each new or deepened capability is for, what it does not
 do, and how far its claims have actually been checked.
 
-This guide describes the planned 2.4.0 package: 46 Skills, 16 Roles, and 4
+This guide describes the 2.4.0 package: 46 Skills, 16 Roles, and 4
 workflows. Install the complete matching release. Confirm `VERSION` is `2.4.0`,
 `routing/skill-catalog.json` contains 46 Skills, `roles/catalog.json`
 contains 16 Roles, `workflows/` holds 4 definitions, and
@@ -77,13 +77,14 @@ cite public specifications; no upstream Skill text is copied.
 | Skill | Decides | Worked example you can check | Limit |
 | --- | --- | --- | --- |
 | `skill-authoring-evaluation` | Whether a Skill's description triggers correctly, names a counterexample, and states an observable outcome. | The worked example scores a weak and a strong description against `database-design`. | Scores the text. It is not an agent experiment and reports none. |
-| `design-system` | Shared tokens (primitive, semantic, component) and component contracts across screens. | The worked example declares CSS custom properties and measures contrast with `contrast-ratio.mjs`. | Tool-neutral. It does not replace `frontend-visual-design`, which owns one screen's visual spec. |
+| `design-system` | Shared tokens (primitive, semantic, component) and component contracts across screens. | The worked example declares CSS custom properties and states the muted-on-surface ratio as `4.48:1` in prose. The same value is produced by the `frontend-visual-design` `contrast-ratio.mjs` command. | Tool-neutral. It does not replace `frontend-visual-design`, which owns one screen's visual spec. |
 | `domain-modeling` | Entities, value objects, aggregates, and which invariant each owns. | The worked example rejects a reservation model that lets two stays write the same room-night. | Stops before storage. Schema and migrations stay with `database-design`. |
 | `migration-upgrade` | The expand, dual-run, switch, and contract order for a dependency, framework, or API upgrade. | The worked example moves an HTTP body under `data` across four separate deploys, detected by an `Accept-Version` header. | Does not plan a schema backfill; that stays with `database-design`. |
 | `mcp-server-development` | An MCP tool surface: names, schemas, error channel, and transport. | The worked example shows a valid `tools/call`, a `-32602` protocol error for an unknown tool, and a tool error for an out-of-range value, pinned to protocol revision `2025-11-25`. | Ships no server scaffold. Its checks validate fixture files and do not start a server. |
 | `technical-diagrams` | Hand-written SVG and Mermaid figures: real text, readable sizes, contrast tokens, and a description. | The worked example is a sequence diagram plus `examples/version-header.svg`, checked by reading the source. | Reading source is not rendering. No figure is claimed to have been drawn on screen. |
 | `localization` | Glossary, placeholder and ICU message protection, expansion, and right-to-left text. | The worked example rewrites a concatenated count into one ICU `plural` message with the same placeholders in every locale. | Prepares source copy. It calls no translation service and invents no translations. |
-| `subtitle-production` | SRT and WebVTT conversion, timing checks, and cue numbering. | `scripts/subtitle-convert.mjs` converts either way and reports the cue count as JSON. | Converts text cues only. It does not style, position, or burn subtitles into video. |
+
+`subtitle-production` is listed under [Audio, video, and document methods](#audio-video-and-document-methods) so the inventory counts each later Skill once.
 
 The local commands and their results are in the
 [tutorial](professional-capability-tutorial.md#6-run-the-240-local-tools).

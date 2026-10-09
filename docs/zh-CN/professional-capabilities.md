@@ -4,7 +4,7 @@
 
 2.4.0 深化 2.3.0 的能力，新增工程方法、设计系统与字幕等八个 Skill，并扩展有界文档块。加上原有十六个及 2.3.0 的二十二个，本包共有 **46 个专业 Skill**、**16 个角色**和 **4 个工作流**。本指南说明新增或增强的能力做什么、不做什么，以及实际验证到哪一步。
 
-本指南描述计划中的 2.4.0 包：46 个 Skill、16 个角色、4 个工作流。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `2.4.0`、`routing/skill-catalog.json` 有 46 个 Skill、`roles/catalog.json` 有 16 个角色、`workflows/` 有 4 份定义，且 `PACKAGE-MANIFEST.json` 与之相符。教程会拒绝版本不匹配的安装。
+本指南描述2.4.0 包：46 个 Skill、16 个角色、4 个工作流。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `2.4.0`、`routing/skill-catalog.json` 有 46 个 Skill、`roles/catalog.json` 有 16 个角色、`workflows/` 有 4 份定义，且 `PACKAGE-MANIFEST.json` 与之相符。教程会拒绝版本不匹配的安装。
 
 ## 如何阅读一项能力
 
@@ -51,13 +51,14 @@
 | Skill | 判断什么 | 可核对的实例 | 限制 |
 | --- | --- | --- | --- |
 | `skill-authoring-evaluation` | 描述是否正确触发、明确反例并提供可观察结果。 | 对照 `database-design` 为弱描述与强描述评分。 | 只评估文本，不是智能体实验。 |
-| `design-system` | 跨屏原始、语义、组件 token 及组件契约。 | CSS 自定义属性示例和对比度测量。 | 工具中立，不替代单屏视觉规范。 |
+| `design-system` | 跨屏原始、语义、组件 token 及组件契约。 | 示例声明 CSS 自定义属性，并在正文中写明 muted-on-surface 对比度为 `4.48:1`。同一数值可由 `frontend-visual-design` 的 `contrast-ratio.mjs` 命令得到。 | 工具中立，不替代单屏视觉规范。 |
 | `domain-modeling` | 实体、值对象、聚合及不变量归属。 | 拒绝允许两个住宿记录写入同一房晚的模型。 | 到持久化之前止步，schema 与迁移归 `database-design`。 |
 | `migration-upgrade` | 依赖、框架或 API 的扩展、双路径运行、切换和收缩顺序。 | 用 `Accept-Version` 探测，分四次部署把 HTTP 字段移入 `data`。 | 不重复 schema 回填方案。 |
 | `mcp-server-development` | 工具名、schema、错误通道与传输。 | 固定协议修订 `2025-11-25`，展示有效 `tools/call`、未知工具的 `-32602` 协议错误及超范围值的工具错误。 | 不附服务器脚手架，测试只检查夹具，不启动服务器。 |
 | `technical-diagrams` | SVG/Mermaid 中的真实文字、字号、对比度 token 和描述。 | 时序图与 `examples/version-header.svg` 的源码语义检查。 | 源码检查不是渲染，不声称屏幕效果已验证。 |
 | `localization` | 术语表、ICU 占位符、文本膨胀与从右到左布局。 | 将拼接计数改为一条 ICU `plural` 消息，各语言保留相同占位符。 | 处理源文案，不调用翻译服务，不编造翻译。 |
-| `subtitle-production` | SRT/WebVTT 转换、时间检查和编号。 | `scripts/subtitle-convert.mjs` 双向转换并输出 JSON cue 数。 | 仅文本，不处理样式、定位或烧录。 |
+
+`subtitle-production` 在[音频、视频与文档方法](#音频视频与文档方法)中列出，以便清单对每个后续 Skill 只计数一次。
 
 具体命令和输出见[教程](professional-capability-tutorial.md#6-运行-240-本地工具)。
 

@@ -6,9 +6,9 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 
 ## Unreleased
 
-### 2.4.0 — professional skill depth (planned)
+### 2.4.0 — professional skill depth
 
-- Added eight original Skills: `skill-authoring-evaluation`, `design-system`, `domain-modeling`, `migration-upgrade`, `mcp-server-development`, `technical-diagrams`, `subtitle-production`, and `localization`. Target inventory is 46 Skills, 16 Roles, and 4 workflows; existing Roles select the new methods as needed.
+- Added eight original Skills: `skill-authoring-evaluation`, `design-system`, `domain-modeling`, `migration-upgrade`, `mcp-server-development`, `technical-diagrams`, `subtitle-production`, and `localization`. The 2.4.0 package carries 46 Skills, 16 Roles, and 4 workflows; existing Roles select the new methods as needed.
 - Deepened six groups: frontend/product handoff and contrast; browser/accessibility journeys and audits; bounded document blocks; icon/web-asset PNG exports; image-header and content/readability checks; composition timing and saved-probe comparison. Existing examples remain supported.
 - Added offline Node commands for WCAG contrast, bounded RGB/RGBA PNG shrinking, PNG/JPEG/WebP headers, SRT/WebVTT conversion, composition frame maps, and ffprobe JSON comparison. Header inspection is not image decoding; timeline and probe checks do not render or transcode.
 - Document source now supports headings, paragraphs, ordered lists and literal tables. Markdown, DOCX and XLSX support real tables; PPTX/PDF reject them explicitly. Original title/bullet inputs remain supported; binary formats still require separately installed pinned Python libraries, and non-ASCII PDF needs a licensed glyph-covering TrueType font.
