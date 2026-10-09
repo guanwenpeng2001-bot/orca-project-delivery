@@ -241,6 +241,28 @@ exit `$childCode
     $result = Run-Script 'check-requirements.ps1' @('-ProjectRoot', $temporary, '-Role', 'codebase-scout')
     Assert ($result.Code -eq 0) 'Existing role must remain offline without keys'
   }
+  Check 'success-exit-resets-caller-status' {
+    $driver = Join-Path $project 'exit-status-driver.ps1'
+    @'
+param([string]$Checker, [string]$Root)
+function Read-CallerExit([string]$Prelude) {
+  $child = Join-Path $PSScriptRoot 'exit-status-child.ps1'
+  Set-Content -LiteralPath $child -Encoding utf8 -Value ($Prelude + "& '$Checker' -ProjectRoot '$Root' -Role codebase-scout | Out-Null; Write-Output ([string]`$LASTEXITCODE)")
+  return ((& (Get-Command pwsh -CommandType Application).Source -NoProfile -NonInteractive -File $child) | Select-Object -Last 1)
+}
+$fresh = Read-CallerExit ''
+if ($fresh -cne '0') { Write-Output "fresh success left LASTEXITCODE=[$fresh]"; exit 71 }
+$stale = Read-CallerExit '& cmd.exe /c exit 7 | Out-Null; '
+if ($stale -cne '0') { Write-Output "stale success left LASTEXITCODE=[$stale]"; exit 72 }
+& $Checker -ProjectRoot $Root -Role missing-role | Out-Null
+if ($LASTEXITCODE -ne 1) { Write-Output "failure exit became $LASTEXITCODE"; exit 73 }
+$document = & $Checker -ProjectRoot $Root -Role codebase-scout | ConvertFrom-Json
+if (-not $document.ok -or $null -eq $document.missing) { Write-Output 'success JSON contract changed'; exit 74 }
+exit 0
+'@ | Set-Content -LiteralPath $driver -Encoding utf8
+    $result = Run-Script '../../project with spaces/exit-status-driver.ps1' @((Join-Path $package 'scripts/check-requirements.ps1'), $temporary)
+    Assert ($result.Code -eq 0) "Success exit must reset caller status and failure must stay 1: $($result.Code) $($result.Text)"
+  }
   Write-Host "REQUIREMENTS SUMMARY PASS=$passed FAIL=0"
 } catch {
   Write-Host "FAIL requirements: $($_.Exception.Message)"

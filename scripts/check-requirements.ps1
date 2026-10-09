@@ -16,6 +16,7 @@ try {
   $resolution = Resolve-RequirementAvailability -ProjectRoot $ProjectRoot -RoleId $Role -SkillIds $Skills -ConfigPath $ConfigPath
   [ordered]@{ ok = ($resolution.Missing.Count -eq 0); role = $Role; skills = @($Skills); checks = $resolution.Checks; missing = $resolution.Missing } | ConvertTo-Json -Depth 10
   if ($resolution.Missing.Count -gt 0) { exit 1 }
+  exit 0
 } catch {
   [ordered]@{ ok = $false; errors = @($_.Exception.Message) } | ConvertTo-Json -Compress
   exit 1
