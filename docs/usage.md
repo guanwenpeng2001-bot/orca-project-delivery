@@ -1,5 +1,7 @@
 # Usage
 
+**English** | [简体中文](zh-CN/usage.md)
+
 This walkthrough shows one complete delivery from the coordinator's seat. It
 summarizes the workflow defined in `SKILL.md` and its references; the Skill
 itself is the authority at runtime, and the installed global `orchestration`

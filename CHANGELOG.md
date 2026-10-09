@@ -6,6 +6,7 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 
 ## Unreleased
 
+- Added Simplified Chinese public documentation: `README.zh-CN.md` and `docs/zh-CN/` (`installation`, `usage`, `architecture`, `faq`, `professional-skills`). English remains the default; root READMEs and the five public guides carry reciprocal English / 简体中文 links. No runtime, routing, schema, or workflow changes.
 - Vendored all 16 professional Skills under package `skills/` from [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) at commit `d9a174c7143bfb4c76ed042f457fb7785c35cea3`, with MIT `LICENSE`, provenance and SHA256 table in `skills/README.md`.
 - Retired installed-home fallback for Skill resolution: `routing/skill-catalog.json`, `scripts/assemble-task.ps1`, and `scripts/verify-package.ps1` resolve only bundled paths (`skills/<skill-id>/SKILL.md`); verification fails closed when a bundled file is missing or its hash diverges.
 - Added offline regressions `regression/bundled-skill-resolution`, `regression/assemble-task-skill-paths`, `regression/standalone-relocated-package`, and `metadata/bundled-skill-integrity`; updated public and reference docs for bundled layout (59-check acceptance suite).

@@ -1,5 +1,7 @@
 # Installation
 
+**English** | [简体中文](zh-CN/installation.md)
+
 This guide installs the `orca-project-delivery` coordinator Skill so a Claude
 Code coordinator session can load it from your control worktree. The package
 is a plain directory of files — there is no installer, no package registry,

@@ -1,5 +1,7 @@
 # Architecture
 
+**English** | [简体中文](zh-CN/architecture.md)
+
 This document explains how `orca-project-delivery` is designed: the two
 planes it separates, the authorities it never duplicates, the roles,
 workflows, and Skills it routes to, its Git evidence model, its coordinator

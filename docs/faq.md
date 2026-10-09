@@ -1,5 +1,7 @@
 # FAQ and troubleshooting
 
+**English** | [简体中文](zh-CN/faq.md)
+
 ## General
 
 **What exactly does this package give me?**

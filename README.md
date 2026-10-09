@@ -1,5 +1,7 @@
 # Orca Project Delivery
 
+**English** | [简体中文](README.zh-CN.md)
+
 A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
 ![Version](https://img.shields.io/badge/version-2.2.0-blue)
@@ -116,11 +118,15 @@ orca-project-delivery/
 ├── VERSION                   # 2.2.0
 ├── PACKAGE-MANIFEST.json     # Package metadata and deliverable counts
 ├── CHANGELOG.md
+├── README.md                 # English (default)
+├── README.zh-CN.md           # Simplified Chinese
 ├── docs/
 │   ├── installation.md       # Install, verify, upgrade, uninstall, troubleshooting
 │   ├── usage.md              # End-to-end coordinator walkthrough
 │   ├── architecture.md       # Design: planes, roles, workflows, evidence, invariants
-│   └── faq.md                # FAQ and troubleshooting
+│   ├── professional-skills.md
+│   ├── faq.md                # FAQ and troubleshooting
+│   └── zh-CN/                # Simplified Chinese translations of the five guides above
 ├── references/               # 11 deep-dive references (runtime, branch model, evidence, ...)
 ├── roles/                    # 12 role contracts + catalog.json
 ├── routing/                  # Model, role, skill, and workflow routing tables
@@ -140,6 +146,7 @@ orca-project-delivery/
 | [Usage](docs/usage.md) | Starting a delivery from the coordinator entry, the full stage sequence, role/model routing, branch and worktree rules, evidence and reports, worker receipts, Q&A |
 | [Architecture](docs/architecture.md) | Control vs. delivery plane, authority sources, role/workflow/skill tables, evidence model, coordinator lock, the 12 invariants |
 | [FAQ](docs/faq.md) | Common questions and failure-mode troubleshooting |
+| [简体中文](README.zh-CN.md) | Chinese README, with links to the Chinese guides under `docs/zh-CN/` |
 | [Changelog](CHANGELOG.md) | Release history |
 
 Reference documentation inside the package (`references/`) is written for the

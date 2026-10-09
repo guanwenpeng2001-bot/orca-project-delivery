@@ -1,5 +1,7 @@
 # Professional Skills
 
+**English** | [简体中文](zh-CN/professional-skills.md)
+
 Orca Project Delivery coordinates workers that load **professional Skills** —
 method-only instruction packs (`SKILL.md`) for reconnaissance, product work,
 architecture, implementation, review, and verification. All sixteen Skills ship
