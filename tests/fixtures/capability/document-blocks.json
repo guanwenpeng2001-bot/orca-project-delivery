@@ -1,0 +1,10 @@
+{
+  "title": "Harbor notes",
+  "blocks": [
+    { "type": "heading", "text": "Berth plan" },
+    { "type": "paragraph", "text": "Draft stays at 12.4 m through Friday." },
+    { "type": "list", "ordered": true, "items": ["Sound the basin", "Log the tide"] },
+    { "type": "bullets", "items": ["Keep one fact per bullet"] },
+    { "type": "table", "columns": ["Berth", "Draft m"], "rows": [["North", "12.4"], ["South", "9.8"]] }
+  ]
+}
