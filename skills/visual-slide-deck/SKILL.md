@@ -13,7 +13,7 @@ A visual deck is a sequence of pictures with a reading order. It must be labeled
 
 Give each slide one claim and one visual action. A slide with two claims should be split. The title states the claim; the body supplies the evidence or next action rather than repeating the title.
 
-Plan for the projection size. Body text must be readable at the back of the intended room, and contrast must meet ordinary text requirements. A full-bleed image needs a protected area for text. Do not place necessary text inside an image region where cropping or generation may alter it.
+Plan for the projection size. Body text must be readable at the back of the intended room: at least 28px when the slide is 1920px wide, scaled in proportion for other widths, with contrast of at least 4.5:1 against the area behind it. A full-bleed image needs a protected area for text. Do not place necessary text inside an image region where cropping or generation may alter it.
 
 If slides are rendered by an image model, every required word is listed exactly and checked after rendering. Numbers and names are source-controlled text, not improvised decoration. Exporting the images into a presentation shell does not make their text editable; the delivery note must say that plainly.
 
@@ -33,7 +33,7 @@ The method is original. Readability and slide-claim guidance derives from presen
 
 ## Worked example
 
-Five harbor-review slides each carry one claim: status, cause, cost, action, and owner. The cost slide lists “$42,000” as required text. After rendering, that word is compared character for character. The delivery states “PNG slides, not editable presentation objects.” A slide combining cause and cost is split before rendering.
+Five harbor-review slides each carry one claim: status, cause, cost, action, and owner. The cost slide lists “$42,000” as required text. After rendering, that word is compared character for character, and the body text is measured against the 28px floor at 1920px width. The delivery states “PNG slides, not editable presentation objects.” A slide combining cause and cost is split before rendering.
 
 ## Failure signals
 

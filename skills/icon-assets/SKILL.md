@@ -13,7 +13,7 @@ An icon is usable only when its meaning, size, and license can be traced. A down
 
 Use one grid, normally 24px with 2px strokes, for interface icons. A 16px icon needs fewer details, not a reduced copy of a complex drawing. Keep the visible weight consistent: if one symbol is filled and another is outlined, that difference must carry meaning.
 
-Prefer a local reviewed set. A public icon API may be consulted only under the task’s network authorization; this Skill does not declare such a network dependency because the package requirement schema cannot represent a keyless API honestly. Record the set name, version or retrieval date, license, and icon name for every adopted item.
+Prefer a local reviewed set. A public icon API may be consulted only under the task’s network authorization; this Skill does not declare such a network dependency because the package requirement schema cannot represent a keyless API honestly. Record the set name, version or retrieval date, license, and icon name for every adopted item. When an icon is exported to a PNG size, record the master file and the command that produced it next to the license, so a resized file can be traced back to the reviewed source.
 
 Do not edit a licensed icon in a way its license reserves. Modifications, attribution, and trademark restrictions stay with the source license. An icon that resembles a third-party logo is not generic artwork.
 
@@ -27,7 +27,7 @@ The method is original. Icon licensing must be read from the selected collection
 
 1. Name the action or status the icon represents and its rendered size.
 2. Select one existing visual family before adding a symbol.
-3. Record source, version, license, and whether attribution is required.
+3. Record source, version, license, attribution, and the export command for each rendered size.
 4. Check legibility at the target size and the accessible name.
 5. Reject any icon whose license or origin cannot be stated.
 
