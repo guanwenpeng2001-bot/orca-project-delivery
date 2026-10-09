@@ -28,12 +28,12 @@ The method is original. Separation of illustration from evidence follows standar
 1. Extract the single claim and classify the image as cover or explanation.
 2. Write required objects, exclusions, and the caption context.
 3. Render only when generation is separately authorized.
-4. Compare the result with the claim and exclusions.
+4. Compare the result with the claim and exclusions, naming each object that appears and whether the article supports it.
 5. Reject imagery that implies evidence the article does not have.
 
 ## Worked example
 
-An article claims that a harbor closed during a storm. The brief asks for an illustrated closed gate and weather, not a photograph of an identifiable operator. The caption begins “Illustration:” and names no real person. A result adding an emergency vehicle and a readable headline not in the article is rejected because it adds an unreported event.
+An article claims that a harbor closed during a storm. The brief asks for an illustrated closed gate and weather, not a photograph of an identifiable operator. The caption begins “Illustration:” and names no real person. A result adding an emergency vehicle and a readable headline not in the article is rejected because it adds an unreported event. The review lists the objects actually visible — gate, weather, vehicle, headline — and marks each as sourced or invented, which a caption or a file-format check cannot do.
 
 ## Failure signals
 

@@ -28,12 +28,12 @@ The method is original. Graphical integrity and zero-baseline guidance follow Ed
 1. Collect the source figures, units, date, and permitted rounding.
 2. Select the form and draw a text-level layout with all labels.
 3. Define the image brief and prohibited alterations.
-4. After rendering, compare every visible number with the source.
-5. Reject any output that adds a trend, icon, or annotation not in the brief.
+4. After rendering, read every visible number back against the source and check that bar lengths rank in the same order as the values.
+5. Reject any output that adds a trend, icon, or annotation not in the brief, or whose longest bar is not the largest value.
 
 ## Worked example
 
-Three berths handled 12, 18, and 9 vessels. The layout is a horizontal bar chart sorted descending, labeled “Vessels in March 2026,” with values beside bars and a zero baseline. The brief permits blue, teal, and gray and forbids a claim about profit. A rendered image that changes 18 to 19 or adds “record growth” is rejected even if the composition looks polished.
+Three berths handled 12, 18, and 9 vessels. The layout is a horizontal bar chart sorted descending, labeled “Vessels in March 2026,” with values beside bars and a zero baseline. The brief permits blue, teal, and gray and forbids a claim about profit. A rendered image that changes 18 to 19, adds “record growth,” or draws the bar for 9 longer than the bar for 12 is rejected even if the composition looks polished. The check is the drawn length against the value, not the file's dimensions.
 
 ## Failure signals
 
