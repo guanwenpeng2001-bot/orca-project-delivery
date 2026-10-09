@@ -52,6 +52,33 @@
       ]
     },
     {
+      "id": "ui-designer",
+      "name": "UI Designer",
+      "category": "product",
+      "path": "roles/product/ui-designer.md",
+      "defaultSkills": [
+        "product-design",
+        "frontend-visual-design"
+      ],
+      "optionalSkills": [
+        "accessibility-audit",
+        "icon-assets"
+      ]
+    },
+    {
+      "id": "document-specialist",
+      "name": "Document Specialist",
+      "category": "product",
+      "path": "roles/product/document-specialist.md",
+      "defaultSkills": [
+        "document-production"
+      ],
+      "optionalSkills": [
+        "visual-slide-deck",
+        "editorial-illustration"
+      ]
+    },
+    {
       "id": "solution-planner",
       "name": "Solution Planner",
       "category": "architecture",
@@ -124,6 +151,20 @@
       ]
     },
     {
+      "id": "browser-test-engineer",
+      "name": "Browser Test Engineer",
+      "category": "quality",
+      "path": "roles/quality/browser-test-engineer.md",
+      "defaultSkills": [
+        "browser-e2e",
+        "integration-verification"
+      ],
+      "optionalSkills": [
+        "accessibility-audit",
+        "systematic-debugging"
+      ]
+    },
+    {
       "id": "security-reviewer",
       "name": "Security Reviewer",
       "category": "quality",
@@ -161,6 +202,28 @@
       ],
       "optionalSkills": [
         "code-review"
+      ]
+    },
+    {
+      "id": "media-producer",
+      "name": "Media Producer",
+      "category": "media",
+      "path": "roles/media/media-producer.md",
+      "defaultSkills": [],
+      "optionalSkills": [
+        "icon-assets",
+        "svg-logo-design",
+        "web-assets",
+        "image-compression",
+        "image-generation",
+        "infographic-design",
+        "editorial-illustration",
+        "visual-slide-deck",
+        "code-video-production",
+        "generated-video",
+        "speech-production",
+        "audio-transcription",
+        "media-transcoding"
       ]
     }
   ]

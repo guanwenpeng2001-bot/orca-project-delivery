@@ -39,6 +39,35 @@
     "independent-review": [
       "code-review",
       "integration-verification"
+    ],
+    "browser-e2e-regression": [
+      "browser-e2e",
+      "integration-verification"
+    ],
+    "accessibility-compliance": [
+      "accessibility-audit"
+    ],
+    "postgres-query-or-schema-tuning": [
+      "postgres-practices"
+    ],
+    "observability-instrumentation": [
+      "observability"
+    ],
+    "ci-pipeline-change": [
+      "ci-pipeline"
+    ],
+    "visual-ui-implementation": [
+      "frontend-visual-design"
+    ],
+    "react-performance-change": [
+      "react-performance"
+    ],
+    "media-asset-production": [
+      "web-assets",
+      "image-compression"
+    ],
+    "authorized-online-generation": [
+      "image-generation"
     ]
   }
 }

@@ -1,0 +1,6 @@
+{
+  "voice_id": "voice_example",
+  "text": "Harbor closed at dusk.",
+  "model_id": "eleven_multilingual_v2",
+  "output_format": "mp3_44100_128"
+}

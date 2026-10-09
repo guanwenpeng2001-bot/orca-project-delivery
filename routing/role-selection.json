@@ -11,6 +11,9 @@
     "issue-root-cause": "issue-investigator",
     "product-scope": "requirements-analyst",
     "user-flow-and-interaction": "requirements-analyst",
+    "visual-design-spec": "ui-designer",
+    "design-review": "ui-designer",
+    "structured-document": "document-specialist",
     "testable-requirements": "requirements-analyst",
     "implementation-options": "solution-planner",
     "plan-comparison": "plan-adjudicator",
@@ -23,9 +26,14 @@
     "tests": "software-implementer",
     "review-findings-fix": "software-implementer",
     "independent-code-review": "code-reviewer",
+    "browser-regression-evidence": "browser-test-engineer",
+    "accessibility-audit-evidence": "browser-test-engineer",
     "security-review": "security-reviewer",
     "performance-review": "code-reviewer",
     "final-delivery-verification": "release-verifier",
-    "merge-conflict-resolution": "merge-resolver"
+    "merge-conflict-resolution": "merge-resolver",
+    "media-asset-set": "media-producer",
+    "generated-image-set": "media-producer",
+    "short-video-render": "media-producer"
   }
 }

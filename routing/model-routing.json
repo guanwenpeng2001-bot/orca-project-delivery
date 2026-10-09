@@ -76,6 +76,28 @@
       "floor": 0,
       "taskTypes": ["需求与验收定义", "产品范围与非目标"]
     },
+    "ui-designer": {
+      "chain": [
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "opus", "effort": "medium" },
+        { "tier": "opus", "effort": "high" },
+        { "tier": "opus", "effort": "xhigh" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["页面视觉设计规范", "组件状态与响应式设计", "设计评审"]
+    },
+    "document-specialist": {
+      "chain": [
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "opus", "effort": "medium" },
+        { "tier": "opus", "effort": "high" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["结构化文档制作", "回读检查", "图片型幻灯片说明"]
+    },
     "solution-planner": {
       "chain": [
         { "tier": "opus", "effort": "high" },
@@ -118,6 +140,17 @@
       "floor": 0,
       "taskTypes": ["源码实施", "修复", "测试编写"]
     },
+    "browser-test-engineer": {
+      "chain": [
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "sonnet", "effort": "xhigh" },
+        { "tier": "opus", "effort": "medium" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["浏览器端到端回归", "可访问性审计证据", "缺陷复现"]
+    },
     "code-reviewer": {
       "chain": [
         { "tier": "sonnet", "effort": "xhigh" },
@@ -158,6 +191,17 @@
       "default": 1,
       "floor": 0,
       "taskTypes": ["合并冲突解决"]
+    },
+    "media-producer": {
+      "chain": [
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "opus", "effort": "medium" },
+        { "tier": "opus", "effort": "high" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["视觉资产制作", "图像生成与导出", "分镜与媒体成品"]
     }
   }
 }

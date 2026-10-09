@@ -1,0 +1,4 @@
+{
+  "status": 429,
+  "body": { "error": { "code": "rate_limit_exceeded", "message": "synthetic limit" } }
+}

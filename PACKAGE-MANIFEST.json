@@ -1,13 +1,13 @@
 {
   "name": "orca-project-delivery",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-09",
   "releasedAt": "2026-10-09",
-  "revisionNote": "Claude-only delivery with repository-native Role/Skill catalogs, optional declarative requirements, scoped literal project configuration and explicit local child-command execution. Bundled professional Skills, explicit Skill delivery, conservative capability evidence, and offline package regression checks. See CHANGELOG.md.",
+  "revisionNote": "Add 22 original professional methods and 4 roles. Optional OpenAI, Pexo, and ElevenLabs connectors are offline-tested and do not authorize provider calls. See CHANGELOG.md.",
   "deliverables": {
-    "roles": 12,
-    "professionalSkills": 16,
+    "roles": 16,
+    "professionalSkills": 38,
     "workflows": 4
   },
   "entrySkill": "orca-project-delivery/SKILL.md",

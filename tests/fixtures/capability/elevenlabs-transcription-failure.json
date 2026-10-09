@@ -1,0 +1,4 @@
+{
+  "status": 422,
+  "body": { "detail": [{ "loc": ["body", "file"], "msg": "synthetic validation failure", "type": "value_error" }] }
+}
