@@ -40,7 +40,7 @@ node skills/frontend-visual-design/scripts/contrast-ratio.mjs --foreground "#FFF
 node skills/frontend-visual-design/scripts/contrast-ratio.mjs --foreground "#777777" --background "#FFFFFF" --threshold 4.5
 ```
 
-The first reports 11.86 and exits 0. The second reports 4.48 and exits 2, because the requested 4.5 text threshold is missed, so that hint is limited to large text and boundaries. The error puts "Tide time is required." beside the field instead of only turning the border red. At 320px the line length stays under 40 characters and the button remains full width. The empty state says "No readings today." rather than leaving a blank table.
+The first reports an unrounded ratio near 11.86 and exits 0. The second reports an unrounded ratio near 4.48 and exits 2, because the requested 4.5 text threshold is missed, so that hint is limited to large text and boundaries. `ratio` is the value the gate uses; `ratioRounded` is only the two-decimal display. The error puts "Tide time is required." beside the field instead of only turning the border red. At 320px the line length stays under 40 characters and the button remains full width. The empty state says "No readings today." rather than leaving a blank table.
 
 ## Failure signals
 

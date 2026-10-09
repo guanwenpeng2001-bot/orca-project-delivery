@@ -1,3 +1,5 @@
+const knownArgs = new Set(['foreground', 'background', 'threshold']);
+
 const values = readArgs(process.argv.slice(2));
 const ratio = contrastRatio(values.foreground, values.background);
 const meets = { text: ratio >= 4.5, boundary: ratio >= 3 };
@@ -5,7 +7,8 @@ if (values.threshold !== null) meets.requested = ratio >= values.threshold;
 process.stdout.write(`${JSON.stringify({
   foreground: values.foreground,
   background: values.background,
-  ratio: roundRatio(ratio),
+  ratio,
+  ratioRounded: roundRatio(ratio),
   threshold: values.threshold,
   meets,
 })}\n`);
@@ -16,7 +19,9 @@ function readArgs(argv) {
   for (let index = 0; index < argv.length; index += 2) {
     const name = argv[index];
     if (!name?.startsWith('--') || argv[index + 1] === undefined) fail(`missing value for ${name ?? 'argument'}`);
-    result[name.slice(2)] = argv[index + 1];
+    const key = name.slice(2);
+    if (!knownArgs.has(key)) fail(`unknown argument --${key}`);
+    result[key] = argv[index + 1];
   }
   return {
     foreground: normalizeColor(result.foreground, 'foreground'),
