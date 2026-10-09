@@ -548,6 +548,7 @@ try {
     $testFiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*.test.mjs' -File | Sort-Object Name | ForEach-Object FullName)
     $exampleFiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'skills') -Recurse -Filter '*.test.mjs' -File | Sort-Object FullName | ForEach-Object FullName)
     $testFiles += $exampleFiles
+    Assert-Condition ($testFiles.Count -gt 0) 'No Node test suites were discovered'
     $result = Invoke-Child $node (@('--test') + $testFiles)
     Assert-Condition ($result.ExitCode -eq 0) "Capability behavior tests failed: $($result.Stdout) $($result.Stderr)"
   }
@@ -557,6 +558,9 @@ try {
   }
   if ($DocumentPython) {
     Invoke-Check 'runtime/document-generation-readback' {
+      foreach ($requiredSuite in @('document-production.test.py', 'document-depth-office.test.py')) {
+        Assert-Condition (Test-Path -LiteralPath (Join-Path $root "tests/$requiredSuite") -PathType Leaf) "Missing required document suite: $requiredSuite"
+      }
       $pythonFiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*.test.py' -File | Sort-Object Name | ForEach-Object FullName)
       foreach ($pythonFile in $pythonFiles) {
         $result = Invoke-Child $DocumentPython @('-I', $pythonFile)
