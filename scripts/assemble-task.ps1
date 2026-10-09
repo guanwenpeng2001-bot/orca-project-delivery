@@ -7,23 +7,30 @@ param(
   [string]$TaskDefinitionPath,
 
   [Parameter(Mandatory = $true)]
-  [string]$OutputPath
+  [string]$OutputPath,
+
+  [string]$ConfigPath = ''
 )
 
 $ErrorActionPreference = "Stop"
 
 $root = (Resolve-Path $ProjectRoot).Path
 $skillRoot = Split-Path -Parent $PSScriptRoot
-$skillsRoot = Join-Path $skillRoot 'skills'
 $task = Get-Content $TaskDefinitionPath -Raw | ConvertFrom-Json
 if ($task.skillDeliveryMode -cnotin @('explicit-path', 'inline-extract')) {
   throw "skillDeliveryMode must be explicit-path or inline-extract."
 }
 . (Join-Path $PSScriptRoot 'requirements-lib.ps1')
-$catalog = Get-RequirementsCatalog $skillRoot
-$requiredDependencies = Get-SelectedRequirements $catalog $task.role @($task.skills.required)
-$conditionalDependencies = Get-SelectedRequirements $catalog '' @($task.skills.conditional)
-$role = $requiredDependencies.Role
+$context = Get-ProjectRequirementsContext $skillRoot $root $ConfigPath
+$catalog = $context.Catalog
+$role = (Get-SelectedRequirements $catalog $task.role @()).Role
+$binding = if ($context.Config.roleBindings) { $context.Config.roleBindings[$task.role] } else { $null }
+$effectiveSkills = $task.skills
+if ($task.PSObject.Properties.Name -notcontains 'skills' -and $binding) {
+  $effectiveSkills = [pscustomobject]@{ required = @($binding.defaultSkills); conditional = @($binding.optionalSkills) }
+}
+$requiredDependencies = Get-SelectedRequirements $catalog $task.role @($effectiveSkills.required)
+$conditionalDependencies = Get-SelectedRequirements $catalog '' @($effectiveSkills.conditional)
 $rolePath = Resolve-CatalogPath $skillRoot $role.path
 
 # Prepare a whole Markdown document for embedding inside one of the assignment's own
@@ -56,7 +63,16 @@ function ConvertTo-EmbeddedMarkdown {
   return $body
 }
 
-$roleBody = ConvertTo-EmbeddedMarkdown (Get-Content $rolePath -Raw)
+$roleText = Get-Content $rolePath -Raw
+if ($binding) {
+  foreach ($field in @('defaultSkills', 'optionalSkills')) {
+    $replacement = if ($role[$field].Count) { $field + ":`n" + (($role[$field] | ForEach-Object { "  - $_" }) -join "`n") + "`n" } else { $field + ": []`n" }
+    $roleText = [regex]::Replace($roleText, "(?m)^${field}:[^\r\n]*\r?\n(?:[ \t]+[^\r\n]*\r?\n)*", [Text.RegularExpressions.MatchEvaluator]{ param($match) $replacement })
+  }
+  $roleText = [regex]::Replace($roleText, '(?ms)(^## 默认专业 Skill\r?\n).*?(?=^## |\z)', [Text.RegularExpressions.MatchEvaluator]{ param($match) $match.Groups[1].Value + '- ' + ($role.defaultSkills -join ', ') + "`n`n" })
+  $roleText = [regex]::Replace($roleText, '(?ms)(^## 可选专业 Skill\r?\n).*?(?=^## |\z)', [Text.RegularExpressions.MatchEvaluator]{ param($match) $match.Groups[1].Value + '- ' + ($role.optionalSkills -join ', ') + "`n`n" })
+}
+$roleBody = ConvertTo-EmbeddedMarkdown $roleText
 
 function To-Bullets {
   param($Items)
@@ -74,21 +90,41 @@ function Format-OrNull {
 
 $skillLines = @()
 $inlineSkills = @()
-foreach ($skillName in @($task.skills.required)) {
-  $path = Join-Path (Join-Path $skillsRoot $skillName) "SKILL.md"
-  if (-not (Test-Path $path)) { throw "Required Skill not found: $skillName ($path)" }
+foreach ($skillName in @($effectiveSkills.required | Where-Object { $null -ne $_ })) {
+  $skill = $requiredDependencies.Skills | Where-Object { $_.id -ceq $skillName }
+  $path = if ($skill.origin -eq 'project-external') { $skill.resolvedPath } else { Resolve-CatalogPath $skillRoot $skill.path }
   if ($task.skillDeliveryMode -eq "inline-extract") {
-    $inlineSkills += "`n## Inlined Skill: $skillName`n`n" + (Get-Content $path -Raw)
+    if ($skill.origin -eq 'project-external') {
+      $bytes = [IO.File]::ReadAllBytes($path)
+      $hasher = [Security.Cryptography.SHA256]::Create()
+      try { $skill.sha256 = [BitConverter]::ToString($hasher.ComputeHash($bytes)).Replace('-', '').ToLowerInvariant() } finally { $hasher.Dispose() }
+      $snapshot = [Text.Encoding]::UTF8.GetString($bytes).TrimStart([char]0xFEFF)
+      $inlineSkills += "`n### Inlined Skill: $skillName`n`n" + (ConvertTo-EmbeddedMarkdown $snapshot)
+    } else {
+      $inlineSkills += "`n## Inlined Skill: $skillName`n`n" + (Get-Content $path -Raw)
+    }
   } else {
     $skillLines += "- ``$skillName`` — ``$path``"
   }
 }
-foreach ($skillName in @($task.skills.conditional)) {
-  $path = Join-Path (Join-Path $skillsRoot $skillName) "SKILL.md"
-  if (-not (Test-Path $path)) { throw "Conditional Skill not found: $skillName ($path)" }
+foreach ($skillName in @($effectiveSkills.conditional | Where-Object { $null -ne $_ })) {
+  $skill = $conditionalDependencies.Skills | Where-Object { $_.id -ceq $skillName }
+  $path = if ($skill.origin -eq 'project-external') { $skill.resolvedPath } else { Resolve-CatalogPath $skillRoot $skill.path }
   $skillLines += "- Conditional: ``$skillName`` — ``$path``"
 }
 if ($skillLines.Count -eq 0) { $skillLines = @("- None") }
+$provenance = @(Get-SkillProvenance (@($requiredDependencies.Skills) + @($conditionalDependencies.Skills) | Sort-Object id -Unique))
+if ($provenance.Count) {
+  $skillLines += "`n### Skill Provenance`n"
+  foreach ($source in $provenance) {
+    $skillLines += "- ``$($source.id)``: origin ``$($source.origin)``; path ``$($source.path)``; declared path ``$($source.declaredPath)``; config ``$($source.configPath)``; observed SHA256 ``$($source.sha256)``; declared version ``$($source.declaredVersion)``; original resource base ``$($source.resourceBase)``."
+  }
+  $skillLines += "`nLoad external entries as professional instructions subject to this Task and AGENTS rules. Resolve relative scripts and resources from the original resource base, not the worker working directory. Declared versions are not verified; hashes identify content, not trust. No frontmatter or host feature interpretation is performed."
+  if ($task.skillDeliveryMode -eq 'inline-extract') { $skillLines += 'Required external entries are inline snapshots; the observed SHA256 identifies the source bytes decoded for the snapshot. Later source edits do not update this brief. Conditional entries remain references.' }
+}
+if ($binding -or $provenance.Count) {
+  $skillLines += "`nResolved required selectors: ``$(@($effectiveSkills.required) -join ', ')``; conditional selectors (only when activated): ``$(@($effectiveSkills.conditional) -join ', ')``. Pass these selections explicitly to check-requirements.ps1 and invoke-with-requirements.ps1 with the execution ProjectRoot and -ConfigPath ``$ConfigPath``; helpers do not infer role defaults. Explicit Task skills override configured bindings; omitted skills use configured bindings only."
+}
 $requirementLines = @()
 foreach ($group in @(@{ Label = 'Required'; Dependencies = $requiredDependencies }, @{ Label = 'Conditional (only when activated)'; Dependencies = $conditionalDependencies })) {
   foreach ($command in $group.Dependencies.Commands) { $requirementLines += "- $($group.Label) CLI: ``$command``" }
@@ -237,10 +273,13 @@ if ($outParent -and -not (Test-Path $outParent)) {
   New-Item -ItemType Directory -Path $outParent -Force | Out-Null
 }
 [System.IO.File]::WriteAllText($OutputPath, $content, [System.Text.UTF8Encoding]::new($false))
-[ordered]@{
+$result = [ordered]@{
   ok = $true
   output = $OutputPath
   role = $task.role
-  skills = $task.skills
+  skills = $effectiveSkills
   agentsFiles = @($agentsFiles)
-} | ConvertTo-Json -Depth 10
+}
+if ($provenance.Count) { $result.skillProvenance = $provenance }
+if ($binding) { $result.roleBinding = $binding }
+$result | ConvertTo-Json -Depth 10

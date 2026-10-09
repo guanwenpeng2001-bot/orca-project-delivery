@@ -27,13 +27,30 @@ function Assert-RequirementsSchema($Document, [string]$SchemaName, [string]$Labe
 }
 
 function Resolve-CatalogPath([string]$PackageRoot, [string]$Path) {
-  $current = Get-Item -LiteralPath $PackageRoot
+  $current = Get-Item -LiteralPath $PackageRoot -Force
   foreach ($segment in $Path.Replace('\', '/').Split('/')) {
-    $current = Get-Item -LiteralPath (Join-Path $current.FullName $segment) -ErrorAction Stop
+    $current = Get-Item -LiteralPath (Join-Path $current.FullName $segment) -Force -ErrorAction Stop
     if ($current.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Linked catalog paths are not supported.' }
   }
   if ($current.PSIsContainer) { throw 'Catalog path must be a file.' }
   return $current.FullName
+}
+
+function Assert-EntryRequirements($Entry) {
+  if (-not $Entry.Contains('requires')) { return }
+  Assert-RequirementsSchema $Entry.requires 'requirements' "Requirements for $($Entry.id)"
+  foreach ($kind in @('cli', 'env', 'api')) {
+    $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($requirement in @($Entry.requires[$kind])) {
+      if ($null -eq $requirement) { continue }
+      $name = if ($kind -eq 'cli') { $requirement } else { $requirement.name }
+      if (-not $names.Add($name)) { throw "Duplicate $kind requirement for $($Entry.id)." }
+    }
+  }
+  foreach ($api in @($Entry.requires.api)) {
+    if ($null -eq $api) { continue }
+    if (@($Entry.requires.env.name) -cnotcontains $api.authEnv) { throw "API $($api.name) references undeclared env $($api.authEnv)." }
+  }
 }
 
 function Get-RequirementsCatalog([string]$PackageRoot) {
@@ -50,21 +67,7 @@ function Get-RequirementsCatalog([string]$PackageRoot) {
       }
       if ($entry.path -isnot [string] -or $entry.path.Replace('\', '/') -cne $expected) { throw "Invalid catalog path for $($entry.id)." }
       $null = Resolve-CatalogPath $PackageRoot $expected
-      if ($entry.Contains('requires')) {
-        Assert-RequirementsSchema $entry.requires 'requirements' "Requirements for $($entry.id)"
-        foreach ($kind in @('cli', 'env', 'api')) {
-          $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-          foreach ($requirement in @($entry.requires[$kind])) {
-            if ($null -eq $requirement) { continue }
-            $name = if ($kind -eq 'cli') { $requirement } else { $requirement.name }
-            if (-not $names.Add($name)) { throw "Duplicate $kind requirement for $($entry.id)." }
-          }
-        }
-        foreach ($api in @($entry.requires.api)) {
-          if ($null -eq $api) { continue }
-          if (@($entry.requires.env.name) -cnotcontains $api.authEnv) { throw "API $($api.name) references undeclared env $($api.authEnv)." }
-        }
-      }
+      Assert-EntryRequirements $entry
     }
   }
   foreach ($role in $roles.roles) {
@@ -89,7 +92,10 @@ function Get-SelectedRequirements($Catalog, [string]$RoleId, [string[]]$SkillIds
   $selectedSkills = @()
   foreach ($id in @($SkillIds | Select-Object -Unique)) {
     $skill = $Catalog.Skills | Where-Object { $_.id -ceq $id }
-    if (-not $skill) { throw 'Unknown skill selector.' }
+    if (-not $skill) {
+      $context = if ($Catalog.ConfigPath) { "config '$($Catalog.ConfigPath)'" } else { 'no -ConfigPath supplied' }
+      throw "Unknown skill selector. '$id' ($context)."
+    }
     $selectedSkills += $skill
   }
   $entries += $selectedSkills
@@ -141,8 +147,9 @@ function Read-LiteralDotEnv([string]$Path) {
   return $values
 }
 
-function Read-ProjectConfig([string]$ProjectRoot, [string]$ConfigPath, $Catalog) {
+function Read-ProjectConfig([string]$ProjectRoot, [string]$ConfigPath) {
   if (-not $ConfigPath) { return @{} }
+  $ProjectRoot = [IO.Path]::GetFullPath($ProjectRoot)
   $path = if ([IO.Path]::IsPathRooted($ConfigPath)) { [IO.Path]::GetFullPath($ConfigPath) } else { [IO.Path]::GetFullPath((Join-Path $ProjectRoot $ConfigPath)) }
   $prefix = $ProjectRoot.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
   $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
@@ -150,22 +157,78 @@ function Read-ProjectConfig([string]$ProjectRoot, [string]$ConfigPath, $Catalog)
   $relative = [IO.Path]::GetRelativePath($ProjectRoot, $path)
   $null = Resolve-CatalogPath $ProjectRoot $relative
   $config = Read-RequirementsJson $path 'Project config'
-  Assert-RequirementsSchema $config 'project-config' 'Project config'
+  Assert-RequirementsSchema $config 'project-config' "Project config '$path'"
+  return $config
+}
+
+function Get-ExternalSkillEntries([string]$ProjectRoot, $Config, [string]$ConfigPath) {
+  foreach ($declaration in @($Config.externalSkills)) {
+    if ($null -eq $declaration) { continue }
+    $label = "External skill '$($declaration.id)' in config '$ConfigPath'"
+    try {
+      Assert-EntryRequirements $declaration
+      $declaredPath = $declaration.path.Replace('\', '/')
+      if ($declaredPath.Split('/') -contains '..') { throw 'Parent traversal is not supported in external skill paths.' }
+      if ([IO.Path]::IsPathRooted($declaredPath) -and -not [IO.Path]::IsPathFullyQualified($declaredPath)) { throw 'External skill path must be absolute or project-relative.' }
+      $absolute = if ([IO.Path]::IsPathFullyQualified($declaredPath)) { [IO.Path]::GetFullPath($declaredPath) } else { [IO.Path]::GetFullPath((Join-Path $ProjectRoot $declaredPath)) }
+      $anchor = [IO.Path]::GetPathRoot($absolute)
+      $resolved = Resolve-CatalogPath $anchor ([IO.Path]::GetRelativePath($anchor, $absolute))
+    } catch { throw "$label at declared path '$($declaration.path)': $($_.Exception.Message)" }
+    $entry = $declaration.Clone()
+    $entry.resolvedPath = $resolved
+    $entry.declaredPath = $declaration.path
+    $entry.origin = 'project-external'
+    $entry.configPath = $ConfigPath
+    $entry.resourceBase = Split-Path -Parent $resolved
+    $entry.declaredVersion = $declaration.version
+    $entry.sha256 = (Get-FileHash -LiteralPath $resolved -Algorithm SHA256).Hash.ToLowerInvariant()
+    $entry
+  }
+}
+
+function Get-ProjectRequirementsContext([string]$PackageRoot, [string]$ProjectRoot, [string]$ConfigPath) {
+  $catalog = Get-RequirementsCatalog $PackageRoot
+  $config = Read-ProjectConfig $ProjectRoot $ConfigPath
+  $catalog.ConfigPath = $ConfigPath
+  $ids = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+  foreach ($entry in $catalog.Skills) { [void]$ids.Add($entry.id) }
+  foreach ($entry in @($config.externalSkills)) {
+    if ($null -eq $entry) { continue }
+    if (-not $ids.Add($entry.id)) { throw "External skill '$($entry.id)' collides with an existing catalog id in config '$ConfigPath'." }
+  }
+  $catalog.Skills = @($catalog.Skills) + @(Get-ExternalSkillEntries $ProjectRoot $config $ConfigPath)
+  foreach ($roleId in $config.roleBindings.Keys) {
+    $role = $catalog.Roles | Where-Object { $_.id -ceq $roleId }
+    if (-not $role) { throw "Role binding '$roleId' references unknown role in config '$ConfigPath'." }
+    foreach ($field in @('defaultSkills', 'optionalSkills')) {
+      foreach ($id in $config.roleBindings[$roleId][$field]) {
+        if (-not $ids.Contains($id)) { throw "Role binding '$roleId' references unknown skill '$id' in config '$ConfigPath'." }
+      }
+      $role[$field] = $config.roleBindings[$roleId][$field]
+    }
+  }
   foreach ($name in $config.env.Keys) {
-    $declarations = @(@($Catalog.Roles) + @($Catalog.Skills) | ForEach-Object { $_.requires.env } | Where-Object { $_.name -ceq $name })
+    $declarations = @(@($catalog.Roles) + @($catalog.Skills) | ForEach-Object { $_.requires.env } | Where-Object { $_.name -ceq $name })
     if ($declarations.Count -eq 0 -or @($declarations | Where-Object secret).Count -gt 0) { throw "Project config name $name must be declared non-secret." }
   }
-  return $config.env
+  return @{ Catalog = $catalog; Config = $config }
+}
+
+function Get-SkillProvenance($Skills) {
+  foreach ($skill in $Skills) {
+    if ($skill.origin -cne 'project-external') { continue }
+    [ordered]@{ id = $skill.id; origin = $skill.origin; path = $skill.resolvedPath; declaredPath = $skill.declaredPath; configPath = $skill.configPath; resourceBase = $skill.resourceBase; sha256 = $skill.sha256; declaredVersion = $skill.declaredVersion }
+  }
 }
 
 function Resolve-RequirementAvailability {
   param([string]$ProjectRoot, [string]$RoleId, [string[]]$SkillIds, [string]$ConfigPath, [System.Collections.IDictionary]$ProcessEnvironment = [Environment]::GetEnvironmentVariables())
   if (-not (Test-Path -LiteralPath $ProjectRoot -PathType Container)) { throw 'ProjectRoot must be an existing directory.' }
   $root = (Resolve-Path -LiteralPath $ProjectRoot).Path
-  $catalog = Get-RequirementsCatalog (Split-Path -Parent $PSScriptRoot)
-  $selected = Get-SelectedRequirements $catalog $RoleId $SkillIds
+  $context = Get-ProjectRequirementsContext (Split-Path -Parent $PSScriptRoot) $root $ConfigPath
+  $selected = Get-SelectedRequirements $context.Catalog $RoleId $SkillIds
   $dotenv = if ($selected.Variables.Count) { Read-LiteralDotEnv (Join-Path $root '.env') } else { @{} }
-  $config = Read-ProjectConfig $root $ConfigPath $catalog
+  $config = if ($context.Config.env) { $context.Config.env } else { @{} }
   $checks = [Collections.Generic.List[object]]::new()
   $missing = [Collections.Generic.List[string]]::new()
   foreach ($command in $selected.Commands) {

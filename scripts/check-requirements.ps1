@@ -14,7 +14,10 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'requirements-lib.ps1')
 try {
   $resolution = Resolve-RequirementAvailability -ProjectRoot $ProjectRoot -RoleId $Role -SkillIds $Skills -ConfigPath $ConfigPath
-  [ordered]@{ ok = ($resolution.Missing.Count -eq 0); role = $Role; skills = @($Skills); checks = $resolution.Checks; missing = $resolution.Missing } | ConvertTo-Json -Depth 10
+  $report = [ordered]@{ ok = ($resolution.Missing.Count -eq 0); role = $Role; skills = @($Skills); checks = $resolution.Checks; missing = $resolution.Missing }
+  $provenance = @(Get-SkillProvenance $resolution.Selected.Skills)
+  if ($provenance.Count) { $report.skillProvenance = $provenance }
+  $report | ConvertTo-Json -Depth 10
   if ($resolution.Missing.Count -gt 0) { exit 1 }
   exit 0
 } catch {
