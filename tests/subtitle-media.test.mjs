@@ -192,6 +192,50 @@ test('a missing argument exits non-zero', () => {
   assert.match(result.stderr, /missing --/);
 });
 
+test('a webvtt timing line with an extra arrow is rejected and writes nothing', () => {
+  const input = writeTemp('three.vtt', 'WEBVTT\n\n00:00:01.000 --> 00:00:02.000 --> 00:00:09.000\nHarbor\n');
+  const output = path.join(directory, 'three.srt');
+  writeFileSync(output, 'pre-existing');
+  const result = runScript(CONVERT, ['--input', input, '--output', output, '--to', 'srt']);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /timestamp line/);
+  assert.equal(readFileSync(output, 'utf8'), 'pre-existing');
+});
+
+test('a short-form webvtt timestamp converts and keeps the cue', () => {
+  const input = writeTemp('short.vtt', 'WEBVTT\n\n00:01.000 --> 00:02.500\nHarbor\n');
+  const output = path.join(directory, 'short.srt');
+  const result = runScript(CONVERT, ['--input', input, '--output', output, '--to', 'srt']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(reportOf(result).cues, 1);
+  assert.match(readFileSync(output, 'utf8'), /^1\n00:00:01,000 --> 00:00:02,500\nHarbor\n$/);
+});
+
+test('hours above 99 are written for webvtt and rejected for srt', () => {
+  const input = writeTemp('long-hours.srt', '1\n100:00:00,000 --> 100:00:01,000\nLater\n');
+  const output = path.join(directory, 'long-hours.vtt');
+  const result = runScript(CONVERT, ['--input', input, '--output', output, '--to', 'vtt']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(readFileSync(output, 'utf8'), /100:00:00\.000 --> 100:00:01\.000\nLater\n$/);
+
+  const back = path.join(directory, 'long-hours-back.srt');
+  const rejected = runScript(CONVERT, ['--input', output, '--output', back, '--to', 'srt']);
+  assert.notEqual(rejected.status, 0);
+  assert.match(rejected.stderr, /range/i);
+  assert.throws(() => readFileSync(back));
+});
+
+test('an empty source converts to an empty file and warns that it has no cues', () => {
+  const input = writeTemp('empty-source.srt', '');
+  const output = path.join(directory, 'empty-source.vtt');
+  const result = runScript(CONVERT, ['--input', input, '--output', output, '--to', 'vtt']);
+  assert.equal(result.status, 0, result.stderr);
+  const report = reportOf(result);
+  assert.equal(report.cues, 0);
+  assert.deepEqual(report.warnings, ['source has no cues']);
+  assert.equal(readFileSync(output, 'utf8'), 'WEBVTT\n\n');
+});
+
 // --- Composition precheck -----------------------------------------------------
 
 const SAMPLE_HTML = [
@@ -281,6 +325,62 @@ test('a duration that is not a whole number of frames is rejected', () => {
   const result = runScript(PRECHECK, ['--input', writeTemp('fraction.html', html), '--fps', '30']);
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /frame/i);
+});
+
+function composition(duration, clips) {
+  const sections = clips.map((clip) => (
+    '<section data-start="' + clip.start + '" data-duration="' + clip.duration + '" data-track-index="' + clip.track + '">Scene</section>'
+  ));
+  return '<main data-composition-id="x" data-start="0" data-duration="' + duration + '" data-width="1920" data-height="1080">' + sections.join('') + '</main>';
+}
+
+test('a frame-aligned decimal duration is accepted at an integer rate', () => {
+  const result = runScript(PRECHECK, ['--input', writeTemp('decimal.html', composition('4.1', [{ start: '0', duration: '4.1', track: '0' }])), '--fps', '30']);
+  assert.equal(result.status, 0, result.stderr);
+  const report = reportOf(result);
+  assert.equal(report.frames, 123);
+  assert.equal(report.clips[0].endFrame, 123);
+});
+
+test('a frame-aligned decimal duration is accepted at a rational rate', () => {
+  const result = runScript(PRECHECK, ['--input', writeTemp('ntsc-decimal.html', composition('1.001', [{ start: '0', duration: '1.001', track: '0' }])), '--fps', '24000/1001']);
+  assert.equal(result.status, 0, result.stderr);
+  const report = reportOf(result);
+  assert.equal(report.frames, 24);
+  assert.equal(report.clips[0].endFrame, 24);
+});
+
+test('a clip that runs past the composition end is reported and still accepted', () => {
+  const result = runScript(PRECHECK, ['--input', writeTemp('overrun.html', composition('10', [{ start: '0', duration: '20', track: '0' }])), '--fps', '30']);
+  assert.equal(result.status, 0, result.stderr);
+  const report = reportOf(result);
+  assert.equal(report.frames, 300);
+  assert.equal(report.clips[0].endFrame, 600);
+  assert.match(report.warnings.join('\n'), /overrun/);
+});
+
+test('the shipped composition fixture maps to the same frames as the inlined sample', () => {
+  const result = runScript(PRECHECK, ['--input', path.join(fixtureRoot, 'subtitle-media-sample.html'), '--fps', '30']);
+  assert.equal(result.status, 0, result.stderr);
+  const report = reportOf(result);
+  assert.equal(report.frames, 300);
+  assert.deepEqual(report.clips.map((clip) => [clip.startFrame, clip.endFrame]), [[0, 90], [90, 210], [210, 300]]);
+  assert.deepEqual(report.warnings, []);
+});
+
+test('the shipped probe fixtures compare inside one frame', () => {
+  const result = runScript(COMPARE, [
+    '--source', path.join(fixtureRoot, 'subtitle-media-source-probe.json'),
+    '--output', path.join(fixtureRoot, 'subtitle-media-output-probe.json'),
+    '--width', '640',
+    '--height', '360',
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  const report = reportOf(result);
+  assert.equal(report.matched, true);
+  assert.equal(report.video.width, 640);
+  assert.equal(report.video.height, 360);
+  assert.ok(report.durationDelta <= report.tolerance);
 });
 
 test('a composition without a declared frame rate is rejected', () => {

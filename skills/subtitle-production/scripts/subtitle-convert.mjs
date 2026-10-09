@@ -2,12 +2,14 @@ import { readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 
+const MAX_HOURS = 100000;
 const values = readArgs(process.argv.slice(2));
 if (!['srt', 'vtt'].includes(values.to)) fail(`--to must be srt or vtt, got ${values.to}`);
 
 const decoded = decodeUtf8(readFileSync(values.input));
 const cues = values.to === 'vtt' ? parseSrt(decoded) : parseVtt(decoded);
 validateCues(cues);
+if (cues.every((cue) => cue.start === null)) cues.push({ start: null, end: null, text: '', warnings: ['source has no cues'] });
 
 const body = values.to === 'vtt' ? renderVtt(cues) : renderSrt(cues);
 writeAtomically(values.output, body);
@@ -48,7 +50,7 @@ function parseSrt(text) {
     const lines = block.split('\n');
     const timingAt = lines.findIndex((line) => line.includes('-->'));
     if (timingAt < 0) fail('malformed srt: a block has no timing line');
-    const [start, end] = readTiming(lines[timingAt], ',');
+    const [start, end] = readTiming(lines[timingAt], ',').map((part) => part.millis);
     const payload = lines.slice(timingAt + 1);
     if (payload.length === 0 || payload.every((line) => line.trim() === '')) fail('empty cue text');
     return { start, end, text: payload.join('\n'), warnings: [] };
@@ -71,14 +73,14 @@ function parseVtt(text) {
     if (timingAt > 1) fail('malformed webvtt: unexpected lines before the timing line');
     const warnings = [];
     if (timingAt === 1) warnings.push(`cue identifier "${lines[0]}" has no srt equivalent`);
-    const timing = lines[timingAt].split('-->');
-    if (timing[1].trim().split(/\s+/).length > 1) fail('unsupported webvtt cue setting on the timing line');
+    const timing = readTiming(lines[timingAt], '.');
+    if (timing[1].setting !== null) fail('unsupported webvtt cue setting on the timing line');
     const payload = lines.slice(timingAt + 1);
     if (payload.some((line) => /<v[\s>]/.test(line))) fail('unsupported webvtt voice span');
     if (payload.length === 0 || payload.every((line) => line.trim() === '')) fail('empty cue text');
     cues.push({
-      start: readTimestamp(timing[0].trim(), '.'),
-      end: readTimestamp(timing[1].trim(), '.'),
+      start: timing[0].millis,
+      end: timing[1].millis,
       text: payload.join('\n'),
       warnings,
     });
@@ -94,15 +96,21 @@ function blocks(text) {
 function readTiming(line, separator) {
   const parts = line.split('-->');
   if (parts.length !== 2) fail(`malformed timestamp line: ${line}`);
-  return parts.map((part) => readTimestamp(part.trim(), separator));
+  return parts.map((part, index) => readTimestamp(part.trim(), separator, index === 1));
 }
 
-function readTimestamp(value, separator) {
-  const match = new RegExp(`^(\\d{2,}):(\\d{2}):(\\d{2})\\${separator}(\\d{3})$`).exec(value);
+function readTimestamp(value, separator, allowSetting) {
+  const match = new RegExp(`^((\\d{2,}):)?(\\d{2}):(\\d{2})\\${separator}(\\d{3})(.*)$`).exec(value);
   if (!match) fail(`malformed timestamp: ${value}`);
-  const [, hours, minutes, seconds, millis] = match.map(Number);
+  const hours = match[2] === undefined ? 0 : Number(match[2]);
+  const minutes = Number(match[3]);
+  const seconds = Number(match[4]);
+  const millis = Number(match[5]);
+  const rest = match[6];
   if (minutes > 59 || seconds > 59) fail(`malformed timestamp: ${value}`);
-  return ((hours * 60 + minutes) * 60 + seconds) * 1000 + millis;
+  if (rest !== '' && !(allowSetting && /^\s+\S/.test(rest))) fail(`malformed timestamp: ${value}`);
+  const setting = rest.trim() === '' ? null : rest.trim();
+  return { millis: ((hours * 60 + minutes) * 60 + seconds) * 1000 + millis, setting };
 }
 
 function validateCues(cues) {
@@ -125,19 +133,21 @@ function previousEnd(cues, cue) {
 
 function renderSrt(cues) {
   const rendered = cues.filter((cue) => cue.start !== null).map((cue, index) => (
-    `${index + 1}\n${formatTimestamp(cue.start, ',')} --> ${formatTimestamp(cue.end, ',')}\n${cue.text}\n`
+    `${index + 1}\n${formatTimestamp(cue.start, ',', 99)} --> ${formatTimestamp(cue.end, ',', 99)}\n${cue.text}\n`
   ));
   return `${rendered.join('\n')}`;
 }
 
 function renderVtt(cues) {
-  const rendered = cues.map((cue) => `${formatTimestamp(cue.start, '.')} --> ${formatTimestamp(cue.end, '.')}\n${cue.text}\n`);
+  const rendered = cues.filter((cue) => cue.start !== null).map((cue) => (
+    `${formatTimestamp(cue.start, '.', MAX_HOURS)} --> ${formatTimestamp(cue.end, '.', MAX_HOURS)}\n${cue.text}\n`
+  ));
   return `WEBVTT\n\n${rendered.join('\n')}`;
 }
 
-function formatTimestamp(millis, separator) {
+function formatTimestamp(millis, separator, maxHours) {
   const hours = Math.floor(millis / 3600000);
-  if (hours > 99) fail(`timestamp out of srt range: ${millis}`);
+  if (hours > maxHours) fail(`timestamp out of range: ${millis}`);
   const minutes = Math.floor(millis / 60000) % 60;
   const seconds = Math.floor(millis / 1000) % 60;
   const padded = [hours, minutes, seconds].map((part) => String(part).padStart(2, '0')).join(':');

@@ -21,6 +21,11 @@ for (const track of groupByTrack(clips)) {
 }
 const coveredUntil = clips.reduce((latest, clip) => Math.max(latest, clip.end), 0);
 if (coveredUntil < composition.duration) fail(`coverage ends at ${coveredUntil}, composition lasts ${composition.duration}`);
+for (const clip of clips) {
+  if (clip.end > composition.duration) {
+    warnings.push(`clip overrun on track ${clip.track}: clip ends at ${clip.end}, composition lasts ${composition.duration}`);
+  }
+}
 for (let index = 0; index < clips.length; index += 1) {
   for (let other = index + 1; other < clips.length; other += 1) {
     const [left, right] = [clips[index], clips[other]];
@@ -114,8 +119,13 @@ function readFps(text) {
 
 function toFrames(seconds, fps) {
   const frames = seconds * fps.numerator / fps.denominator;
-  if (!Number.isInteger(frames)) fail(`duration ${seconds} is not a whole number of frames at ${fps.text} fps`);
-  return frames;
+  const nearest = Math.round(frames);
+  // Decimal seconds are not exact in binary, so a genuinely frame-aligned
+  // duration can land a fraction of a ULP off an integer. The drift measured
+  // across real rates stays under 1e-12 frames, while the smallest authoring
+  // miss (a millisecond) is thousandths of a frame, so 1e-6 separates them.
+  if (Math.abs(frames - nearest) > 1e-6) fail(`duration ${seconds} is not a whole number of frames at ${fps.text} fps`);
+  return nearest;
 }
 
 function frameSpan(clip, fps) {

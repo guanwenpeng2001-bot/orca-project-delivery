@@ -30,9 +30,9 @@ The grammar it accepts is deliberately smaller than HyperFrames:
 | Exactly one element carrying `data-composition-id` | A second composition root |
 | Root `data-start="0"`, numeric `data-duration`, `data-width`, `data-height` | A missing or non-numeric value |
 | Clips with numeric `data-start`, `data-duration`, and integer `data-track-index` | A clip-time reference such as `intro + 2` |
-| Durations that land on whole frames at the declared rate | A duration between two frames |
+| Durations that land on whole frames at the declared rate, including a decimal such as `4.1` at 30 fps | A duration between two frames, such as `10.016` at 30 fps |
 
-Frame mapping is exact: a clip's frames are `[start x fps, (start + duration) x fps)`, so a clip ending at second 3 and the next starting at second 3 share no frame. Two clips on the same track whose ranges overlap are rejected, because one hides the other. The same overlap across two tracks is intentional — a caption over a code state — and is reported in `warnings` rather than rejected. A gap inside a track is a warning; a gap that leaves the composition's end uncovered is an error.
+Frame mapping is exact: a clip's frames are `[start x fps, (start + duration) x fps)`, so a clip ending at second 3 and the next starting at second 3 share no frame. Two clips on the same track whose ranges overlap are rejected, because one hides the other. The same overlap across two tracks is intentional — a caption over a code state — and is reported in `warnings` rather than rejected. A gap inside a track is a warning; a gap that leaves the composition's end uncovered is an error. A clip that runs past the composition's end is a warning, not an error: the report names the overrun and the frame map still counts the clip's own frames, because a renderer may clip the tail.
 
 The report is `{compositionId, fps, frames, width, height, clips, warnings}`. Each clip carries `startFrame` and `endFrame`. `fps` is a number for an integer rate and the rational text otherwise.
 
@@ -118,7 +118,7 @@ Installation may download packages and browser components; perform it only when 
 
 ## Evaluation scenario
 
-Execute the sample only in a configured local environment; retain renderer and FFprobe results and inspect first/fix/last frames. If HyperFrames or FFmpeg is absent, record the missing command and mark rendering unverified. Run `node --test tests/subtitle-media.test.mjs`: the sample composition maps to 300 frames, a cross-track overlap passes with a warning, and a same-track overlap, a non-frame duration, and a relative time expression each exit non-zero. This package supplies an executable method, not pre-rendered video evidence.
+Execute the sample only in a configured local environment; retain renderer and FFprobe results and inspect first/fix/last frames. If HyperFrames or FFmpeg is absent, record the missing command and mark rendering unverified. Run `node --test tests/subtitle-media.test.mjs`: the sample composition maps to 300 frames, a cross-track overlap passes with a warning, and a frame-aligned decimal such as `4.1` at 30 fps is accepted, a same-track overlap, a non-frame duration, and a relative time expression each exit non-zero, and a clip that overruns the composition exits zero with a warning. This package supplies an executable method, not pre-rendered video evidence.
 
 ## Boundary
 

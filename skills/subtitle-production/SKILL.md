@@ -23,7 +23,7 @@ What the conversion keeps:
 
 | Input | Result |
 | --- | --- |
-| Timecode | SRT uses a comma for milliseconds, WebVTT a dot. Both are `hh:mm:ss` with hours from 00 to 99 |
+| Timecode | SRT uses a comma for milliseconds, WebVTT a dot. SRT hours run from 00 to 99. WebVTT hours are optional, so `mm:ss.mmm` is read as zero hours, and WebVTT hours have no two-digit ceiling |
 | Cue text | One cue per block, lines preserved, cue numbers rebuilt from 1 |
 | Byte order mark, CR, LF | Stripped or normalized; output is UTF-8 with LF |
 | WebVTT cue identifier | Dropped, and named in `warnings`, because SRT has no identifier |
@@ -39,11 +39,11 @@ What the conversion refuses, naming the construct on stderr and writing nothing:
 | Cue ending at or before it starts | No duration |
 | Cue starting before the previous cue ends | The cues overlap |
 | Cue starting before the previous cue starts | The cues are out of order |
-| Hours above 99 | SRT cannot express them |
+| Hours above 99 written to SRT | SRT cannot express them. The same timing written to WebVTT is kept |
 | Empty cue text | Nothing would be shown |
 | Bytes that are not UTF-8 | The text would be guessed |
 
-Exit 0 means the output was written and validated. Any other exit means nothing was written, and an output that already existed is left untouched. The write is atomic: the previous output is replaced only after the new file is complete.
+A source with no cues is valid and converts to an empty file: the report has `cues` 0 and the warning `source has no cues`. Exit 0 means the output was written and validated. Any other exit means nothing was written, and an output that already existed is left untouched. The write is atomic: the previous output is replaced only after the new file is complete.
 
 ### Connecting cues to a transcript
 
@@ -86,7 +86,7 @@ The first report has `format` `vtt`, `cues` 2, and no warnings. `sample.vtt` beg
 
 ## Evaluation scenario
 
-Run `node --test tests/subtitle-media.test.mjs`. The SRT fixture converts to WebVTT and back with the same cue count and timing. Overlap, ordering, empty text, bad timestamps, hours past 99, non-UTF-8 bytes, `STYLE` blocks, cue settings, and voice spans each exit non-zero and write nothing. It fails if any of those inputs exits 0.
+Run `node --test tests/subtitle-media.test.mjs`. The SRT fixture converts to WebVTT and back with the same cue count and timing. Overlap, ordering, empty text, bad timestamps, a timing line with an extra arrow, hours past 99 written to SRT, non-UTF-8 bytes, `STYLE` blocks, cue settings, and voice spans each exit non-zero and write nothing. A short-form WebVTT timestamp and hours past 99 written to WebVTT both convert. It fails if any of those inputs exits 0.
 
 ## Boundary
 
