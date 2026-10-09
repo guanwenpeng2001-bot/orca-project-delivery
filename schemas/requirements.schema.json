@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Catalog Requirements",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "cli": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" } },
+    "env": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["name", "secret", "purpose"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "secret": { "type": "boolean" },
+          "purpose": { "type": "string", "pattern": "^[^\\r\\n]+$", "minLength": 1 }
+        }
+      }
+    },
+    "api": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["name", "authEnv", "purpose"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "authEnv": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "purpose": { "type": "string", "pattern": "^[^\\r\\n]+$", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

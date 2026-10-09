@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Non-secret Project Configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "env"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "env": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[A-Z][A-Z0-9_]*$" },
+      "additionalProperties": { "type": "string", "pattern": "^[^\u0000]*$" }
+    }
+  }
+}

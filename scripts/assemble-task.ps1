@@ -19,11 +19,12 @@ $task = Get-Content $TaskDefinitionPath -Raw | ConvertFrom-Json
 if ($task.skillDeliveryMode -cnotin @('explicit-path', 'inline-extract')) {
   throw "skillDeliveryMode must be explicit-path or inline-extract."
 }
-$catalog = Get-Content (Join-Path $skillRoot "roles\catalog.json") -Raw | ConvertFrom-Json
-$role = $catalog.roles | Where-Object { $_.id -eq $task.role } | Select-Object -First 1
-if (-not $role) { throw "Unknown role: $($task.role)" }
-
-$rolePath = Join-Path $skillRoot ($role.path -replace "/", "\")
+. (Join-Path $PSScriptRoot 'requirements-lib.ps1')
+$catalog = Get-RequirementsCatalog $skillRoot
+$requiredDependencies = Get-SelectedRequirements $catalog $task.role @($task.skills.required)
+$conditionalDependencies = Get-SelectedRequirements $catalog '' @($task.skills.conditional)
+$role = $requiredDependencies.Role
+$rolePath = Resolve-CatalogPath $skillRoot $role.path
 
 # Prepare a whole Markdown document for embedding inside one of the assignment's own
 # "## " sections: demote H1-H3 by two levels in a single pass (so a demoted heading is
@@ -88,6 +89,24 @@ foreach ($skillName in @($task.skills.conditional)) {
   $skillLines += "- Conditional: ``$skillName`` — ``$path``"
 }
 if ($skillLines.Count -eq 0) { $skillLines = @("- None") }
+$requirementLines = @()
+foreach ($group in @(@{ Label = 'Required'; Dependencies = $requiredDependencies }, @{ Label = 'Conditional (only when activated)'; Dependencies = $conditionalDependencies })) {
+  foreach ($command in $group.Dependencies.Commands) { $requirementLines += "- $($group.Label) CLI: ``$command``" }
+  foreach ($variable in @($group.Dependencies.Variables.Values | Sort-Object name)) { $requirementLines += "- $($group.Label) env: ``$($variable.name)`` — $($variable.purpose); secret: $($variable.secret)" }
+  foreach ($api in $group.Dependencies.Apis) { $requirementLines += "- $($group.Label) API: ``$($api.name)`` — $($api.purpose); auth env: ``$($api.authEnv)`` (name check only)" }
+}
+$requirementBody = ''
+if ($requirementLines.Count) {
+  $requirementBody = @"
+### Declared Requirements
+
+$($requirementLines -join "`n")
+
+On the execution host, run ``$(Join-Path $PSScriptRoot 'check-requirements.ps1') -ProjectRoot <explicit-project-root> -Role $($task.role) -Skills <selected-skill-ids>``. Add ``-ConfigPath <project-relative-config.json>`` only for an explicitly chosen non-secret config file.
+File configuration is not current-process availability. Use ``$(Join-Path $PSScriptRoot 'invoke-with-requirements.ps1')`` with the same selectors plus ``-Executable <authorized-executable> -Arguments <argument-array>`` for an explicitly authorized local child command. Process environment takes precedence; only declared file variables are added to the child. No parent environment mutation or automatic coordinator configuration copying occurs.
+Escalate missing dependencies by name; never print values. These helpers make no API calls and do not install tools. Child programs control their own output and may disclose values.
+"@
+}
 
 # Drop the contract's duplicate title; the document already has its own
 # "## Orca Worker Contract" heading. Remaining headings nest two levels deeper.
@@ -159,6 +178,8 @@ $($inlineSkills -join [Environment]::NewLine)
 ## Inputs and Dependencies
 
 $(To-Bullets $task.inputs)
+
+$requirementBody
 
 ## Allowed Scope
 
