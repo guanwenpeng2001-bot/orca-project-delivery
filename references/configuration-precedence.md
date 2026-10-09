@@ -34,6 +34,12 @@ See [Extending and configuration](../docs/extending.md) for literal dotenv gramm
 JSON restrictions, exact interfaces, bootstrap behavior and runnable offline examples.
 Workers never need a `.dev-work/` copy or an automatic coordinator `.env` transfer.
 
+For 2.4.0 local tools, a declared Node command does not prove a sufficient Node
+version, Python Playwright availability, a usable Chromium executable, document
+libraries, or FFmpeg availability. Check the selected tool at its actual entry
+point; optional browser skips and header-only image checks remain limited
+evidence. These dependencies do not require provider credentials.
+
 ## Important consequences
 
 - A user-pinned model/effort allows no automatic upgrade or downgrade. If the choice is rejected or the receipt mismatches, suspend the Task and ask.

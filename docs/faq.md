@@ -32,19 +32,20 @@ schema-validated, and old runs stay readable.
 
 ## Professional capabilities
 
-**Does 2.3.0 generate images, video, speech, or documents?**
-No. It adds methods and Roles. The [capability guide](professional-capabilities.md)
-labels each one as a method, an implemented local tool, an offline
-verification, or a real online call. Nothing in the last category has been
-called, and this release reports no measured output.
+**Does 2.4.0 generate images, video, speech, or documents?**
+It ships local PNG, subtitle, manifest, Markdown, and Office/PDF tools as well
+as methods and gated provider connectors. Bounded local Chromium and FFmpeg
+checks ran on Windows. No real provider call, HyperFrames render, or Office
+visual review is claimed. See the [capability guide](professional-capabilities.md)
+for the evidence and limits; loading a Skill alone runs nothing.
 
 **Are OpenAI, Pexo, and ElevenLabs the chosen providers?**
 No. They are example connectors, named so the configuration shape is concrete.
 Selecting a provider, a budget, and an upload scope is a per-task user
 decision. Installing the package does not authorize a call.
 
-**Why does the package claim 38 Skills when my catalog shows 16?**
-A complete 2.3.0 install contains 38 Skills and 16 Roles. A catalog showing
+**Why does the package claim 46 Skills when my catalog shows 16?**
+A complete 2.4.0 install contains 46 Skills and 16 Roles. A catalog showing
 16 Skills belongs to a version that does not match this release, even if newer
 documentation is present. Install the complete matching release; the
 [tutorial](professional-capability-tutorial.md) checks the version, catalog
@@ -59,7 +60,7 @@ OpenMontage is AGPL-3.0 and is not included. `document-production` and
 ## Extensions and configuration
 
 **Can I add a Skill or Role, or edit a bundled method?**
-Yes. Use native catalogs, matching files, current hashes and manifest counts; a new Role also needs a model route. Bundled bodies are maintained MIT adaptations, not frozen upstream copies. Follow [Extending](extending.md) and run both metadata and full verification.
+Yes. Use native catalogs, matching files, current hashes and manifest counts; a new Role also needs a model route. The original sixteen are maintained MIT adaptations; the later thirty are original methods with public references. Follow [Extending](extending.md) and run both metadata and full verification.
 
 **Why does a configured API still show unavailable, or fail later?**
 `configured` only describes file presence. An empty process value overrides a nonempty file value and blocks the child. API checks never authenticate or access the network; a passing presence check says nothing about a real service's response.

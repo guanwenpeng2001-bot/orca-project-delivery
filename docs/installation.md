@@ -7,7 +7,7 @@ Code coordinator session can load it from your control worktree. The package
 is a plain directory of files — there is no installer, no package registry,
 and no build step.
 
-This guide describes the published 2.3.0 package (38 Skills / 16 Roles). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
+This guide describes the planned 2.4.0 package (46 Skills / 16 Roles / 4 workflows). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
 
 ## Prerequisites
 
@@ -18,10 +18,10 @@ This guide describes the published 2.3.0 package (38 Skills / 16 Roles). Install
 | Git | On `PATH`; used for branches, worktrees, merges, and evidence validation. |
 | Claude Code | Installed, on `PATH`, and authenticated. All workers are Claude Code agents. |
 | Orca Runtime | The `orca` CLI plus the installed global `orchestration`, `orca-cli`, and `orca-per-workspace-env` Skills. They own Run/Task/Dispatch/Worker lifecycle; this package never replaces them. |
-| Professional Skills | **Bundled** — all 38 professional Skills ship inside this package under `skills/<skill-id>/SKILL.md`. No separate install step. The original sixteen trace to [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills); every Skill's upstream, pinned commit, and license are in `skills/README.md`. |
+| Professional Skills | **Bundled** — all 46 professional Skills ship inside this package under `skills/<skill-id>/SKILL.md`. No separate install step. The original sixteen trace to [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills); the original sixteen’s upstream baseline and the later original methods’ public references are in `skills/README.md`. |
 
 The Skills referenced by `routing/skill-catalog.json` are the original sixteen
-plus the twenty-two added in 2.3.0. The original sixteen are
+plus the twenty-two added in 2.3.0 and eight added in 2.4.0. The original sixteen are
 codebase-reconnaissance, technical-research, product-discovery,
 product-design, requirements-analysis, solution-architecture, api-design,
 database-design, implementation-planning, test-driven-development,
@@ -29,6 +29,16 @@ systematic-debugging, code-review, security-review, performance-review,
 integration-verification, and merge-conflict-resolution. The added Skills and
 their evidence labels are listed in
 [Professional capabilities](professional-capabilities.md).
+
+Selected capability tools have additional local requirements; installation of
+this Skill does not install them. Check the tools on the actual execution host.
+
+| Selected feature | Runtime / dependency | Missing dependency behavior |
+| --- | --- | --- |
+| Contrast, subtitles, composition/probes, manifest, Markdown | Node.js; use 22.16+ for the complete tutorial and PNG tools using `node:zlib` CRC32 | Fix the named missing executable or unsupported Node version before running. |
+| Browser sample | Node host, Python with Playwright, existing Chromium executable | Runner names the missing dependency; only relevant optional tests skip. |
+| DOCX/PPTX/XLSX/PDF | Python 3.10+ and versions in `skills/document-production/scripts/requirements.txt` | Missing library exits 2; invalid/unsupported content exits 1. Non-ASCII PDF additionally needs `--font`. |
+| Real transcoding | Local `ffmpeg` and `ffprobe`; they may exist outside PATH | Use explicit executable paths if needed. The saved-probe comparison itself needs only Node. |
 
 ## Directory conventions
 
@@ -93,7 +103,7 @@ Expected shape of the output on a healthy install:
 
 - many `PASS <check>` lines (parse, encoding, routing, metadata, runtime
   fixtures, evidence fixtures, ...);
-- a `skills: N/N resolved (... package-bundled)` summary line, where N is the Skill count of the revision you installed (38 for the 2.3.0 capability release);
+- a `skills: N/N resolved (... package-bundled)` summary line, where N is the Skill count of the revision you installed (46 for the 2.4.0 capability release);
 - a final line of the form `SUMMARY PASS=<n> FAIL=0`;
 - process exit code 0.
 
@@ -112,15 +122,15 @@ A note on the sibling evidence validator: when you use
 
 ## Extensions and local execution configuration
 
-For new methods or responsibilities, use the native catalog recipe in [Extending](extending.md), including current-content hashes, manifest counts and model routes. Bundled Skills are maintained adaptations; this project's original work is MIT, third-party Skills keep their own license, and intentional edits are reviewed before hashes change. `verify-package.ps1 -MetadataOnly` is a quick structural check, not a substitute for the full suite. The summary above describes the revision you installed; success requires no failures, not a permanently fixed count.
+For new methods or responsibilities, use the native catalog recipe in [Extending](extending.md), including current-content hashes, manifest counts and model routes. The original sixteen are maintained MIT adaptations and the later thirty are original methods; this project's original work is MIT, third-party Skills keep their own license, and intentional edits are reviewed before hashes change. `verify-package.ps1 -MetadataOnly` is a quick structural check, not a substitute for the full suite. The summary above describes the revision you installed; success requires no failures, not a permanently fixed count.
 
 The capability release adds methods for software, local assets, images, and
 audio, video, and documents. Installing it does not run any of them. The
 [capability tutorial](professional-capability-tutorial.md) checks the install
-and the dependency helpers only; it makes no provider call, and a passing
+and bounded local tools and dependency helpers; it makes no provider call, and a passing
 package suite is not evidence about generated output.
 
-Bootstrap creates `.env.example` and `project-config.example.json` only when missing, preserving existing files. It adds `/.env` to local Git `info/exclude`, shared by this clone's worktrees. Keep populated `.env` untracked on the actual execution host. Workers must supply their own explicit `ProjectRoot`; helpers neither copy coordinator config nor create worker `.dev-work/` state. The original sixteen declare no credential requirements. A 2.3.0 Skill declares a credential only when it names one, and an online connector named in the docs is an example, not a provider you have selected. No real key belongs in the repository.
+Bootstrap creates `.env.example` and `project-config.example.json` only when missing, preserving existing files. It adds `/.env` to local Git `info/exclude`, shared by this clone's worktrees. Keep populated `.env` untracked on the actual execution host. Workers must supply their own explicit `ProjectRoot`; helpers neither copy coordinator config nor create worker `.dev-work/` state. The original sixteen declare no credential requirements. A 2.4.0 Skill declares a credential only when it names one, and an online connector named in the docs is an example, not a provider you have selected. No real key belongs in the repository.
 
 ## Upgrade
 

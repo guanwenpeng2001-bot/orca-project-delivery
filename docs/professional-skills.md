@@ -6,8 +6,8 @@ Orca Project Delivery coordinates workers that load **professional Skills** —
 method instruction packs (`SKILL.md`) for reconnaissance, product work,
 architecture, implementation, review, and verification, plus methods for
 software delivery, local assets, images, and audio, video, and documents.
-All thirty-eight Skills ship **inside this package** under
-`skills/<skill-id>/SKILL.md` in the published 2.3.0 release. Some methods also
+All forty-six Skills ship **inside this package** under
+`skills/<skill-id>/SKILL.md` in the planned 2.4.0 release. Some methods also
 ship local scripts or provider connectors; execution evidence is separate from
 loading their instructions. Install the complete matching release, and check
 its version and catalogs using the [tutorial](professional-capability-tutorial.md).
@@ -15,15 +15,13 @@ A version that does not match is not this release.
 
 ## Upstream sources
 
-Provenance is recorded **per Skill** in `skills/README.md`: upstream
-repository, pinned commit, license, and the license file shipped beside the
-Skill. There is no single upstream for the package.
+Provenance is recorded **per Skill** in `skills/README.md`: the original sixteen’s
+pinned upstream and MIT notice, and public references for later original methods.
 
 | Group | Source | License |
 | --- | --- | --- |
 | The original sixteen | [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) at `d9a174c7143bfb4c76ed042f457fb7785c35cea3`, then maintained in this package | MIT — `skills/LICENSE`, plus the project MIT `LICENSE` |
-| Software, asset, image, audio, and video methods added in 2.3.0 | One pinned upstream per Skill, listed in `skills/README.md` | The upstream's own license, copied to `skills/<id>/LICENSE.txt`. Apache-2.0 stays Apache-2.0 |
-| `document-production`, `media-transcoding` | Written in this project; no upstream text copied | Project MIT |
+| The twenty-two added in 2.3.0 and the eight added in 2.4.0 | Written in this project. Each cites a public specification or document in `skills/README.md` and copies no upstream text | Project MIT. No Skill ships a `LICENSE.txt` |
 
 This project's MIT license covers its original work only. It does not relicense
 third-party material. Two upstreams are intentionally absent: the Anthropic
@@ -36,7 +34,7 @@ current bodies are package-maintained MIT adaptations, enriched with domain
 methods, decision criteria, worked examples, failure signals and evaluation
 scenarios. Edit any Skill deliberately in place and recompute its current
 content SHA256 row in `skills/README.md`; retain the unchanged upstream MIT
-notice in `skills/LICENSE` and each Skill's own `LICENSE.txt`. The hashes
+notice in `skills/LICENSE`. The hashes
 track today's adaptations, not byte-identical upstream copies. See
 [Extending](extending.md) for authoring, registration and validation.
 
@@ -73,7 +71,7 @@ below is the contract; it is not a test result.
 | Skill | Purpose |
 | --- | --- |
 | `frontend-visual-design` | Typography, color, and visual hierarchy, checked against hierarchy, error states, keyboard path, and zoom. |
-| `browser-e2e` | Browser regression: selector strategy, trace capture, fixture handling, on the project's existing Node and Playwright. |
+| `browser-e2e` | Browser regression: selector strategy, trace capture, fixture handling, with a local Python Playwright sample runner hosted by Node. |
 | `accessibility-audit` | Accessibility evidence: focus order, labels, error association, contrast. An automated scan is not WCAG conformance. |
 | `postgres-practices` | PostgreSQL indexes, `EXPLAIN`, and row-level security, measured on an isolated test database. |
 | `observability` | Decide the runtime question first, then place metrics, logs, and traces. Vendor-neutral. |
@@ -82,7 +80,7 @@ below is the contract; it is not a test result.
 | `react-composition` | Component composition, shared state, and boolean-prop sprawl. React 19-only advice applies only when named. |
 | `icon-assets` | Icon selection with source and license recorded per icon set. The Iconify lookup needs a network and no key. |
 | `svg-logo-design` | SVG logo design and export check, with local tooling only. |
-| `web-assets` | Favicon, manifest, and social-image sizes from a local master, using Python and Pillow. |
+| `web-assets` | Favicon, manifest, and social-image sizes from a local master, using Node for manifests and bounded PNG exports. |
 | `image-compression` | Local image compression with the measured ratio and transparency preserved. No ratio is guaranteed. |
 | `image-generation` | Prompt, aspect ratio, and acceptance checks for one selected image backend. Generation is online and unverified. |
 | `infographic-design` | Layout, reading order, and the claims an infographic must carry. |
@@ -93,7 +91,24 @@ below is the contract; it is not a test result.
 | `speech-production` | Speech synthesis for a named piece of text. Real online, not verified. |
 | `audio-transcription` | Transcript and timestamps for a supplied recording. Real online, not verified. |
 | `media-transcoding` | Local cut, remux, and transcode with FFmpeg, written from FFmpeg's own documentation. |
-| `document-production` | Editable documents, slides, spreadsheets, and PDF, authored against libraries whose licenses allow it. |
+| `document-production` | Editable documents, slides, spreadsheets, and PDF from bounded blocks, authored against libraries whose licenses allow it. |
+
+## The eight added in 2.4.0
+
+Seven are methods, one ships a local converter, and the rest of the 2.4.0 work
+deepens Skills already listed above. Scope and limits are in
+[Professional capabilities](professional-capabilities.md#engineering-methods).
+
+| Skill | Purpose |
+| --- | --- |
+| `skill-authoring-evaluation` | Score a Skill's triggering, counterexamples, and observable outcome. Scoring the text is not an agent experiment. |
+| `design-system` | Shared design tokens and component contracts across screens, measured for contrast. |
+| `domain-modeling` | Entities, value objects, aggregates, and the invariant each one owns. Storage stays with `database-design`. |
+| `migration-upgrade` | Expand, dual-run, switch, and contract ordering for a dependency, framework, or API upgrade. |
+| `mcp-server-development` | MCP tool names, schemas, error channels, and transport, checked against fixture messages. No server is started. |
+| `technical-diagrams` | Hand-written SVG and Mermaid figures with real text, readable sizes, and a description. |
+| `localization` | Glossary, ICU placeholder protection, expansion, and right-to-left text. No translation service is called. |
+| `subtitle-production` | SRT and WebVTT conversion with timing checks. Text cues only; nothing is burned into video. |
 
 ## Installation
 

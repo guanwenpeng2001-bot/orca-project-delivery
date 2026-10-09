@@ -7,6 +7,14 @@ summarizes the workflow defined in `SKILL.md` and its references; the Skill
 itself is the authority at runtime, and the installed global `orchestration`
 Skill plus current `--help` output are the authority for every Orca command.
 
+This guide targets planned 2.4.0: **46 Skills, 16 Roles, 4 workflows**. Select
+only the methods needed by the Task: shared tokens use `design-system`, domain
+invariants use `domain-modeling`, upgrades use `migration-upgrade`, and tool
+protocols use `mcp-server-development`. Diagrams, localization, Skill evaluation
+and subtitle conversion have dedicated Skills. See the [capability guide](professional-capabilities.md)
+and [offline tutorial](professional-capability-tutorial.md) for inputs, commands,
+and verification limits. New Skills do not create new Roles or expand authority.
+
 ## Starting a delivery (coordinator entry)
 
 You run the Skill from a **coordinator control worktree** — a checkout of the
@@ -112,8 +120,8 @@ Assembly resolves only those paths (`explicit-path`) or inlines the same bodies
 `skills/README.md` and enforced offline by `metadata/bundled-skill-integrity` in
 `scripts/verify-package.ps1`. See [professional-skills.md](professional-skills.md),
 [professional-capabilities.md](professional-capabilities.md), and
-[installation.md](installation.md). A walkthrough that checks the install and
-the dependency helpers without calling a provider is in
+[installation.md](installation.md). A walkthrough that checks the install and runs
+local tools and dependency helpers without calling a provider is in
 [professional-capability-tutorial.md](professional-capability-tutorial.md).
 
 Assembly places catalog `requires` names/purposes under Inputs and Dependencies, separating Role plus required-Skill dependencies from conditional Skills. Conditional dependencies activate only when the Task calls for them. On the execution host, run `check-requirements.ps1` with explicit `-ProjectRoot`, `-Role`, and an in-session `-Skills @(...)` array of selected IDs. Helpers do not select Role defaults for you. File configuration does not mean the current shell has those values; an authorized child can receive selected file additions through `invoke-with-requirements.ps1`, preserving its parent's environment. See [Extending and configuration](extending.md) for exact interfaces and an offline walkthrough. The ten-part Task order and applicable `AGENTS.md` last are unchanged.

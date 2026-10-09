@@ -69,7 +69,7 @@
 
 high-risk 深度会在任务图之前插入并行侦察、独立方案、裁决和架构，并在实施期间插入审查循环。
 
-## 38 个专业 Skill
+## 46 个专业 Skill
 
 Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `SKILL.md` 绝对路径）交付给工作者；作为回退，也可以用 `inline-extract`，并记录来源路径和哈希。单独一个 Skill 名称绝不是加载证据，Skill 只提供方法 — 它不能扩大任务范围，也不能授予编排控制。
 
@@ -92,7 +92,7 @@ Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `
 | integration-verification | 用命令和运行时证据验证任务与最终交付的验收 |
 | merge-conflict-resolution | 依据分支意图、历史和测试解决 Git 合并冲突 |
 | frontend-visual-design | 页面或组件的排版、色彩和视觉层级 |
-| browser-e2e | 浏览器回归：选择器、trace、夹具，基于项目的 Node 和 Playwright |
+| browser-e2e | 浏览器回归：选择器、trace、夹具，附带由 Node 调用的本地 Python Playwright 示例 |
 | accessibility-audit | 可访问性证据：焦点顺序、标签、错误关联、对比度 |
 | postgres-practices | PostgreSQL 索引、EXPLAIN 和行级安全 |
 | observability | 先确定要回答的运行问题，再布置指标、日志和追踪 |
@@ -113,12 +113,20 @@ Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `
 | audio-transcription | 在线转录和时间戳；未选定提供方，未验证调用 |
 | media-transcoding | 用 FFmpeg 在本地剪切、重封装和转码 |
 | document-production | 可编辑的文档、幻灯片、电子表格和 PDF |
+| skill-authoring-evaluation | 评估触发、反例与可观察结果 |
+| design-system | 跨屏共享原始、语义与组件 token |
+| domain-modeling | 实体、值对象、聚合及不变量归属 |
+| migration-upgrade | 扩展、双路径运行、切换、收缩与回滚边界 |
+| mcp-server-development | MCP 工具 schema、传输与协议/工具错误区分 |
+| technical-diagrams | 可读且有可访问描述的 SVG 与 Mermaid 源码 |
+| localization | 术语表、ICU 占位符、文本膨胀与从右到左布局 |
+| subtitle-production | SRT 与 WebVTT 纯文本字幕离线互转 |
 
-新增的二十二个 Skill 在[专业能力](professional-capabilities.md)中说明，包括哪些是方法、哪些依赖本地工具、哪些是本版本尚未验证的真实在线调用。
+新增的三十个 Skill 在[专业能力](professional-capabilities.md)中说明，包括哪些是方法、哪些依赖本地工具、哪些是本版本尚未验证的真实在线调用。
 
 ## 原生扩展与执行配置
 
-Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由、清单数量及当前 Skill 哈希。数量由目录驱动。Skill 正文是包内维护的改编版，包含领域方法和评估用例。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。不新增项目覆盖注册表或目录可执行 hook。
+Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由、清单数量及当前 Skill 哈希。数量由目录驱动。原有十六个 Skill 是 MIT 改编版，其后三十个为引用公开资料的原创方法。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。不新增项目覆盖注册表或目录可执行 hook。
 
 可选 `requires` 元数据声明 CLI、env 和 API 依赖名称。组装标出必需与条件集合，不新增顶层合同段。在实际执行主机上，辅助脚本使用显式选择器和 ProjectRoot。配置优先级为继承进程值（包括空值）、根 `.env`、显式非秘密 JSON。只有所选声明的文件变量补入子进程；已有变量继承，父进程不变。API 检查仅判断存在性。配置路径留在根内，授权可执行文件可以在外；直接批处理启动不保证兼容。注册与可运行示例见[扩展](extending.md)。
 

@@ -2,9 +2,9 @@
 
 [English](../professional-capability-tutorial.md) | **简体中文**
 
-本教程面向完整的 **2.3.0 包：38 个 Skill、16 个角色**。它在临时项目中使用合成值演练本地工具、离线提供方夹具及限定范围的依赖注入。没有发起实际提供方或付费调用；离线模拟不验证生成质量。
+本教程面向完整的 **2.4.0 包：46 个 Skill、16 个角色、4 个工作流**。它在临时项目中使用合成值演练本地工具、离线提供方夹具及限定范围的依赖注入。没有发起实际提供方或付费调用；离线模拟不验证生成质量。
 
-从包根目录在 PowerShell 7 会话中依次运行代码块，使用 Node.js 或 Python 的示例需要相应运行时可用。先安装完整且匹配的 2.3.0 版本。版本不匹配就缺少这些命令所用的脚本。
+从包根目录在 PowerShell 7 会话中依次运行代码块，使用 Node.js 22.16+（需要 `node:zlib` CRC32）和 Python 3.10+ 的示例需要相应运行时。先安装完整且匹配的 2.4.0 版本。版本不匹配就缺少这些命令所用的脚本。
 
 ## 1. 确认你安装的是什么
 
@@ -15,13 +15,14 @@ Get-Content -Raw .\VERSION
 Get-Content -Raw .\PACKAGE-MANIFEST.json
 ```
 
-读三个字段：
+读四个字段：
 
 | 字段 | 它告诉你什么 |
 | --- | --- |
-| `VERSION` | 包的修订。2.3.0 是能力版本。 |
-| `deliverables.professionalSkills` | 包声称的 Skill 数。能力版本声称 38。 |
-| `deliverables.roles` | 包声称的角色数。能力版本声称 16。 |
+| `VERSION` | 包的修订。2.4.0 是当前能力版本。 |
+| `deliverables.professionalSkills` | 包声称的 Skill 数。2.4.0 版本声称 46。 |
+| `deliverables.roles` | 包声称的角色数。2.4.0 版本声称 16。 |
+| `workflows/` | 工作流定义数，两个版本均为 4。 |
 
 然后对照目录确认，而不是对照本教程：
 
@@ -37,12 +38,16 @@ $roles = (Get-Content -Raw .\roles\catalog.json | ConvertFrom-Json).roles.Count
 ```powershell
 $manifest = Get-Content -Raw ./PACKAGE-MANIFEST.json | ConvertFrom-Json
 $version = (Get-Content -Raw ./VERSION).Trim()
-if ($version -ne '2.3.0' -or $manifest.version -ne $version -or
-    $skills -ne 38 -or $roles -ne 16 -or
+$workflows = (Get-ChildItem ./workflows -Filter *.md).Count
+"catalog workflows: $workflows"
+if ($version -ne '2.4.0' -or $manifest.version -ne $version -or
+    $skills -ne 46 -or $roles -ne 16 -or $workflows -ne 4 -or
     $manifest.deliverables.professionalSkills -ne $skills -or
-    $manifest.deliverables.roles -ne $roles) {
-  throw 'Install the complete matching 2.3.0 package before continuing.'
+    $manifest.deliverables.roles -ne $roles -or
+    $manifest.deliverables.workflows -ne $workflows) {
+  throw 'Install the complete matching 2.4.0 package before continuing.'
 }
+"GUARD_PASSED skills=$skills roles=$roles version=$version"
 ```
 
 ## 2. 离线校验包
@@ -53,7 +58,7 @@ pwsh -NoProfile -File .\scripts\verify-package.ps1
 
 验收标准是退出码 0，且最后一行含 `FAIL=0`。`PASS` 计数不是常数：它描述你正在运行的修订，所以引用你观察到的那一行，而不是一个记得的数字。
 
-这是对包结构的**离线验证**：解析、编码、路由、目录计数和当前 Skill 哈希。它不启动浏览器、数据库、编码器或模型。一次通过不是关于生成产出的证据。
+这是对包结构及行为的**离线验证**：解析、编码、路由、计数、哈希和行为测试。本地 Python Playwright 与 Chromium 存在时，可选测试会启动本地浏览器；否则按名记录跳过。文档重开需要 `-DocumentPython` 指向带固定库的解释器。套件不调用提供方，也不证明生成质量。
 
 ## 3. 查看能力
 
@@ -107,7 +112,7 @@ Remove-Item -Recurse -Force $project
 
 ## 5. 运行本地能力示例
 
-这些命令在完整的 2.3.0 包根目录运行，只写入一个新的临时目录。它们使用 2.3.0 随附的稳定脚本和旗标。没有联系提供方。
+这些命令在包根目录运行，只写新建临时目录，保留自 2.3.0 提供的稳定脚本和旗标，不联系提供方。
 
 ```powershell
 $work = Join-Path ([IO.Path]::GetTempPath()) ('orca-local-capability-' + [guid]::NewGuid().ToString('N'))
@@ -121,7 +126,7 @@ node ./skills/document-production/scripts/markdown-document.mjs --input ./tests/
 $markdownExit = $LASTEXITCODE
 ```
 
-预期退出码全部为 `0`。压缩结果打印 `status: "compressed"` 及字节数。无损候选结果没有变小则打印 `status: "no-gain"`，且不创建输出文件。manifest 记录 Harbor、`#123456` 和五种图标尺寸。Markdown 包含夹具中的标题和项目符号。结束后删除 `$work`。
+预期退出码全部为 `0`。压缩结果打印 `status: "compressed"` 及字节数。无损候选结果没有变小则打印 `status: "no-gain"`，且不创建输出文件。manifest 记录 Harbor、`#123456` 和五种图标尺寸。Markdown 包含夹具中的标题和项目符号。保留 `$work` 到后续全部示例结束再删除。
 
 Office/PDF 生成命令是：
 
@@ -142,7 +147,102 @@ python -I ./skills/document-production/scripts/office-document.py --input ./test
 | `web-assets` | 重新打开导出文件、读取尺寸，并解析 manifest 中的图标路径。 | 尺寸和格式符合要求，必要时保留透明度，manifest 引用的文件全部存在。 |
 | `image-compression` | 校验输入/输出 PNG 结构，对比解码后的像素、alpha 和字节数。 | chunk/CRC 合法且无损像素相同；记录实际节省或明确无收益。无效输入必须失败且不产生新输出。 |
 
-## 6. 运行离线提供方夹具
+相同脚本还支持 `heading`、`paragraph`、有序 `list` 和 `table`。Markdown、DOCX、XLSX 产出真实表格，PPTX/PDF 按名拒绝表格而非丢弃。单元格均为字面文本，`=SUM(A1:A2)` 不会被执行。将下面的源数据写到 `$work/blocks.json`：
+
+```powershell
+@'
+{"title":"Berth notes","blocks":[
+  {"type":"heading","text":"Berth plan"},
+  {"type":"paragraph","text":"One fact per paragraph."},
+  {"type":"list","ordered":true,"items":["Sound the depth","Record the draft"]},
+  {"type":"table","columns":["Berth","Draft m"],"rows":[["North","12.4"]]}
+]}
+'@ | Set-Content -LiteralPath "$work/blocks.json" -Encoding utf8
+node ./skills/document-production/scripts/markdown-document.mjs --input "$work/blocks.json" --output "$work/blocks.md"
+```
+
+输出 Markdown 包含二级标题、段落、编号列表和含 `North`、`12.4` 的表格。相同输入配合 `--format docx` 或 `xlsx` 会报告 `reopened: true`；`pptx` 或 `pdf` 以 `1` 退出并指出 table。单元格换行由 DOCX/XLSX 保留，Markdown 压成空格，PPTX 拒绝。重开不验证表格溢出、字体替换或视觉布局。
+
+固定版本库可用时，预期退出码依次为 `0, 0, 1, 1`：
+
+```powershell
+python -I ./skills/document-production/scripts/office-document.py --input "$work/blocks.json" --format docx --output "$work/blocks.docx"
+python -I ./skills/document-production/scripts/office-document.py --input "$work/blocks.json" --format xlsx --output "$work/blocks.xlsx"
+python -I ./skills/document-production/scripts/office-document.py --input "$work/blocks.json" --format pptx --output "$work/blocks.pptx"
+python -I ./skills/document-production/scripts/office-document.py --input "$work/blocks.json" --format pdf --output "$work/blocks.pdf"
+```
+
+## 6. 运行 2.4.0 本地工具
+
+文件处理命令离线运行，只写 `$work`，需要 Node.js 22.16+。可选浏览器测试还需要 Python Playwright 和现有 Chromium，没有命令联系提供方。
+
+黑对白对比度为 21:1，满足 4.5:1 文本与 3:1 边界阈值。灰色 `#777777` 对白不足 4.5:1，第二条命令以 `2` 退出：
+
+```powershell
+node ./skills/frontend-visual-design/scripts/contrast-ratio.mjs --foreground "#000000" --background "#FFFFFF"
+node ./skills/frontend-visual-design/scripts/contrast-ratio.mjs --foreground "#777777" --background "#FFFFFF" --threshold 4.5
+```
+
+第一条打印 `ratioRounded: 21`、`meets.text: true`；非 `#RGB`/`#RRGGBB` 颜色以 `1` 退出并在 stderr 说明原因。
+
+字幕夹具从 SRT 转 WebVTT 再转回，cue 数保持相同。时间戳末尾带无效文本会以 `1` 退出且不改已有输出：
+
+```powershell
+node ./skills/subtitle-production/scripts/subtitle-convert.mjs --input ./tests/fixtures/capability/subtitle-media-sample.srt --output "$work/sample.vtt" --to vtt
+node ./skills/subtitle-production/scripts/subtitle-convert.mjs --input "$work/sample.vtt" --output "$work/sample-back.srt" --to srt
+```
+
+两次均输出含 `cues`、`warnings` 的 JSON。只处理文本，不支持样式、定位或烧录；小时超过 99 的 WebVTT 不能转成 SRT，转换会以 `1` 退出。
+
+合成检查只读 HTML，输出帧映射，不渲染，无需 HyperFrames 或浏览器：
+
+```powershell
+node ./skills/code-video-production/scripts/composition-check.mjs --input ./tests/fixtures/capability/subtitle-media-sample.html --fps 30
+```
+
+输出 `frames: 300`；同轨 clip 重叠以 `1` 退出。帧映射不是渲染视频，本教程不声称 HyperFrames 渲染通过。
+
+探测比较只读两份已保存的 ffprobe JSON，不运行 ffprobe。夹具以 640x360 匹配，时长差超容差以 `1` 退出：
+
+```powershell
+node ./skills/media-transcoding/scripts/probe-compare.mjs --source ./tests/fixtures/capability/subtitle-media-source-probe.json --output ./tests/fixtures/capability/subtitle-media-output-probe.json --width 640 --height 360
+```
+
+匹配时报告 `matched: true`；比较不是转码，所装 FFmpeg 与编码器的许可仍须另查。
+
+`png-resize.mjs` 只缩小 8-bit 非隔行 RGB/RGBA PNG，拒绝非缩小请求。`image-info.mjs` 只读 PNG/JPEG/WebP 头中的格式、宽高、alpha 和色彩类型，不解码像素。包不附二进制夹具，可用已有 sample 命令生成母版：
+
+```powershell
+node ./skills/image-compression/scripts/png-compressor.mjs --sample "$work/master.png"
+node ./skills/image-compression/scripts/png-resize.mjs --input "$work/master.png" --output "$work/icon-32.png" --width 32 --height 32
+node ./skills/image-generation/scripts/image-info.mjs --input "$work/icon-32.png"
+```
+
+缩图报告 `status: "resized"` 和尺寸，头检查报告 `format: "png"`。缩到母版本身大小以 `1` 退出并提示 `not smaller`，截断头也失败；头有效的文件仍可能损坏。
+
+浏览器示例包含保存潮汐记录与拒绝空白时间两条旅程，测试还检测刻意植入的缺陷。它使用 Python Playwright 及 Windows `LOCALAPPDATA/ms-playwright` 中已有的 Chromium。缺少依赖只跳过对应测试并注明原因，调用 runner 则报告错误而非通过：
+
+```powershell
+node --test ./tests/design-browser.test.mjs
+```
+
+内容审查在 Windows、Python 3.14.6、Chromium revision 1234 上真实运行过可选浏览器部分，不代表跨平台或其他应用的可访问性。手动查看页面时，在另一终端运行 `node ./skills/browser-e2e/scripts/serve-fixture.mjs`，打开打印的本地回环 URL，完成后关闭服务。提供页面并不等于运行旅程。
+
+工程方法也附带离线夹具检查：
+
+```powershell
+node --test ./skills/mcp-server-development/examples/protocol-shapes.test.mjs ./skills/technical-diagrams/examples/diagram-semantics.test.mjs ./skills/localization/examples/message-consistency.test.mjs
+```
+
+它们检查 MCP 请求/错误形状、SVG 源码语义、语言键与占位符，不启动 MCP 服务器、不渲染图形、不调用翻译服务。Skill 编写评分、领域模型、迁移顺序、设计 token 的完整实例在对应 Skill 文件中，仍需审查任务的实际产物。
+
+PNG 缩图校验 CRC，并按声明尺寸限制解压，源像素总数上限为 4096 × 4096。两个轴都必须缩小，拒绝调色板、灰度、16-bit 和隔行输入。RGB `tRNS` 先展开 alpha 再盒式平均；`gAMA`、`sRGB`、`iCCP`、`pHYs`、`bKGD`、`zTXt`、`iTXt` 等不支持的块在替换输出前按名拒绝。这是重采样，不是无损压缩。
+
+字幕拒绝重叠、倒序时长、cue 设置、voice span、STYLE/REGION 和非 UTF-8；丢弃的标识符与 NOTE 块写入 warnings，空源报告零 cue 及警告。100000 小时上限是工具策略，不是 WebVTT 规范上限。
+
+合成检查接受有界 HTML 属性语法而非任意 HyperFrames：单根、数值时间、整数轨道、整帧时长、整数或有理数 fps。轨内空隙、跨轨重叠和 clip 超出结尾发警告，合成结尾未覆盖则失败。探测比较只核对首个视频流及音轨存在性，不核对每条流或解码质量；默认时长容差为输出一帧，帧率容差为 0.001。
+
+## 7. 运行离线提供方夹具
 
 夹具模式使用 `--request`、`--fixture` 和内置合成密钥。它从不读取真实提供方密钥，并报告 `networkCalled: false`。不要添加 `--online`；它与 `--fixture` 同时使用会被拒绝。这些示例不测量生成质量。
 
@@ -159,13 +259,19 @@ node ./skills/speech-production/scripts/elevenlabs-speech-request.mjs --request 
 $speechSuccess = $LASTEXITCODE
 node ./skills/audio-transcription/scripts/elevenlabs-transcription-request.mjs --request ./tests/fixtures/capability/elevenlabs-transcription-request.json --fixture ./tests/fixtures/capability/elevenlabs-transcription-failure.json --audio "$work/speech.mp3" --output "$work/transcript.json"
 $transcriptionFailure = $LASTEXITCODE
-node ./skills/image-generation/scripts/openai-image-request.mjs --online --request ./tests/fixtures/capability/openai-image-request.json --output "$work/online.png"
-$disabledOnline = $LASTEXITCODE
+$previousOnlineGate = $env:CAPABILITY_ONLINE_PROVIDERS_ENABLED
+try {
+  $env:CAPABILITY_ONLINE_PROVIDERS_ENABLED = 'false'
+  node ./skills/image-generation/scripts/openai-image-request.mjs --online --request ./tests/fixtures/capability/openai-image-request.json --output "$work/online.png"
+  $disabledOnline = $LASTEXITCODE
+} finally {
+  $env:CAPABILITY_ONLINE_PROVIDERS_ENABLED = $previousOnlineGate
+}
 ```
 
-预期退出码依次为 `0`、`3`、`0`、`4`、`0`、`3`、`2`。图像和语音成功会保存文件。图像与转录夹具模拟 HTTP 失败。Pexo 成功夹具只是 SSE 提交确认；超时以 `4` 退出。最后一条命令在没有单独启用真实执行时以 `2` 退出，错误为 `online-disabled`。
+预期退出码依次为 `0`、`3`、`0`、`4`、`0`、`3`、`2`。图像和语音成功会保存文件。图像与转录夹具模拟 HTTP 失败。Pexo 成功夹具只是 SSE 提交确认；超时以 `4` 退出。最后一条临时关闭在线门，以 `2` 退出并返回 `online-disabled`，随后恢复此前开关而不打印它。
 
-## 7. 真实执行必须显式启用
+## 8. 真实执行必须显式启用
 
 提供方脚本默认离线。`--request <JSON 路径>`、`--output <路径>` 和 `--fixture <JSON 路径>` 用于本地请求/响应处理，不联系提供方。夹具和注入的传输不能验证凭据、计费、提供方可用性或生成质量。本轮文档工作没有发起实际付费调用。
 
@@ -189,7 +295,7 @@ $disabledOnline = $LASTEXITCODE
 | `4` | 超时。 |
 | `5` | 等待中或需要进一步操作。 |
 
-## 8. 失败时
+## 9. 失败时
 
 | 你看到的 | 含义 |
 | --- | --- |

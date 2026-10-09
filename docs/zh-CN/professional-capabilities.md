@@ -2,9 +2,9 @@
 
 [English](../professional-capabilities.md) | **简体中文**
 
-2.3.0 为软件交付、本地视觉资产、图像规划，以及音频、视频和文档制作补充专业方法。加上原有的十六个，本包共有 **38 个专业 Skill** 和 **16 个角色**。本指南说明每项新能力做什么、不做什么，以及它的说法实际核到了哪一步。
+2.4.0 深化 2.3.0 的能力，新增工程方法、设计系统与字幕等八个 Skill，并扩展有界文档块。加上原有十六个及 2.3.0 的二十二个，本包共有 **46 个专业 Skill**、**16 个角色**和 **4 个工作流**。本指南说明新增或增强的能力做什么、不做什么，以及实际验证到哪一步。
 
-本指南描述已发布的 2.3.0 包：38 个 Skill、16 个角色。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `2.3.0`、`routing/skill-catalog.json` 有 38 个 Skill、`roles/catalog.json` 有 16 个角色，且 `PACKAGE-MANIFEST.json` 与之相符。版本不匹配就不是本版本。
+本指南描述计划中的 2.4.0 包：46 个 Skill、16 个角色、4 个工作流。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `2.4.0`、`routing/skill-catalog.json` 有 46 个 Skill、`roles/catalog.json` 有 16 个角色、`workflows/` 有 4 份定义，且 `PACKAGE-MANIFEST.json` 与之相符。教程会拒绝版本不匹配的安装。
 
 ## 如何阅读一项能力
 
@@ -13,7 +13,7 @@
 | 标签 | 含义 | 不代表什么 |
 | --- | --- | --- |
 | **方法** | 一份 `SKILL.md`，告诉工作者如何判断、检查和报告。 | 它自己不执行任何东西，加载它也不是测试结果。 |
-| **已实现的本地工具** | 本包确实随附、且本修订的脚本能够运行的命令，例如现有的依赖辅助脚本。 | 不代表浏览器、数据库、编码器或模型运行过。 |
+| **已实现的本地工具** | 本包确实随附、且本修订的脚本能够运行的命令，例如对比度、缩图、图像头、字幕、合成时间线与探测结果比较脚本。 | 不代表浏览器、数据库、编码器或模型运行过。 |
 | **离线验证** | 不需要网络、也不需要提供方账号的检查。包结构校验属于这一类。 | 通过一项不能衡量生成的图片、音频或视频。 |
 | **真实在线，未验证** | 一次需要密钥、网络，以及明确批准提供方、预算和上传范围的提供方调用。 | 本版本没有做过任何这样的调用。配置存在不是一次成功的生成。 |
 
@@ -29,13 +29,13 @@
 
 ## 软件方法
 
-八个 Skill。都不声明提供方密钥。只需要方法的任务不必新增凭据。
+八个 Skill。都不声明提供方密钥，只需要方法的任务不必新增凭据。其中三个在 2.4.0 中获得本地工具或工具衔接，其余五个仍为方法。
 
 | Skill | 补充什么 | 不替代什么 | 执行状态 |
 | --- | --- | --- | --- |
-| `frontend-visual-design` | 页面或组件的排版、色彩和视觉层级，并检查层级、错误态、键盘路径和 200% 缩放。 | `product-design`，它仍负责流程、信息架构和交互状态。 | 方法。页面检查需要项目自身的运行时和浏览器；本版本没有做过该检查。 |
-| `browser-e2e` | 浏览器回归的选择器策略、trace 取证和夹具处理。 | `integration-verification`，它仍是通用验收方法。 | 方法。执行期望项目已有的 Node 和 Playwright。不新增 Python 辅助脚本。这里不声称做过浏览器运行。 |
-| `accessibility-audit` | 把可访问性要求变成证据：焦点顺序、标签、错误关联、对比度。 | `product-design`，它在设计期提出要求。 | 方法。自动扫描不是 WCAG 符合性声明。 |
+| `frontend-visual-design` | 页面或组件的排版、色彩和视觉层级，含错误态、键盘路径和 200% 缩放；2.4.0 新增 `scripts/contrast-ratio.mjs`，本地计算 WCAG 2.2 对比度。 | `product-design` 负责流程和交互状态，`design-system` 负责跨屏 token。 | 方法及本地工具。实际页面检查仍需要项目运行时和浏览器，本版本未检查用户页面。 |
+| `browser-e2e` | 浏览器选择器、trace 和夹具，以及静态页面上的本地旅程示例。 | 通用验收方法 `integration-verification`。 | 方法及本地脚本。示例经调用者的 Python Playwright 启动已安装的 Chromium；缺少 Python、Playwright 或 Chromium 时返回具名依赖错误，对应可选测试跳过。跳过不是覆盖，不会自行安装浏览器。 |
+| `accessibility-audit` | 焦点、标签、错误关联及通过 `frontend-visual-design` 脚本测量的对比度证据。 | 在设计期提出要求的 `product-design`。 | 方法。自动扫描不是 WCAG 符合性声明。 |
 | `postgres-practices` | PostgreSQL 专项规则：索引、`EXPLAIN`、行级安全。 | `database-design`，它仍是通用建模和迁移方法。 | 方法。测量需要独立的测试数据库。方法不涉及共享库或生产库。 |
 | `observability` | 先确定要回答的运行问题，再布置指标、日志和追踪。 | `systematic-debugging`，它从缺陷出发，而不是从仪表化设计出发。 | 方法。供应商中立；没有选定遥测供应商。 |
 | `ci-pipeline` | 按项目真实拥有的检查来组织质量门。 | 临时拼凑的 CI 模板。本 Skill 不附带流水线。 | 方法。本地模拟和远端流水线运行是不同的证据，必须分开标注。 |
@@ -43,6 +43,23 @@
 | `react-composition` | 组件组合、状态共享和布尔属性膨胀。 | 为了重构而重构。 | 方法。仅 React 19 适用的建议，只在任务写明 React 19 时生效。 |
 
 这些不是新角色。实施者、架构师、审查者或验证者按需加载对应 Skill。一个 Skill 不对应一个角色。
+
+## 工程方法
+
+2.4.0 新增八个 Skill：七个是方法（部分有离线示例检查），一个附带本地转换器。它们不调用服务，均为引用公开规范的原创方法，不复制上游 Skill 文本。
+
+| Skill | 判断什么 | 可核对的实例 | 限制 |
+| --- | --- | --- | --- |
+| `skill-authoring-evaluation` | 描述是否正确触发、明确反例并提供可观察结果。 | 对照 `database-design` 为弱描述与强描述评分。 | 只评估文本，不是智能体实验。 |
+| `design-system` | 跨屏原始、语义、组件 token 及组件契约。 | CSS 自定义属性示例和对比度测量。 | 工具中立，不替代单屏视觉规范。 |
+| `domain-modeling` | 实体、值对象、聚合及不变量归属。 | 拒绝允许两个住宿记录写入同一房晚的模型。 | 到持久化之前止步，schema 与迁移归 `database-design`。 |
+| `migration-upgrade` | 依赖、框架或 API 的扩展、双路径运行、切换和收缩顺序。 | 用 `Accept-Version` 探测，分四次部署把 HTTP 字段移入 `data`。 | 不重复 schema 回填方案。 |
+| `mcp-server-development` | 工具名、schema、错误通道与传输。 | 固定协议修订 `2025-11-25`，展示有效 `tools/call`、未知工具的 `-32602` 协议错误及超范围值的工具错误。 | 不附服务器脚手架，测试只检查夹具，不启动服务器。 |
+| `technical-diagrams` | SVG/Mermaid 中的真实文字、字号、对比度 token 和描述。 | 时序图与 `examples/version-header.svg` 的源码语义检查。 | 源码检查不是渲染，不声称屏幕效果已验证。 |
+| `localization` | 术语表、ICU 占位符、文本膨胀与从右到左布局。 | 将拼接计数改为一条 ICU `plural` 消息，各语言保留相同占位符。 | 处理源文案，不调用翻译服务，不编造翻译。 |
+| `subtitle-production` | SRT/WebVTT 转换、时间检查和编号。 | `scripts/subtitle-convert.mjs` 双向转换并输出 JSON cue 数。 | 仅文本，不处理样式、定位或烧录。 |
+
+具体命令和输出见[教程](professional-capability-tutorial.md#6-运行-240-本地工具)。
 
 ## 本地资产方法
 
@@ -52,10 +69,10 @@
 | --- | --- | --- | --- |
 | `icon-assets` | 选定的图标，并按图标集记录来源和许可。 | 本地工具需要 Node。查询公开的 Iconify 索引需要网络，不需要密钥。 | 不是离线。每个图标集保留自己的许可。 |
 | `svg-logo-design` | 一个 SVG Logo 和一次导出检查。 | 只用本地 SVG 工具。 | 是方法和导出。没有选定托管的 Logo 服务。 |
-| `web-assets` | 从本地母版生成的 favicon、web manifest 和社交图片尺寸。 | 项目环境中的 Python 与 Pillow。 | 只有位图尺寸。它不生成画作。 |
-| `image-compression` | 压缩后的图片、实测压缩比，并保留透明度。 | 本地编码器，例如 `cwebp` 或 ImageMagick，由实现选定，不由本指南选定。 | 不保证任何压缩比。在 Windows 上失败就是失败，不是跳过。 |
+| `web-assets` | 来自本地母版的 favicon、web manifest 和社交图片尺寸。 | Node 生成 manifest，`png-resize.mjs` 从审阅过的母版导出较小 PNG。 | 不生成画作；512px 母版直接作为 512 条目，不能缩到自身大小。SVG 栅格化需要本包不附带的外部工具。 |
+| `image-compression` | 压缩图片、实测压缩比与保留的透明度，以及从母版导出的较小 PNG。 | Node；`png-compressor.mjs` 无损压缩，`png-resize.mjs` 缩小 8-bit 非隔行 RGB/RGBA PNG。 | 不保证压缩比，非缩小请求失败；RGB `tRNS` 色键先展开为 alpha 再平均，其他不支持的辅助块按名拒绝而非丢弃。 |
 
-`icon-assets` 是资产 Skill 里默认在线的一个。其余三个是本地的。四个都不是付费 API，本版本也都没有测得的产出：教程里的[资产验收行](professional-capability-tutorial.md#资产验收)列出实际产出应记录的检查，不是已经通过的检查。
+`icon-assets` 是资产 Skill 里默认在线的一个。其余三个是本地的。四个都不是付费 API。压缩与缩图已在生成的离线夹具上检查结构及解码像素，不代表视觉质量；[资产验收行](professional-capability-tutorial.md#资产验收)仍须逐项记录实际输出及未运行项。
 
 ## 图像方法
 
@@ -63,7 +80,7 @@
 
 | Skill | 规划什么 | 仅在何时生成 |
 | --- | --- | --- |
-| `image-generation` | 针对一个选定后端的提示词、宽高比和验收检查。 | 用户已批准一个提供方、一笔预算，以及允许上传的内容。 |
+| `image-generation` | 一个后端的提示词、宽高比和验收，以及读取 PNG/JPEG/WebP 头的 `scripts/image-info.mjs`。 | 用户批准提供方、预算和上传内容后才生成；本地图像头检查不解码像素。 |
 | `infographic-design` | 版式、阅读顺序，以及图片必须承载的结论。 | 使用同一个已批准的后端。 |
 | `editorial-illustration` | 封面和文章配图的方向。 | 使用同一个后端。 |
 | `visual-slide-deck` | 以图片呈现的幻灯片序列。 | 使用同一个后端。结果是图片型 deck，不是可编辑的 Office 文档。 |
@@ -72,33 +89,45 @@
 
 ## 音频、视频与文档方法
 
-六个 Skill。本地渲染和在线生成始终分开，即使同一件交付物两种都能做。
+七个 Skill。本地渲染和在线生成始终分开，即使同一件交付物两种都能做。
 
 | Skill | 是什么 | 本地还是在线 | 状态 |
 | --- | --- | --- | --- |
-| `code-video-production` | 以帧来规划、在本地渲染的代码讲解视频。 | 本地渲染。可选的联网素材或语音是单独批准的步骤。 | 方法。优先的编写方法是 HyperFrames。Remotion 和 video-shotcraft 是未入选的备选。本版本没有跑过渲染。 |
+| `code-video-production` | 以帧规划的代码视频，渲染前由 `scripts/composition-check.mjs` 检查时间线。 | 本地渲染；联网素材与语音另行批准。 | 方法及本地检查。优先 HyperFrames，检查只读 HTML 并输出帧映射，不渲染；本版本未运行 HyperFrames 渲染。 |
 | `generated-video` | 向在线视频提供方请求的视频。 | 在线。需要密钥、网络和已批准的预算。 | 真实在线，未验证。Pexo 是示例连接器，不是选定的供应商。OpenMontage 不包含在内；见许可证。 |
 | `speech-production` | 对一段指定文本做语音合成。 | 在线。 | 真实在线，未验证。ElevenLabs 是示例连接器，不是选定的供应商。 |
 | `audio-transcription` | 对一段给定录音做转录和时间戳。 | 在线。 | 真实在线，未验证。同一个示例连接器，同样不是选择。 |
-| `media-transcoding` | 用本地 FFmpeg 做剪切、重封装或转码。 | 本地。执行主机上的 `ffmpeg` 和 `ffprobe`。 | 方法。所装 FFmpeg 的编码器与构建许可另行核查。本版本没有跑过转码。 |
-| `document-production` | 可编辑的文档、幻灯片、电子表格和 PDF，基于许可允许的库编写。 | 本地库，按格式选择。 | 方法。这不是 Anthropic docx、pptx、pdf 或 xlsx Skill 的副本；那些不包含在内。 |
+| `media-transcoding` | 本地 FFmpeg 剪切、重封装或转码，并用 `scripts/probe-compare.mjs` 比较探测结果。 | 执行主机上的 `ffmpeg` 与 `ffprobe`。 | 方法及本地检查。比较器只读调用者保存的 ffprobe JSON，不运行 ffprobe。构建与编码器许可另行核查。 |
+| `document-production` | 从有界块生成可编辑文档、幻灯片、表格和 PDF，使用许可允许的库。 | 按格式选择本地库。 | 方法及本地脚本；不复制 Anthropic docx、pptx、pdf 或 xlsx Skill。 |
+| `subtitle-production` | 带时间校验的 SRT/WebVTT 转换。 | 仅 Node。 | 本地工具；只有文本，不支持样式、定位或烧录。 |
 
-`media-producer` 承载资产、图像和音视频 Skill。`document-specialist` 承载文档制作和图片型幻灯片。两个角色都不得在没有明确批准该任务的提供方、预算和上传范围时上传、发布或发起付费调用。
+`media-producer` 承载资产、图像、音视频和字幕 Skill。`document-specialist` 承载文档制作和图片型幻灯片。两个角色都不得在没有明确批准该任务的提供方、预算和上传范围时上传、发布或发起付费调用。
 
-## 四个新角色
+## 2.3.0 新增的四个角色
 
 合计十六个角色：原有十二个，加上这四个。角色是身份和边界。它不提升权限，也不加载该领域的全部 Skill。
 
 | 角色 | 类别 | 何时使用 | 默认 Skill | 可选 Skill | 绝不 |
 | --- | --- | --- | --- | --- | --- |
-| `ui-designer` | product | 页面或组件需要视觉规范、组件状态矩阵或设计评审。 | `product-design`、`frontend-visual-design` | `accessibility-audit`，以及 `icon-assets` 注册之后。 | 不收集需求，不实现产品 UI。只在任务点名的路径上写原型代码。 |
+| `ui-designer` | product | 页面或组件需要视觉规范、状态矩阵或设计评审。 | `product-design`、`frontend-visual-design` | `accessibility-audit`、`icon-assets`、`design-system`、`localization` | 不收集需求，不实现产品 UI，只在任务授权路径写原型。 |
 | `browser-test-engineer` | quality | 任务需要浏览器回归证据、可访问性审计，或缺陷的 trace。 | `browser-e2e`、`integration-verification` | `accessibility-audit`、`systematic-debugging` | 不实现被测产品，也不替代 `release-verifier`。实现某页面的人不同时验收该页面。 |
-| `media-producer` | media | 任务产出图标、Logo、网站资产、插图、分镜或音视频母版，并附来源与许可清单。 | 默认没有；任务选一到三个。 | 与该任务相关的资产、图像和音视频 Skill。 | 未经明确批准不上传、不发布、不花钱。不修改产品源码。 |
+| `media-producer` | media | 图标、Logo、网站资产、插图、分镜、字幕或音视频母版，附来源和许可清单。 | 默认没有，任务选一到三个。 | 相关资产、图像、音视频、`subtitle-production` 与 `technical-diagrams`。 | 未经明确批准不上传、发布或花钱，不改产品源码。 |
 | `document-specialist` | product | 任务产出可编辑的文档、幻灯片、电子表格或 PDF，并检查它能往返打开。 | `document-production` | `visual-slide-deck` | 不把图片型 deck 说成可编辑对象，也不复制专有的文档 Skill。 |
 
-其余十二个角色不变。React、PostgreSQL、可观测性和 CI 不单设角色；它们是 Skill，由需要它们的实施者、架构师、审查者或验证者加载。
+其余十二个角色的身份不变。架构师按需加载 `domain-modeling`、`migration-upgrade`、`mcp-server-development`、`technical-diagrams`；实施者按需加载 `migration-upgrade`、`mcp-server-development`、`localization`、`skill-authoring-evaluation`。React、PostgreSQL、可观测性与 CI 仍不新增角色。可选 Skill 的权威是安装版本的 `roles/catalog.json`。
 
 模型路由、交付物路由和风险路由是 `routing/` 里的包数据。本指南不复制它们，因为复制的表会在包一变时就过时。
+
+## 六组增强
+
+| 组 | 实质改动 | 边界 |
+| --- | --- | --- |
+| 前端与产品 | 共享 token、实测对比度，以及写明 token 引用、状态矩阵、文案和可观察验收的设计交接。 | 一个对比度数字不能验收整个页面。 |
+| 浏览器与无障碍 | 两条键盘旅程、植入缺陷检测，以及焦点、标签、错误、对比度和缩放审计表。 | 只覆盖本地示例，不是 WCAG 认证或用户应用测试。 |
+| 文档 | 标题、段落、有序列表及 Markdown/DOCX/XLSX 真实表格，保留原有 title/bullets 用法。 | PPTX/PDF 拒绝表格，不支持合并单元格、图表、宏或任意模板。 |
+| 图标与网站资产 | 按尺寸记录母版、导出和许可，有界 PNG 缩图生成 manifest 中较小尺寸。 | 16/32 使用简化小图标母版，180/192 使用大母版，512 条目直接复制审阅过的 512 母版。 |
+| 图像 | PNG/JPEG/WebP 头检查、信息图数值与图形匹配、插图对象来源记录、幻灯片可读性阈值。 | 1920px 宽幻灯片正文至少 28px、对比度 4.5:1；头检查不能验证标签、真实性或视觉可读性。 |
+| 代码视频与转码 | 合成帧映射与已保存 ffprobe JSON 比较。 | 两条命令都不渲染或转码，这些操作需要另有本地工具。 |
 
 ## 说法与证据
 
@@ -106,26 +135,28 @@
 | --- | --- | --- |
 | 本包离线验证自身结构。 | 在你安装的修订上，`scripts/verify-package.ps1` 以 0 退出且 `FAIL=0`。 | 套件通过并不能说明生成的图片、视频或文档。 |
 | 方法以 Skill 文件交付。 | Skill 文件存在于 `skills/<id>/SKILL.md`，且哈希与 `skills/README.md` 一致。 | 加载一个 Skill 不是对其产出的测试。 |
-| 本地能力脚本和依赖辅助脚本在本地运行。 | 教程运行 PNG 压缩、web manifest、Markdown 生成、依赖检查和离线提供方夹具。 | Office/PDF 生成需要固定版本的库；夹具成功不是提供方或生成质量证据。 |
+| 本地工具离线运行。 | 教程运行对比度、PNG 缩图、图像头、字幕、帧映射、探测比较、PNG 压缩、manifest、Markdown、依赖检查和提供方夹具。 | 帧映射不是视频，探测比较不是转码，头检查不是解码，夹具不证明提供方质量。 |
+| Office/PDF 块能往返打开。 | 程序重开 docx、xlsx、pptx、pdf 并比较文本。 | 未检查视觉布局、表格溢出、字体替换和 PDF 分页；PPTX/PDF 拒绝 table 块。 |
 | 在线连接器以示例存在。 | 教程把 OpenAI 作为图像示例、Pexo 作为视频示例、ElevenLabs 作为语音和转录示例。 | 没有发起调用。没有选定提供方。没有测量生成质量。 |
+
+内容审查曾在 Windows 本地运行 Chromium 两条旅程（Python 3.14.6、Chromium revision 1234），并用 FFmpeg 8.1 生成合成媒体、探测及解码到空输出。这些是有界本地结果，不代表跨平台验证。HyperFrames 渲染、Office/PDF 视觉审查、真实提供方调用仍未验证，图像头检查也不证明完整解码和视觉质量。
 
 ## 许可证与来源
 
-出处按 Skill 记录，不是一个笼统的上游。权威表是 `skills/README.md`：每个 Skill 一行，写明上游仓库、固定提交、许可证，以及复制进包内的许可证文件。本指南说明这些行必须满足的规则。
+`skills/README.md` 按 Skill 记录原有十六个的固定上游与 MIT 声明，以及后续原创方法的公开参考；引用不意味着复制上游 Skill 文本。
 
 - **本项目保留自己的 MIT 许可证**，位于仓库根目录。MIT 覆盖本项目的原创文本：协调者 Skill、脚本、路由和公开文档。
 - **第三方材料保留它带来的许可证。** 一个 Apache-2.0 的 Skill 仍是 Apache-2.0，声明原样保留在旁边。项目的 MIT 许可证不把它重新许可。
 - **原有的十六个**是 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) 在提交 `d9a174c7143bfb4c76ed042f457fb7785c35cea3` 上的包内维护 MIT 改编版，并在本包内做了补充。它们的上游 MIT 声明留在 `skills/LICENSE`。当前哈希跟踪改编后的文本，不是逐字节一致的上游副本。
-- **新增的改编**各自携带自己的 `LICENSE.txt` 和固定的上游提交。软件方法改编的上游包括 Anthropic frontend-design（Apache-2.0）、ECC e2e-testing（MIT）、wshobson 可访问性模式（MIT）、Supabase PostgreSQL 实践（MIT），以及 Addy Osmani 的可观测性与 CI 方法（MIT）。资产和图像方法改编 MIT 许可的上游。固定提交写在 `skills/README.md`，不写在这里，以免本指南与导入事实漂移。
+- **其余三十个均为原创方法。** 2.3.0 的二十二个和 2.4.0 的八个均在本项目编写，引用 WCAG 2.2、PNG、WebVTT、MCP、PostgreSQL、OpenTelemetry、React 等公开资料，不复制上游 Skill 文本。没有 Skill 目录附带 `LICENSE.txt`，来源表标记为 `Original`。
 - **有两个上游有意不复制。** Anthropic 的 docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内；`document-production` 针对许可允许的库独立编写。OpenMontage 是 AGPL-3.0，不包含在内；`media-transcoding` 依据 FFmpeg 自身文档编写，所装 FFmpeg 构建及其编码器的许可另行核查。
-- **React 方法是独立编写的。** `react-performance` 和 `react-composition` 在本项目内依据公共 API 指导编写，没有复制任何厂商 Skill。`skills/README.md` 把两者都记录为原创。
 - **资产自带许可。** 图标集、字体和素材图片不由获取它们的工具的许可覆盖。`icon-assets` 要求每个图标集都有来源和许可。
 
-新增 Skill 不复制会启动另一种智能体产品的上游指令。改编保留方法，去掉那一部分。
+公开参考提供技术事实，原创方法不导入其他产品的编排指令。
 
 ## 相关
 
 - [安装](installation.md)：离线包检查。
-- [专业能力教程](professional-capability-tutorial.md)：一次只用依赖辅助脚本的走读。
+- [专业能力教程](professional-capability-tutorial.md)：本地工具与依赖辅助脚本走读。
 - [扩展](extending.md)：计数所依据的注册规则。
-- [专业 Skill](professional-skills.md)：原有的十六个。
+- [专业 Skill](professional-skills.md)：完整清单。

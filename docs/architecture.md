@@ -95,9 +95,9 @@ The high-risk depth inserts parallel reconnaissance, independent plans,
 adjudication, and architecture before the task graph, and review loops during
 implementation.
 
-## The 38 professional Skills
+## The 46 professional Skills
 
-Skills are vendored under the package `skills/` directory and are delivered to
+Skills are bundled under the package `skills/` directory and are delivered to
 workers by `explicit-path` (the absolute `SKILL.md` path named in the Task)
 or, as a fallback, by `inline-extract` with the source path and hash
 recorded. A Skill name alone is never loading evidence, and a Skill supplies
@@ -122,7 +122,7 @@ method — it cannot expand Task scope or grant orchestration control.
 | integration-verification | Verify Task and final-delivery acceptance with commands and runtime evidence |
 | merge-conflict-resolution | Resolve Git merge conflicts from branch intent, history, and tests |
 | frontend-visual-design | Typography, color, and visual hierarchy for a page or component |
-| browser-e2e | Browser regression: selectors, traces, fixtures, on the project's Node and Playwright |
+| browser-e2e | Browser regression: selectors, traces, fixtures, with a local Python Playwright sample hosted by Node |
 | accessibility-audit | Accessibility evidence: focus order, labels, error association, contrast |
 | postgres-practices | PostgreSQL indexes, EXPLAIN, and row-level security |
 | observability | Decide the runtime question first, then place metrics, logs, and traces |
@@ -143,15 +143,23 @@ method — it cannot expand Task scope or grant orchestration control.
 | audio-transcription | Online transcript and timestamps; no provider selected, no call verified |
 | media-transcoding | Local cut, remux, and transcode with FFmpeg |
 | document-production | Editable documents, slides, spreadsheets, and PDF |
+| skill-authoring-evaluation | Score triggering, counterexamples, and observable outcomes |
+| design-system | Shared primitive, semantic, and component tokens |
+| domain-modeling | Entities, value objects, aggregates, and invariant ownership |
+| migration-upgrade | Expand, dual-run, switch, contract and rollback boundaries |
+| mcp-server-development | MCP tool schemas, transports, and protocol/tool error separation |
+| technical-diagrams | Readable SVG and Mermaid source with accessible descriptions |
+| localization | Glossaries, ICU placeholders, expansion, and right-to-left layout |
+| subtitle-production | Offline text-cue conversion between SRT and WebVTT |
 
-The twenty-two added Skills are specified in
+The thirty added Skills are specified in
 [Professional capabilities](professional-capabilities.md), including which are
 methods, which depend on a local tool, and which are real online calls that
 this release has not verified.
 
 ## Native extension and execution configuration
 
-Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes, manifest counts and current Skill hashes. Counts are catalog-driven. Skill bodies are package-maintained adaptations with domain methods and evaluation cases. This project's original work is MIT; third-party Skills keep the license they arrived with, recorded per Skill in `skills/README.md`. No project overlay registry or executable catalog hooks are added.
+Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes, manifest counts and current Skill hashes. Counts are catalog-driven. The original sixteen Skill bodies are maintained MIT adaptations; the other thirty are original methods with public references. This project's original work is MIT; third-party Skills keep the license they arrived with, recorded per Skill in `skills/README.md`. No project overlay registry or executable catalog hooks are added.
 
 Optional `requires` metadata names CLI, env and API dependencies. Assembly labels required and conditional sets without adding a new top-level contract section. On the actual execution host, helpers use explicit selectors and ProjectRoot. Configuration precedence is inherited process values (even empty), root `.env`, then explicit non-secret JSON. Only selected declared file variables are added to the child; inherited variables remain and the parent is unchanged. API checks are presence-only. Config paths stay inside the root, while an authorized executable may be outside; direct batch-launch compatibility is not guaranteed. See [Extending](extending.md) for registration and runnable examples.
 

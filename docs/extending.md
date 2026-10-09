@@ -16,7 +16,7 @@ Extend the package's native catalogs when a reusable method or a distinct delive
 
 ## Native registration
 
-Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 2.3.0 package ships 38 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
+Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 2.4.0 package ships 46 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
 
 | File | What to add or update |
 | --- | --- |
@@ -78,7 +78,7 @@ Append this object to `routing/skill-catalog.json`'s existing `skills` array:
 }
 ```
 
-Keep essential method content in `SKILL.md`: required Skills work with both path delivery and full-body inline delivery. If changing a bundled Skill, it is a **package-maintained adaptation** of its recorded upstream baseline, not a frozen byte-identical import. This project's original work is MIT; a third-party Skill keeps its own license. Preserve the unchanged upstream notice in `skills/LICENSE` or that Skill's `LICENSE.txt`; recompute the current-content hash after every intentional body edit. Examples demonstrate reasoning, not measured production outcomes. See [Professional Skills](professional-skills.md).
+Keep essential method content in `SKILL.md`: required Skills work with both path delivery and full-body inline delivery. The original sixteen bundled Skills are maintained MIT adaptations of their pinned baseline; the later thirty are original methods with public references. Preserve the original upstream notice in `skills/LICENSE` and any notices required for future imports; no current Skill ships a `LICENSE.txt`. Recompute the current-content hash after every intentional body edit. Examples demonstrate reasoning, not measured production outcomes. See [Professional Skills](professional-skills.md).
 
 ## Author a Role
 
@@ -172,7 +172,7 @@ Duplicate declarations within an entry fail. Across selected entries, identical 
 
 ## Validate the extension
 
-After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 2.3.0 package starts at 16 Roles / 38 Skills, so these illustrative additions yield 17 / 39. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 2.3.0. Keep workflow counts correct.
+After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 2.4.0 package starts at 16 Roles / 46 Skills, so these illustrative additions yield 17 / 47. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 2.4.0. Keep workflow counts correct.
 
 ```powershell
 (Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
@@ -180,7 +180,7 @@ After adding the example, derive the manifest counts from the edited catalogs. S
 (Get-Content -Raw ./VERSION).Trim()
 ```
 
-Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 2.3.0 capabilities.
+Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 2.4.0 capabilities.
 
 In a PowerShell 7 session, set `$package` to your edited package copy and compute the hash:
 

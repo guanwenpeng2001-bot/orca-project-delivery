@@ -21,14 +21,14 @@
 
 ## 专业能力
 
-**2.3.0 会生成图像、视频、语音或文档吗？**
-不会。它新增的是方法和角色。[能力指南](professional-capabilities.md)把每一项标为方法、已实现的本地工具、离线验证或真实在线调用。最后一类没有任何一次被调用过，本版本也不报告测得的产出。
+**2.4.0 会生成图像、视频、语音或文档吗？**
+它附带本地 PNG、字幕、manifest、Markdown 和 Office/PDF 工具，以及方法和有门控的提供方连接器。Windows 上运行过有界的 Chromium 与 FFmpeg 检查，但不声称真实提供方调用、HyperFrames 渲染或 Office 视觉审查通过。证据和限制见[能力指南](professional-capabilities.md)；仅加载 Skill 不会执行命令。
 
 **OpenAI、Pexo 和 ElevenLabs 是选定的提供方吗？**
 不是。它们是示例连接器，点名是为了让配置的形状具体。选择提供方、预算和上传范围是按任务做出的用户决定。安装本包并不授权一次调用。
 
-**为什么包声称 38 个 Skill，而我的目录显示 16 个？**
-完整的 2.3.0 安装包含 38 个 Skill 和 16 个角色。显示 16 个 Skill 的目录属于与本版本不匹配的版本，即使旁边已有新文档也一样。请安装完整且匹配的版本；[教程](professional-capability-tutorial.md)在运行新命令前核对版本、目录计数和清单。
+**为什么包声称 46 个 Skill，而我的目录显示 16 个？**
+完整的 2.4.0 安装包含 46 个 Skill 和 16 个角色。显示 16 个 Skill 的目录属于与本版本不匹配的版本，即使旁边已有新文档也一样。请安装完整且匹配的版本；[教程](professional-capability-tutorial.md)在运行新命令前核对版本、目录计数和清单。
 
 **可以把 Anthropic 的文档 Skill 或 OpenMontage 复制进来吗？**
 不可以。docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内。OpenMontage 是 AGPL-3.0，不包含在内。`document-production` 和 `media-transcoding` 是独立编写的。见[许可证一节](professional-capabilities.md#许可证与来源)。
@@ -36,7 +36,7 @@
 ## 扩展与配置
 
 **可以新增 Skill/Role，或修改随包方法吗？**
-可以。使用原生目录、匹配文件、当前哈希与清单数量；新 Role 还需要模型路由。随包正文是维护中的 MIT 改编版，不是冻结的上游副本。按[扩展指南](extending.md)操作，并运行元数据及完整验证。
+可以。使用原生目录、匹配文件、当前哈希与清单数量；新 Role 还需要模型路由。原有十六个是维护中的 MIT 改编版，其后三十个是引用公开资料的原创方法。按[扩展指南](extending.md)操作，并运行元数据及完整验证。
 
 **为什么已配置的 API 仍不可用，或之后失败？**
 `configured` 仅描述文件存在性。空进程值覆盖非空文件值并阻止子进程。API 检查从不验证认证或访问网络；通过存在性检查不代表真实服务会成功响应。

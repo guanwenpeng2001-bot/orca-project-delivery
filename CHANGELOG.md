@@ -6,6 +6,15 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 
 ## Unreleased
 
+### 2.4.0 — professional skill depth (planned)
+
+- Added eight original Skills: `skill-authoring-evaluation`, `design-system`, `domain-modeling`, `migration-upgrade`, `mcp-server-development`, `technical-diagrams`, `subtitle-production`, and `localization`. Target inventory is 46 Skills, 16 Roles, and 4 workflows; existing Roles select the new methods as needed.
+- Deepened six groups: frontend/product handoff and contrast; browser/accessibility journeys and audits; bounded document blocks; icon/web-asset PNG exports; image-header and content/readability checks; composition timing and saved-probe comparison. Existing examples remain supported.
+- Added offline Node commands for WCAG contrast, bounded RGB/RGBA PNG shrinking, PNG/JPEG/WebP headers, SRT/WebVTT conversion, composition frame maps, and ffprobe JSON comparison. Header inspection is not image decoding; timeline and probe checks do not render or transcode.
+- Document source now supports headings, paragraphs, ordered lists and literal tables. Markdown, DOCX and XLSX support real tables; PPTX/PDF reject them explicitly. Original title/bullet inputs remain supported; binary formats still require separately installed pinned Python libraries, and non-ASCII PDF needs a licensed glyph-covering TrueType font.
+- Updated Chinese and English README, usage, installation, architecture, Skill inventory, capability guide, tutorial, FAQ, extension and runtime reference documentation. Corrected provenance: the original sixteen are maintained MIT adaptations; the later thirty are original methods with public references, with no per-Skill `LICENSE.txt` imports.
+- Local Windows content review exercised Python Playwright with Chromium revision 1234 and synthetic FFmpeg 8.1 generation/probe/null-decode. These results do not establish cross-platform support, HyperFrames rendering, Office/PDF visual acceptance, or live provider quality; no real provider calls are claimed.
+
 ### 2.3.0 — professional capabilities
 
 - Documented 22 added professional Skills and 4 added Roles, bringing the package to 38 Skills and 16 Roles: software methods (`frontend-visual-design`, `browser-e2e`, `accessibility-audit`, `postgres-practices`, `observability`, `ci-pipeline`, `react-performance`, `react-composition`), local assets (`icon-assets`, `svg-logo-design`, `web-assets`, `image-compression`), image methods (`image-generation`, `infographic-design`, `editorial-illustration`, `visual-slide-deck`), and audio, video, and documents (`code-video-production`, `generated-video`, `speech-production`, `audio-transcription`, `media-transcoding`, `document-production`). Roles added: `ui-designer`, `browser-test-engineer`, `media-producer`, `document-specialist`.
