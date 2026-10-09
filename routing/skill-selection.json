@@ -68,6 +68,31 @@
     ],
     "authorized-online-generation": [
       "image-generation"
+    ],
+    "skill-authoring-review": [
+      "skill-authoring-evaluation"
+    ],
+    "design-system-spec": [
+      "design-system",
+      "frontend-visual-design"
+    ],
+    "domain-model": [
+      "domain-modeling"
+    ],
+    "dependency-framework-upgrade": [
+      "migration-upgrade"
+    ],
+    "mcp-server-build": [
+      "mcp-server-development"
+    ],
+    "technical-diagram": [
+      "technical-diagrams"
+    ],
+    "subtitle-caption-conversion": [
+      "subtitle-production"
+    ],
+    "localization-i18n": [
+      "localization"
     ]
   }
 }

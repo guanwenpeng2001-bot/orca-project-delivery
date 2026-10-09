@@ -62,7 +62,9 @@
       ],
       "optionalSkills": [
         "accessibility-audit",
-        "icon-assets"
+        "icon-assets",
+        "design-system",
+        "localization"
       ]
     },
     {
@@ -116,7 +118,11 @@
       "optionalSkills": [
         "api-design",
         "database-design",
-        "security-review"
+        "security-review",
+        "domain-modeling",
+        "migration-upgrade",
+        "mcp-server-development",
+        "technical-diagrams"
       ]
     },
     {
@@ -133,7 +139,11 @@
         "database-design",
         "systematic-debugging",
         "security-review",
-        "product-design"
+        "product-design",
+        "migration-upgrade",
+        "mcp-server-development",
+        "localization",
+        "skill-authoring-evaluation"
       ]
     },
     {
@@ -223,7 +233,9 @@
         "generated-video",
         "speech-production",
         "audio-transcription",
-        "media-transcoding"
+        "media-transcoding",
+        "subtitle-production",
+        "technical-diagrams"
       ]
     }
   ]

@@ -109,7 +109,7 @@ Upgrade, downgrade, suspension, trivial read-only adjustment and user-pinned beh
 
 ## Skill delivery
 
-Professional Skills are package-maintained MIT adaptations under `skills/`; `skills/README.md` records provenance and current hashes. See `docs/extending.md` for native authoring/registration and metadata/full verification.
+Under `skills/`, the original 16 Skills are package-maintained adaptations of the MIT-licensed baseline; the 30 methods added in versions 2.3.0 and 2.4.0 are original package content. `skills/README.md` records provenance and current hashes. See `docs/extending.md` for native authoring/registration and metadata/full verification.
 - `explicit-path` is the default: give the absolute `SKILL.md` path in the Task and require reading it.
 - `inline-extract` is the fallback: include the required sections and record source path and hash.
 A Skill name alone is not loading evidence. Skills supply method and cannot expand Task scope or grant orchestration control.

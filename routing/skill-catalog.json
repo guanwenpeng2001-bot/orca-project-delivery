@@ -103,20 +103,35 @@
       "id": "frontend-visual-design",
       "name": "Frontend Visual Design",
       "path": "skills\\frontend-visual-design\\SKILL.md",
-      "description": "Choose typography, color, spacing, and visual hierarchy for an interface. Use when a screen needs a visual specification rather than only a user flow."
+      "description": "Choose typography, color, spacing, and visual hierarchy for an interface. Use when a screen needs a visual specification rather than only a user flow.",
+      "requires": {
+        "cli": [
+          "node"
+        ]
+      }
     },
     {
       "id": "browser-e2e",
       "name": "Browser End-to-End Testing",
       "path": "skills\\browser-e2e\\SKILL.md",
-      "description": "Design and execute browser journeys through the real entry point, including failure paths and retained traces. Use for browser regression evidence.",
-      "requires": { "cli": ["node"] }
+      "description": "Design and execute browser journeys through the real entry point, including failure paths and retained traces. Use for browser regression evidence. The local example requires Python Playwright and an installed Chromium executable; it reports missing prerequisites by name.",
+      "requires": {
+        "cli": [
+          "node",
+          "python"
+        ]
+      }
     },
     {
       "id": "accessibility-audit",
       "name": "Accessibility Audit",
       "path": "skills\\accessibility-audit\\SKILL.md",
-      "description": "Audit keyboard access, names, errors, contrast, and reflow, separating tool output from human checks. Use before claiming accessibility conformance."
+      "description": "Audit keyboard access, names, errors, contrast, and reflow, separating tool output from human checks. Use before claiming accessibility conformance.",
+      "requires": {
+        "cli": [
+          "node"
+        ]
+      }
     },
     {
       "id": "postgres-practices",
@@ -257,6 +272,74 @@
       "path": "skills\\document-production\\SKILL.md",
       "description": "Produce and reopen Markdown, editable DOCX/PPTX/XLSX, and PDF from structured source using independently written local examples.",
       "requires": { "cli": ["node", "python"] }
+    },
+    {
+      "id": "design-system",
+      "name": "Design System",
+      "path": "skills\\design-system\\SKILL.md",
+      "description": "Define the shared tokens and component contracts a product reuses across screens. Use when more than one screen must share the same type, color, spacing, or component behavior."
+    },
+    {
+      "id": "domain-modeling",
+      "name": "Domain Modeling",
+      "path": "skills\\domain-modeling\\SKILL.md",
+      "description": "Assign entities, value objects, aggregates, and invariants to a bounded context before choosing storage. Use when the domain language is unsettled and no schema change is in scope yet."
+    },
+    {
+      "id": "localization",
+      "name": "Localization",
+      "path": "skills\\localization\\SKILL.md",
+      "description": "Prepare source copy so placeholders, plural rules, and right-to-left layout survive translation. Use when shipping text that will be translated or pseudo-localized. Not for writing the translation itself.",
+      "requires": {
+        "cli": [
+          "node"
+        ]
+      }
+    },
+    {
+      "id": "mcp-server-development",
+      "name": "MCP Server Development",
+      "path": "skills\\mcp-server-development\\SKILL.md",
+      "description": "Design an MCP server tool surface, classify protocol errors separately from tool errors, and verify the messages against the pinned specification. Use when adding or changing tools on a Model Context Protocol server. Not for HTTP API design.",
+      "requires": {
+        "cli": [
+          "node"
+        ]
+      }
+    },
+    {
+      "id": "migration-upgrade",
+      "name": "Migration Upgrade",
+      "path": "skills\\migration-upgrade\\SKILL.md",
+      "description": "Order a dependency, framework, library, or API upgrade so every step ships independently and reverses. Use when a version change must roll out while old and new code both run. Not for designing a new schema."
+    },
+    {
+      "id": "skill-authoring-evaluation",
+      "name": "Skill Authoring Evaluation",
+      "path": "skills\\skill-authoring-evaluation\\SKILL.md",
+      "description": "Evaluate a method Skill for triggering, counterexamples, and observable task quality. Use when reviewing or authoring a SKILL.md before registration."
+    },
+    {
+      "id": "subtitle-production",
+      "name": "Subtitle Production",
+      "path": "skills\\subtitle-production\\SKILL.md",
+      "description": "Convert SRT and WebVTT subtitles with validated timing and connect cues to a transcript. Use for local caption files.",
+      "requires": {
+        "cli": [
+          "node"
+        ]
+      }
+    },
+    {
+      "id": "technical-diagrams",
+      "name": "Technical Diagrams",
+      "path": "skills\\technical-diagrams\\SKILL.md",
+      "description": "Draw an editable architecture or sequence diagram as SVG or Mermaid with readable type, contained text, and theme-safe contrast. Use when a change needs a diagram maintained beside the text. Not for slide layout or logo design.",
+      "requires": {
+        "cli": [
+          "node"
+        ]
+      }
     }
   ]
 }
