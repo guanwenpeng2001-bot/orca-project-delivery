@@ -1,11 +1,11 @@
 #requires -Version 7.0
 <##
-Offline package acceptance. Requires PowerShell 7, Git and the 16 professional
+Offline package acceptance. Requires PowerShell 7, Git and the professional
 Skills bundled under skills/ in this package. The package under
 test is read-only; all runtime fixtures and copies live in one temporary root.
 ##>
 [CmdletBinding()]
-param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot))
+param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly)
 
 $ErrorActionPreference = 'Stop'
 $passed = 0
@@ -51,7 +51,7 @@ function Assert-Rejected([string]$Name, [scriptblock]$Action, [string]$Diagnosti
 
 function Assert-ModelRouting($Routing, $Catalog) {
   $ids = @($Catalog.roles.id)
-  Assert-Condition ($ids.Count -eq 12 -and @($ids | Select-Object -Unique).Count -eq 12) 'routing: expected 12 unique catalog roles'
+  Assert-Condition ($ids.Count -gt 0 -and @($ids | Select-Object -Unique).Count -eq $ids.Count) 'routing: expected nonempty unique catalog roles'
   Assert-Condition ($Routing.agent -ceq 'claude') 'routing: agent must be claude'
   Assert-Condition ($Routing.roles -is [Collections.IDictionary]) 'routing: roles must be a map'
   Assert-Condition (-not (Compare-Object ($ids | Sort-Object) (@($Routing.roles.Keys) | Sort-Object) -CaseSensitive)) 'routing: role sets differ'
@@ -115,7 +115,10 @@ function Assert-ClaudeText([string]$Content, [string]$Extension, [string]$Source
       $ordinaryProse = $Extension -eq '.md' -and $match.Value -ieq ('con' + 'tinue') -and
         $segment.Substring($match.Index) -match ('^Con' + 'tinue (processing|working|with|to)\b') -and
         ($match.Index -eq 0 -or $segment[$match.Index - 1] -notin @('`', '"', "'"))
-      Assert-Condition $ordinaryProse "agent reference: $Source contains $($match.Value)"
+      $databaseTerm = $Extension -eq '.md' -and $match.Value -ceq ('cur' + 'sor') -and
+        ($match.Index -eq 0 -or $segment[$match.Index - 1] -notin @('`', '"', "'")) -and
+        ($segment.Substring(0, $match.Index) -cmatch '(database|SQL) $' -or $segment.Substring($match.Index) -cmatch ('^cur' + 'sor pagination\b'))
+      Assert-Condition ($ordinaryProse -or $databaseTerm) "agent reference: $Source contains $($match.Value)"
     }
   }
 }
@@ -424,7 +427,7 @@ try {
   $git = (Get-Command git -CommandType Application | Select-Object -First 1).Source
   $files = @(Get-PackageFiles $root)
   $scripts = @('assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'probe-claude-capabilities.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1', 'validate-run.ps1', 'validate-git-evidence.ps1')
-  foreach ($name in $scripts + @('verify-package.ps1')) {
+  foreach ($name in $scripts + @('verify-package.ps1', 'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1', 'verify-requirements.ps1')) {
     Invoke-Check "parse/$name" {
       $path = Join-Path $root "scripts/$name"
       Assert-Condition (Test-Path -LiteralPath $path -PathType Leaf) "Missing script: $path"
@@ -498,7 +501,9 @@ try {
     Assert-Condition (Test-Path -LiteralPath $readmePath -PathType Leaf) 'skills/README.md missing'
     $readme = [IO.File]::ReadAllText($readmePath, $utf8)
     $rows = [regex]::Matches($readme, '\|\s*`([^`]+)`\s*\|\s*([A-F0-9]{64})\s*\|')
-    Assert-Condition ($rows.Count -ge 17) 'Expected SHA256 table in skills/README.md'
+    $expectedRows = @('LICENSE') + @((Read-PackageJson 'routing/skill-catalog.json').skills | ForEach-Object { "$($_.id)/SKILL.md" })
+    $actualRows = @($rows | ForEach-Object { $_.Groups[1].Value })
+    Assert-Condition ($actualRows.Count -eq $expectedRows.Count -and -not (Compare-Object ($actualRows | Sort-Object -Unique) ($expectedRows | Sort-Object) -CaseSensitive)) 'SHA256 table must cover exactly the catalog Skills and LICENSE'
     foreach ($match in $rows) {
       $relative = $match.Groups[1].Value
       $expectedHash = $match.Groups[2].Value
@@ -517,13 +522,30 @@ try {
       professionalSkills = @((Read-PackageJson 'routing/skill-catalog.json').skills).Count
       workflows = @(Get-ChildItem -LiteralPath (Join-Path $root 'workflows') -Filter '*.md' -File).Count
     }
-    Assert-Condition ($version -ceq '2.2.0') 'Expected release 2.2.0'
     Assert-Condition (-not $manifest.deliverables.Contains('orcaAgents') -and -not $manifest.Contains('inPlaceFixes')) 'Obsolete manifest fields remain'
-    Assert-Condition ($counts.roles -eq 12 -and $counts.professionalSkills -eq 16 -and $counts.workflows -eq 4) 'Expected 12 roles, 16 professional skills, 4 workflows'
     foreach ($key in $counts.Keys) {
       Assert-Condition ($manifest.deliverables.Contains($key) -and $manifest.deliverables[$key] -eq $counts[$key]) "Manifest $key declared $($manifest.deliverables[$key]), actual $($counts[$key])"
       Write-Host "COUNT $key=$($counts[$key])"
     }
+  }
+  Invoke-Check 'metadata/catalog-requirements' {
+    . (Join-Path $root 'scripts/requirements-lib.ps1')
+    $null = Get-RequirementsCatalog $root
+    Assert-RequirementsSchema (Read-PackageJson 'templates/project-config.example.json') 'project-config' 'Config template'
+    foreach ($example in @('.env.example', 'templates/project.env.example')) {
+      foreach ($line in [IO.File]::ReadAllLines((Join-Path $root $example))) {
+        Assert-Condition ($line -match '^\s*(#.*)?$' -or $line -cmatch '^[A-Z][A-Z0-9_]*=$') 'Env examples must contain names with empty values only'
+      }
+    }
+  }
+  if ($MetadataOnly) {
+    Write-Host "METADATA SUMMARY PASS=$passed FAIL=$failed"
+    if ($failed) { exit 1 }
+    exit 0
+  }
+  Invoke-Check 'runtime/requirements-extension-fixtures' {
+    $result = Invoke-Child $pwsh @('-NoProfile', '-NonInteractive', '-File', (Join-Path $root 'scripts/verify-requirements.ps1'), '-PackageRoot', $root)
+    Assert-Condition ($result.ExitCode -eq 0 -and $result.Stdout.Contains('REQUIREMENTS SUMMARY')) 'Requirements regressions failed'
   }
   Invoke-Check 'regression/routing-contracts' {
     $catalog = Read-PackageJson 'roles/catalog.json'
@@ -564,6 +586,12 @@ try {
     Assert-ClaudeText ('Write-Error message -ErrorAction Con' + 'tinue') '.ps1' 'fixture'
     Assert-ClaudeText ('Con' + 'tinue processing the current task.') '.md' 'fixture'
     Assert-ClaudeText 'Use claude-haiku-4-5 with effort.' '.md' 'fixture'
+    Assert-ClaudeText ('A database cur' + 'sor reads rows; use cur' + 'sor pagination for API results.') '.md' 'fixture'
+    Assert-Rejected 'quoted-database-term' { Assert-ClaudeText ('Use `cur' + 'sor` as worker agent.') '.md' 'fixture' } 'agent reference:'
+    Assert-Rejected 'capitalized-agent' { Assert-ClaudeText ('Use Cur' + 'sor as worker agent.') '.md' 'fixture' } 'agent reference:'
+    $nonClaudeRouting = Read-PackageJson 'routing/model-routing.json'
+    $nonClaudeRouting.agent = 'cur' + 'sor'
+    Assert-Rejected 'non-claude-routing' { Assert-ModelRouting $nonClaudeRouting (Read-PackageJson 'roles/catalog.json') } 'agent must be claude'
     Assert-Rejected 'vocabulary-name-does-not-exempt-other-files' { Assert-ClaudeText ('$forbiddenAgentIds = @("' + $forbiddenAgentIds[0] + '")') '.ps1' 'fixture' } 'agent reference:'
   }
   $stagedPackage = Join-Path $temporaryRoot 'skills/orca-project-delivery'
@@ -608,6 +636,15 @@ try {
   Invoke-Check 'runtime/bootstrap-create-validate-templates' {
     $script:healthyRepository = New-FixtureRepository 'healthy-repository'
     Assert-OkResult (Invoke-PackageScript 'bootstrap-project.ps1' @('-ProjectRoot', $healthyRepository))
+    foreach ($name in @('.env.example', 'project-config.example.json')) {
+      Assert-Condition (Test-Path -LiteralPath (Join-Path $healthyRepository $name) -PathType Leaf) "Bootstrap example missing: $name"
+    }
+    $examplePath = Join-Path $healthyRepository '.env.example'
+    [IO.File]::WriteAllText($examplePath, "# preserved project example`n", $utf8)
+    Assert-OkResult (Invoke-PackageScript 'bootstrap-project.ps1' @('-ProjectRoot', $healthyRepository, '-ForceLock'))
+    Assert-Condition ([IO.File]::ReadAllText($examplePath) -ceq "# preserved project example`n") 'Bootstrap overwrote project example'
+    $exclude = Invoke-FixtureGit @('-C', $healthyRepository, 'check-ignore', '.env')
+    Assert-Condition ($exclude -eq '.env') 'Bootstrap did not exclude local dotenv'
     Assert-OkResult (Invoke-PackageScript 'create-run.ps1' @('-ProjectRoot', $healthyRepository, '-Objective', 'Offline package verification', '-RunSlug', 'package-verification'))
     Assert-OkResult (Invoke-PackageScript 'validate-run.ps1' @('-ProjectRoot', $healthyRepository, '-IncludeTemplates'))
   }

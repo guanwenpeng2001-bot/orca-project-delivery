@@ -127,6 +127,13 @@ if (-not (Test-Path $agentsPath)) {
   $createdAgents = $true
 }
 
+foreach ($example in @(@{ Source = 'project.env.example'; Target = '.env.example' }, @{ Source = 'project-config.example.json'; Target = 'project-config.example.json' })) {
+  $destination = Join-Path $gitRoot $example.Target
+  if (-not (Test-Path -LiteralPath $destination)) {
+    Copy-Item -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) "templates/$($example.Source)") -Destination $destination
+  }
+}
+
 $devWork = Join-Path $gitRoot ".dev-work"
 $createdDevWork = $false
 if (-not (Test-Path $devWork)) {
@@ -172,7 +179,7 @@ if (-not (Test-Path $excludePath)) {
   New-Item -ItemType File -Path $excludePath | Out-Null
 }
 $excludeLines = Get-Content $excludePath -ErrorAction SilentlyContinue
-foreach ($line in @("/AGENTS.md", "/.dev-work/")) {
+foreach ($line in @("/AGENTS.md", "/.dev-work/", "/.env")) {
   if ($excludeLines -notcontains $line) {
     Add-Content -Path $excludePath -Value $line -Encoding UTF8
   }

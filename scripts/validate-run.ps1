@@ -360,6 +360,14 @@ if (-not $SkipPackageChecks) {
     }
   }
   $checks['roleCatalog'] = ($catalog.roles -and $skillCatalog.skills -and $errors.Count -eq $before)
+  try {
+    . (Join-Path $PSScriptRoot 'requirements-lib.ps1')
+    $null = Get-RequirementsCatalog $skillRoot
+    $checks['catalogRequirements'] = $true
+  } catch {
+    [void]$errors.Add($_.Exception.Message)
+    $checks['catalogRequirements'] = $false
+  }
   $checks["packageChecks"] = "enabled"
 } else {
   $checks["packageChecks"] = "skipped"
