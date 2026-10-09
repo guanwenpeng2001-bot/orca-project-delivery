@@ -4,7 +4,7 @@
 
 本教程面向完整的 **2.3.0 包：38 个 Skill、16 个角色**。它在临时项目中使用合成值演练本地工具、离线提供方夹具及限定范围的依赖注入。没有发起实际提供方或付费调用；离线模拟不验证生成质量。
 
-从包根目录在 PowerShell 7 会话中依次运行代码块，使用 Node.js 或 Python 的示例需要相应运行时可用。旧版 2.2.0 运行时上的纯文档检出缺少新脚本；这里的相对链接和命令指向组合后的 2.3.0 树。
+从包根目录在 PowerShell 7 会话中依次运行代码块，使用 Node.js 或 Python 的示例需要相应运行时可用。先安装完整且匹配的 2.3.0 版本。版本不匹配就缺少这些命令所用的脚本。
 
 ## 1. 确认你安装的是什么
 
@@ -107,7 +107,7 @@ Remove-Item -Recurse -Force $project
 
 ## 5. 运行本地能力示例
 
-这些命令在完整的 2.3.0 包根目录运行，只写入一个新的临时目录。它们使用已对照能力运行时检出核验的稳定脚本和旗标。没有联系提供方。
+这些命令在完整的 2.3.0 包根目录运行，只写入一个新的临时目录。它们使用 2.3.0 随附的稳定脚本和旗标。没有联系提供方。
 
 ```powershell
 $work = Join-Path ([IO.Path]::GetTempPath()) ('orca-local-capability-' + [guid]::NewGuid().ToString('N'))
@@ -129,7 +129,7 @@ Office/PDF 生成命令是：
 python -I ./skills/document-production/scripts/office-document.py --input ./tests/fixtures/capability/document-input.json --format docx --output "$work/notes.docx"
 ```
 
-按需要把 `docx` 和 `.docx` 换成 `pptx`、`xlsx` 或 `pdf`。成功时 JSON 含 `reopened: true`。缺少库时打印 `missing-dependency` 并以 `2` 退出；文档或输入失败以 `1` 退出。仅在你选择的环境中安装 `skills/document-production/scripts/requirements.txt` 固定的精确版本。非 ASCII 的 PDF 文本还需要 `--font`，指向覆盖这些字形且许可允许的 TrueType 字体。本教程环境缺少这些库，因此这里没有执行 Office/PDF 生成。
+按需要把 `docx` 和 `.docx` 换成 `pptx`、`xlsx` 或 `pdf`。成功时 JSON 含 `reopened: true`。缺少库时打印 `missing-dependency` 并以 `2` 退出；文档或输入失败以 `1` 退出。仅在你选择的环境中安装 `skills/document-production/scripts/requirements.txt` 固定的精确版本。非 ASCII 的 PDF 文本还需要 `--font`，指向覆盖这些字形且许可允许的 TrueType 字体。docx、pptx、xlsx 和 pdf 的程序化生成与重新打开已在隔离环境中验证。目标应用程序中的布局、字体、视觉外观，以及任何真实提供方调用，均未验证。
 
 ### 资产验收
 
@@ -195,7 +195,7 @@ $disabledOnline = $LASTEXITCODE
 | --- | --- |
 | 清单计数与目录计数不同 | 包的修订内部不一致。停下来；不要把两个数字平均。 |
 | `verify-package.ps1` 打印任何 `FAIL` 行 | 安装不被接受，无论 `PASS` 计数是多少。见[安装](installation.md)。 |
-| `check-requirements.ps1` 以 1 退出，提示未知角色或 Skill | 该 ID 不在本修订的目录里。要么能力包尚未合并，要么 ID 拼写错误。 |
+| `check-requirements.ps1` 以 1 退出，提示未知角色或 Skill | 该 ID 不在本修订的目录里。要么本版本与文档描述的版本不匹配，要么 ID 拼写错误。 |
 | `configured: true` 但 `availableForChild: false` | 一个空的进程值掩盖了文件值。不要打印该值。 |
 | 提供方调用失败 | 超出这里的范围。存在性从不是提供方可用的证据。 |
 

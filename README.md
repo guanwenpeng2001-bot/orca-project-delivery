@@ -9,7 +9,7 @@ A coordinator-only Skill for Orca and Claude Code users, turning software object
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-These guides target the complete **2.3.0 package: 38 Skills and 16 Roles**. A documentation-only checkout on an older runtime is not that release; install the matching runtime and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md).
+These guides describe the published **2.3.0 package: 38 Skills and 16 Roles**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
 
 Orca Project Delivery is a coordinator-only Skill that runs a complete software
 delivery pipeline with Claude Code worker agents. It solves the problem of

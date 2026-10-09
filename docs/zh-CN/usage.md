@@ -123,7 +123,7 @@ intake -> reconnaissance -> plan -> task graph -> dispatch
 | media-producer | sonnet / high |
 | document-specialist | sonnet / high |
 
-最后四个是新增角色的 2.3.0 提案。路由文件是权威；如果它与本表不一致，以文件为准。每个新角色做什么、拒绝什么，见[专业能力](professional-capabilities.md)。
+最后四个是 2.3.0 新增角色的当前路由。路由文件是权威；如果它与本表不一致，以文件为准。每个新角色做什么、拒绝什么，见[专业能力](professional-capabilities.md)。
 
 升档沿链向右一步（先提推理档，再提档位）；降档只在有明确的速率限制、配额或模型不可用证据时发生，绝不因沉默而降。haiku 档优先使用带推理档的完整模型 id，被拒绝或不匹配时回退到不带推理档的别名。用户锁定的选择禁止一切自动变更。
 

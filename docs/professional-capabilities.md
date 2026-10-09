@@ -8,12 +8,12 @@ with the original sixteen, the package carries **38 professional Skills** and
 **16 Roles**. This guide explains what each new capability is for, what it does
 not do, and how far its claims have actually been checked.
 
-This guide and its relative links target the combined 2.3.0 documentation and
-runtime package. A docs-only checkout based on 2.2.0 lacks the new Skill files
-and catalogs; it is not an installable 2.3.0 release. Confirm `VERSION` is
-`2.3.0`, `routing/skill-catalog.json` contains 38 Skills, `roles/catalog.json`
+This guide describes the published 2.3.0 package: 38 Skills and 16 Roles.
+Install the complete matching release. Confirm `VERSION` is `2.3.0`,
+`routing/skill-catalog.json` contains 38 Skills, `roles/catalog.json`
 contains 16 Roles, and `PACKAGE-MANIFEST.json` agrees before running the
-[tutorial](professional-capability-tutorial.md).
+[tutorial](professional-capability-tutorial.md). A version that does not match
+is not this release.
 
 ## How to read a capability
 
@@ -153,7 +153,7 @@ stale the moment the package changes.
 ## Licenses and sources
 
 Provenance is per Skill, not one blanket upstream. The authoritative table is
-`skills/README.md` in the capability package: one row per Skill with its
+`skills/README.md`: one row per Skill with its
 upstream repository, pinned commit, license, and the license file copied into
 the package. This guide states the rules those rows have to satisfy.
 
@@ -181,12 +181,9 @@ the package. This guide states the rules those rows have to satisfy.
   OpenMontage is AGPL-3.0 and is not included; `media-transcoding` is written
   from FFmpeg's own documentation, and the license of the installed FFmpeg
   build and its encoders is checked separately.
-- **React methods are conditional.** The Vercel react-best-practices and
-  composition-patterns upstreams declare MIT but did not ship a root `LICENSE`
-  text at research time. They are included only once the capability package
-  records an authorization text at a pinned commit, or replaced by an
-  independent write-up that copies no upstream wording. Until that record
-  exists, do not describe them as cleared.
+- **React methods are independently written.** `react-performance` and
+  `react-composition` were written in this project from public API guidance.
+  No vendor Skill was copied. `skills/README.md` records both as original.
 - **Assets carry their own licenses.** An icon set, a font, and a stock image
   are not covered by the tool that fetched them. `icon-assets` requires a
   source and a license per icon set.

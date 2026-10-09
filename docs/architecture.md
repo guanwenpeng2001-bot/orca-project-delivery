@@ -68,9 +68,10 @@ professional Skills, and the objective from the Task.
 | media-producer | media | (none; the task selects) | sonnet medium → **sonnet high** → opus medium → opus high |
 | document-specialist | product | document-production | sonnet medium → **sonnet high** → opus medium → opus high |
 
-The four routes at the bottom are the 2.3.0 proposal. They are not a copy of
-`routing/model-routing.json`, which remains the authority; where the two
-differ, the routing file wins and this table needs updating.
+The four routes at the bottom are current routes for the Roles added in 2.3.0.
+They are not a copy of `routing/model-routing.json`, which remains the
+authority; where the two differ, the routing file wins and this table needs
+updating.
 
 Conflicting identities — design, implementation, independent review — are
 split into separate Tasks. Escalation moves one step right along the chain

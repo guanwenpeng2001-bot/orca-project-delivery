@@ -7,7 +7,7 @@ Code coordinator session can load it from your control worktree. The package
 is a plain directory of files — there is no installer, no package registry,
 and no build step.
 
-This guide targets the combined 2.3.0 package (38 Skills / 16 Roles). A docs-only checkout on an older runtime is incomplete for this release; use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples.
+This guide describes the published 2.3.0 package (38 Skills / 16 Roles). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
 
 ## Prerequisites
 

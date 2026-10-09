@@ -7,10 +7,11 @@ method instruction packs (`SKILL.md`) for reconnaissance, product work,
 architecture, implementation, review, and verification, plus methods for
 software delivery, local assets, images, and audio, video, and documents.
 All thirty-eight Skills ship **inside this package** under
-`skills/<skill-id>/SKILL.md` in the complete 2.3.0 release. Some methods also ship
-local scripts or provider connectors; execution evidence is separate from
-loading their instructions. An older runtime with newer docs is incomplete;
-check its version and catalogs using the [tutorial](professional-capability-tutorial.md).
+`skills/<skill-id>/SKILL.md` in the published 2.3.0 release. Some methods also
+ship local scripts or provider connectors; execution evidence is separate from
+loading their instructions. Install the complete matching release, and check
+its version and catalogs using the [tutorial](professional-capability-tutorial.md).
+A version that does not match is not this release.
 
 ## Upstream sources
 

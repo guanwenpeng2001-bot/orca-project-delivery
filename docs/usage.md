@@ -220,8 +220,8 @@ Default routes (chain index 1 of each role's chain):
 | media-producer | sonnet / high |
 | document-specialist | sonnet / high |
 
-The last four are the 2.3.0 proposal for the added Roles. The routing file is
-the authority; if it disagrees with this table, the file wins. What each new
+The last four are current routes for the Roles added in 2.3.0. The routing file
+is the authority; if it disagrees with this table, the file wins. What each new
 Role does and refuses is in
 [Professional capabilities](professional-capabilities.md).
 

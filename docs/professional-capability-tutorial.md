@@ -8,9 +8,9 @@ injection using a temporary project and synthetic values. No actual provider
 or paid call is made; offline simulation does not verify generation quality.
 
 Run the PowerShell blocks in order in a PowerShell 7 session from the package
-root, with Node.js and Python available for the examples that use them. A
-documentation-only checkout on the older 2.2.0 runtime lacks the new scripts;
-relative links and commands here refer to the combined 2.3.0 tree.
+root, with Node.js and Python available for the examples that use them.
+Install the complete matching 2.3.0 release first. A version that does not
+match lacks the scripts these commands use.
 
 ## 1. Confirm what you installed
 
@@ -137,8 +137,8 @@ Remove-Item -Recurse -Force $project
 ## 5. Run local capability examples
 
 These commands run in the complete 2.3.0 package root and write only to a fresh
-temporary directory. They use the stable scripts and flags verified against the
-capability runtime checkout. No provider is contacted.
+temporary directory. They use the stable scripts and flags shipped in 2.3.0.
+No provider is contacted.
 
 ```powershell
 $work = Join-Path ([IO.Path]::GetTempPath()) ('orca-local-capability-' + [guid]::NewGuid().ToString('N'))
@@ -170,8 +170,10 @@ prints JSON with `reopened: true`. A missing library prints
 Install the exact versions pinned in
 `skills/document-production/scripts/requirements.txt` only in an environment
 you choose. Non-ASCII PDF text also requires `--font` pointing at a licensed
-TrueType font that covers its glyphs. This tutorial environment lacked those
-libraries, so Office/PDF generation was not executed here.
+TrueType font that covers its glyphs. Programmatic generation and read-back of
+docx, pptx, xlsx, and pdf were verified in an isolated environment. Target
+application layout, fonts, visual appearance, and any real provider call were
+not verified.
 
 ### Asset acceptance
 
@@ -255,7 +257,7 @@ media artifact.
 | --- | --- |
 | Manifest count differs from the catalog count | The package revision is inconsistent. Stop; do not average the two numbers. |
 | `verify-package.ps1` prints any `FAIL` line | The install is not accepted, whatever the `PASS` count. See [Installation](installation.md). |
-| `check-requirements.ps1` exits 1 with an unknown Role or Skill | That ID is not in this revision's catalogs. Either the capability package is not merged, or the ID is misspelled. |
+| `check-requirements.ps1` exits 1 with an unknown Role or Skill | That ID is not in this revision's catalogs. Either this version does not match the documented release, or the ID is misspelled. |
 | `configured: true` but `availableForChild: false` | An empty process value is masking the file. Do not print the value. |
 | A provider call fails | Out of scope here. Presence was never evidence of a working provider. |
 

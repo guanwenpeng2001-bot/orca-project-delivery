@@ -45,9 +45,10 @@ decision. Installing the package does not authorize a call.
 
 **Why does the package claim 38 Skills when my catalog shows 16?**
 A complete 2.3.0 install contains 38 Skills and 16 Roles. A catalog showing
-16 Skills belongs to an older runtime, even if newer documentation is present.
-Install the matching release; the [tutorial](professional-capability-tutorial.md)
-checks the version, catalog counts, and manifest before running new commands.
+16 Skills belongs to a version that does not match this release, even if newer
+documentation is present. Install the complete matching release; the
+[tutorial](professional-capability-tutorial.md) checks the version, catalog
+counts, and manifest before running new commands.
 
 **Can I copy the Anthropic document Skills or OpenMontage in?**
 No. The docx, pptx, pdf, and xlsx Skills are proprietary and are not included.

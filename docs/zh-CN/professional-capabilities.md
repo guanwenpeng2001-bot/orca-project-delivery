@@ -4,7 +4,7 @@
 
 2.3.0 为软件交付、本地视觉资产、图像规划，以及音频、视频和文档制作补充专业方法。加上原有的十六个，本包共有 **38 个专业 Skill** 和 **16 个角色**。本指南说明每项新能力做什么、不做什么，以及它的说法实际核到了哪一步。
 
-本指南及其相对链接面向文档与运行时组合后的 2.3.0 包。基于 2.2.0 的纯文档检出缺少新 Skill 文件及目录条目，不是可安装的 2.3.0 版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `2.3.0`、`routing/skill-catalog.json` 有 38 个 Skill、`roles/catalog.json` 有 16 个角色，且 `PACKAGE-MANIFEST.json` 与之相符。
+本指南描述已发布的 2.3.0 包：38 个 Skill、16 个角色。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `2.3.0`、`routing/skill-catalog.json` 有 38 个 Skill、`roles/catalog.json` 有 16 个角色，且 `PACKAGE-MANIFEST.json` 与之相符。版本不匹配就不是本版本。
 
 ## 如何阅读一项能力
 
@@ -111,14 +111,14 @@
 
 ## 许可证与来源
 
-出处按 Skill 记录，不是一个笼统的上游。权威表是能力包里的 `skills/README.md`：每个 Skill 一行，写明上游仓库、固定提交、许可证，以及复制进包内的许可证文件。本指南说明这些行必须满足的规则。
+出处按 Skill 记录，不是一个笼统的上游。权威表是 `skills/README.md`：每个 Skill 一行，写明上游仓库、固定提交、许可证，以及复制进包内的许可证文件。本指南说明这些行必须满足的规则。
 
 - **本项目保留自己的 MIT 许可证**，位于仓库根目录。MIT 覆盖本项目的原创文本：协调者 Skill、脚本、路由和公开文档。
 - **第三方材料保留它带来的许可证。** 一个 Apache-2.0 的 Skill 仍是 Apache-2.0，声明原样保留在旁边。项目的 MIT 许可证不把它重新许可。
 - **原有的十六个**是 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) 在提交 `d9a174c7143bfb4c76ed042f457fb7785c35cea3` 上的包内维护 MIT 改编版，并在本包内做了补充。它们的上游 MIT 声明留在 `skills/LICENSE`。当前哈希跟踪改编后的文本，不是逐字节一致的上游副本。
 - **新增的改编**各自携带自己的 `LICENSE.txt` 和固定的上游提交。软件方法改编的上游包括 Anthropic frontend-design（Apache-2.0）、ECC e2e-testing（MIT）、wshobson 可访问性模式（MIT）、Supabase PostgreSQL 实践（MIT），以及 Addy Osmani 的可观测性与 CI 方法（MIT）。资产和图像方法改编 MIT 许可的上游。固定提交写在 `skills/README.md`，不写在这里，以免本指南与导入事实漂移。
 - **有两个上游有意不复制。** Anthropic 的 docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内；`document-production` 针对许可允许的库独立编写。OpenMontage 是 AGPL-3.0，不包含在内；`media-transcoding` 依据 FFmpeg 自身文档编写，所装 FFmpeg 构建及其编码器的许可另行核查。
-- **React 方法是有条件的。** Vercel 的 react-best-practices 和 composition-patterns 上游声明 MIT，但研究时没有根目录 `LICENSE` 文本。只有当能力包在某个固定提交记录了授权文本时才纳入，否则改为不复制上游文字的独立编写。在该记录存在之前，不要把它们描述为已清除。
+- **React 方法是独立编写的。** `react-performance` 和 `react-composition` 在本项目内依据公共 API 指导编写，没有复制任何厂商 Skill。`skills/README.md` 把两者都记录为原创。
 - **资产自带许可。** 图标集、字体和素材图片不由获取它们的工具的许可覆盖。`icon-assets` 要求每个图标集都有来源和许可。
 
 新增 Skill 不复制会启动另一种智能体产品的上游指令。改编保留方法，去掉那一部分。

@@ -52,7 +52,7 @@
 | media-producer | media | （无；由任务选择） | sonnet medium → **sonnet high** → opus medium → opus high |
 | document-specialist | product | document-production | sonnet medium → **sonnet high** → opus medium → opus high |
 
-底部四条路由是 2.3.0 的提案。它们不是 `routing/model-routing.json` 的副本，该文件仍是权威；两者不一致时以路由文件为准，并需要更新本表。
+底部四条路由是 2.3.0 新增角色的当前路由。它们不是 `routing/model-routing.json` 的副本，该文件仍是权威；两者不一致时以路由文件为准，并需要更新本表。
 
 互相冲突的身份 — 设计、实施、独立审查 — 拆成不同的任务。升档沿链向右一步（先提推理档，再提档位）；降档需要明确的速率限制、配额或模型不可用证据，且绝不低于角色的最低档。
 
