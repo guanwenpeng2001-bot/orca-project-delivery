@@ -3,6 +3,7 @@ import { deflateSync, inflateSync, crc32 } from 'node:zlib';
 import { saveOutput } from '../../../scripts/capability-runtime.mjs';
 
 const channelsFor = { 2: 3, 6: 4 };
+const keptChunks = ['IHDR', 'IDAT', 'IEND', 'tEXt', 'tRNS'];
 const MAX_SOURCE_PIXELS = 4096 * 4096;
 
 try {
@@ -12,10 +13,11 @@ try {
   const source = readFileSync(values.input);
   const decoded = decodePng(source);
   if (targetWidth >= decoded.width || targetHeight >= decoded.height) throw new Error('requested size is not smaller on both axes');
-  const resized = boxAverage(decoded, targetWidth, targetHeight);
+  const expanded = applyColorKey(decoded);
+  const resized = boxAverage(expanded, targetWidth, targetHeight);
   saveOutput(values.output, encodePng(resized));
   process.stdout.write(`${JSON.stringify({
-    status: 'resized', width: targetWidth, height: targetHeight, alpha: decoded.channels === 4, output: values.output,
+    status: 'resized', width: targetWidth, height: targetHeight, alpha: expanded.channels === 4, output: values.output,
   })}\n`);
 } catch (error) {
   process.stderr.write(`${error.message}\n`);
@@ -47,7 +49,9 @@ function decodePng(source) {
   const first = chunks.findIndex(({ type }) => type === 'IDAT');
   const last = chunks.findLastIndex(({ type }) => type === 'IDAT');
   if (first < 0 || chunks.slice(first, last + 1).some(({ type }) => type !== 'IDAT')) throw new Error('invalid IDAT sequence');
-  if (chunks.some(({ type }) => type[0] === type[0].toUpperCase() && !['IHDR', 'IDAT', 'IEND'].includes(type))) throw new Error('unsupported PNG chunk');
+  const dropped = chunks.find(({ type }) => !keptChunks.includes(type));
+  if (dropped) throw new Error('unsupported PNG chunk: ' + dropped.type);
+  const transparency = colorKey(chunks, header[9]);
   const stride = width * channels;
   let inflated;
   try {
@@ -74,7 +78,31 @@ function decodePng(source) {
     rows.push(row);
     previous = row;
   }
-  return { width, height, channels, rows };
+  return { width, height, channels, rows, transparency };
+}
+
+function colorKey(chunks, colorType) {
+  const chunk = chunks.find(({ type }) => type === 'tRNS');
+  if (!chunk) return null;
+  if (colorType !== 2 || chunk.data.length !== 6) throw new Error('unsupported PNG transparency');
+  const key = [chunk.data.readUInt16BE(0), chunk.data.readUInt16BE(2), chunk.data.readUInt16BE(4)];
+  if (key.some((value) => value > 255)) throw new Error('unsupported PNG transparency');
+  return key;
+}
+
+function applyColorKey(image) {
+  if (!image.transparency) return image;
+  const rows = image.rows.map((source) => {
+    const row = Buffer.alloc(source.length + source.length / 3);
+    for (let index = 0; index < source.length; index += 3) {
+      const target = (index / 3) * 4;
+      source.copy(row, target, index, index + 3);
+      const matched = image.transparency.every((value, channel) => value === source[index + channel]);
+      row[target + 3] = matched ? 0 : 255;
+    }
+    return row;
+  });
+  return { width: image.width, height: image.height, channels: 4, rows };
 }
 
 function paeth(left, up, upLeft) {

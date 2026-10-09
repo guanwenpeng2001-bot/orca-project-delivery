@@ -8,7 +8,6 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const fixtureRoot = path.join(root, 'tests', 'fixtures', 'capability');
 const resizer = 'skills/image-compression/scripts/png-resize.mjs';
 
 function run(args) {
@@ -254,22 +253,110 @@ function masterPng(size) {
   ]);
 }
 
-test('a generated 512px master exports the five declared web sizes', () => {
+test('a generated 512px master is the 512 entry and exports the four smaller declared sizes', () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'asset-resize-fixture-'));
   try {
     const fixture = path.join(directory, 'master.png');
     writeFileSync(fixture, masterPng(512));
-    for (const size of [512, 192, 180, 32, 16]) {
-      const output = path.join(directory, `${size}.png`);
-      const requested = size === 512 ? 256 : size;
-      const result = run(['--input', fixture, '--output', output, '--width', String(requested), '--height', String(requested)]);
+    const master = decode(readFileSync(fixture));
+    assert.equal(master.width, 512);
+    assert.equal(master.height, 512);
+    assert.equal(master.colorType, 6);
+    for (const size of [192, 180, 32, 16]) {
+      const output = path.join(directory, size + '.png');
+      const result = run(['--input', fixture, '--output', output, '--width', String(size), '--height', String(size)]);
       assert.equal(result.status, 0, result.stderr);
       const decoded = decode(readFileSync(output));
-      assert.equal(decoded.width, requested);
-      assert.equal(decoded.height, requested);
+      assert.equal(decoded.width, size);
+      assert.equal(decoded.height, size);
       assert.equal(decoded.colorType, 6);
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test('an RGB color key is kept as real alpha instead of being dropped', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'asset-resize-trns-'));
+  try {
+    const master = path.join(directory, 'keyed.png');
+    const key = Buffer.from([0x00, 0x0a, 0x00, 0x14, 0x00, 0x1e]);
+    const row = [10, 20, 30, 40, 50, 60];
+    writeFileSync(master, png(2, 2, 2, [row, row], [chunk('tRNS', key)]));
+    const output = path.join(directory, 'out.png');
+    const result = run(['--input', master, '--output', output, '--width', '1', '--height', '1']);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).alpha, true);
+    const decoded = decode(readFileSync(output));
+    assert.equal(decoded.colorType, 6);
+    assert.deepEqual(decoded.rows[0].slice(0, 4), [25, 35, 45, 128]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('a non-text ancillary chunk is rejected and the destination stays untouched', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'asset-resize-ancillary-'));
+  try {
+    const master = path.join(directory, 'gamma.png');
+    const gamma = Buffer.alloc(4);
+    gamma.writeUInt32BE(45455);
+    writeFileSync(master, png(2, 2, 2, [Array(6).fill(8), Array(6).fill(8)], [chunk('gAMA', gamma)]));
+    const output = path.join(directory, 'out.png');
+    writeFileSync(output, Buffer.from('untouched'));
+    const result = run(['--input', master, '--output', output, '--width', '1', '--height', '1']);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /gAMA/);
+    assert.equal(readFileSync(output).toString(), 'untouched');
+
+    const keyed = Buffer.from([0x00, 0x0a, 0x00, 0x14, 0x00, 0x1e]);
+    const combined = path.join(directory, 'combined.png');
+    writeFileSync(combined, png(2, 2, 2, [Array(6).fill(8), Array(6).fill(8)], [chunk('tRNS', keyed), chunk('gAMA', gamma)]));
+    writeFileSync(output, Buffer.from('untouched'));
+    const both = run(['--input', combined, '--output', output, '--width', '1', '--height', '1']);
+    assert.equal(both.status, 1);
+    assert.match(both.stderr, /gAMA/);
+    assert.equal(readFileSync(output).toString(), 'untouched');
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('palette, 16-bit, interlaced and oversized PNGs are rejected before writing', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'asset-resize-unsupported-'));
+  try {
+    const output = path.join(directory, 'out.png');
+    const palette = png(2, 1, 3, [Array(6).fill(1)]);
+    const sixteen = ihdr(2, 1, 2);
+    sixteen[8] = 16;
+    const interlaced = ihdr(2, 1, 2);
+    interlaced[12] = 1;
+    const oversized = ihdr(5000, 5000, 2);
+    const cases = [
+      ['palette', palette],
+      ['sixteen-bit', framed(sixteen, Buffer.alloc(2 * (2 * 6 + 1)))],
+      ['interlaced', framed(interlaced, Buffer.alloc(1 + 6))],
+      ['oversized', framed(oversized, Buffer.alloc(1))],
+      ['wide-key', png(2, 2, 2, [Array(6).fill(8), Array(6).fill(8)], [chunk('tRNS', Buffer.from([0x01, 0x00, 0x00, 0x00, 0x00, 0x00]))])],
+    ];
+    for (const [name, bytes] of cases) {
+      const master = path.join(directory, name + '.png');
+      writeFileSync(master, bytes);
+      writeFileSync(output, Buffer.from('untouched'));
+      const result = run(['--input', master, '--output', output, '--width', '1', '--height', '1']);
+      assert.equal(result.status, 1, name);
+      assert.equal(readFileSync(output).toString(), 'untouched', name);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+function framed(header, scanlines) {
+  return Buffer.concat([
+    Buffer.from('89504e470d0a1a0a', 'hex'),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(scanlines)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}

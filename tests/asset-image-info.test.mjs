@@ -8,7 +8,6 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const fixtureRoot = path.join(root, 'tests', 'fixtures', 'capability');
 const inspector = 'skills/image-generation/scripts/image-info.mjs';
 
 function run(args) {
@@ -140,6 +139,7 @@ test('VP8 and VP8L WebP headers report their own dimensions and alpha', () => {
     lossless.writeUInt32LE(17, 4);
     lossless.write('WEBPVP8L', 8);
     lossless.writeUInt32LE(5, 16);
+    lossless[20] = 0x2f;
     lossless.writeUInt32LE((6 << 14) | 9, 21);
     lossless[24] = 0x10;
     assert.deepEqual(report(write(directory, 'lossless.webp', lossless)), {
@@ -165,6 +165,79 @@ test('a WebP whose declared chunk runs past the file is rejected', () => {
     const result = run(['--input', file]);
     assert.equal(result.status, 1);
     assert.match(result.stderr, /truncated/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('a color-key PNG reports alpha and a gray PNG without one does not', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'asset-info-trns-'));
+  try {
+    const header = Buffer.alloc(13);
+    header.writeUInt32BE(4, 0);
+    header.writeUInt32BE(4, 4);
+    header[8] = 8;
+    const keyed = Buffer.concat([
+      Buffer.from('89504e470d0a1a0a', 'hex'),
+      pngChunk('IHDR', header),
+      pngChunk('tRNS', Buffer.from([0x00, 0x0a])),
+      pngChunk('IEND', Buffer.alloc(0)),
+    ]);
+    assert.deepEqual(report(write(directory, 'keyed.png', keyed)), {
+      format: 'png', width: 4, height: 4, alpha: true, colorType: 'gray',
+    });
+    const opaque = Buffer.concat([
+      Buffer.from('89504e470d0a1a0a', 'hex'),
+      pngChunk('IHDR', header),
+      pngChunk('IEND', Buffer.alloc(0)),
+    ]);
+    assert.equal(report(write(directory, 'opaque.png', opaque)).alpha, false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('a truncated JPEG frame and a four-component frame are not reported as RGB', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'asset-info-jpeg-'));
+  try {
+    const short = path.join(directory, 'short.jpg');
+    writeFileSync(short, Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0x00, 0x07, 0x08, 0x00, 0x10, 0x00, 0xff, 0xd9]));
+    const truncated = run(['--input', short]);
+    assert.equal(truncated.status, 1);
+    assert.match(truncated.stderr, /start of frame/);
+
+    const cmyk = Buffer.concat([
+      Buffer.from([0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0e, 0x08, 0x00, 0x10, 0x00, 0x20, 0x04]),
+      Buffer.alloc(4),
+      Buffer.from([0xff, 0xd9]),
+    ]);
+    assert.equal(report(write(directory, 'cmyk.jpg', cmyk)).colorType, 'cmyk');
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('a short VP8X chunk and a VP8L chunk without its signature are rejected', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'asset-info-webp-bounds-'));
+  try {
+    const short = Buffer.alloc(26);
+    short.write('RIFF', 0);
+    short.writeUInt32LE(18, 4);
+    short.write('WEBPVP8X', 8);
+    short.writeUInt32LE(6, 16);
+    const vp8x = run(['--input', write(directory, 'short-vp8x.webp', short)]);
+    assert.equal(vp8x.status, 1);
+    assert.match(vp8x.stderr, /VP8X/);
+
+    const unsigned = Buffer.alloc(25);
+    unsigned.write('RIFF', 0);
+    unsigned.writeUInt32LE(17, 4);
+    unsigned.write('WEBPVP8L', 8);
+    unsigned.writeUInt32LE(5, 16);
+    unsigned.writeUInt32LE((6 << 14) | 9, 21);
+    const vp8l = run(['--input', write(directory, 'unsigned-vp8l.webp', unsigned)]);
+    assert.equal(vp8l.status, 1);
+    assert.match(vp8l.stderr, /VP8L/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

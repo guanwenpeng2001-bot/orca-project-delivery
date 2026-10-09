@@ -28,7 +28,7 @@ The request contract follows the OpenAI OpenAPI reference retrieved 2026-10-09: 
 1. Write the brief and confirm provider, budget, and content authorization.
 2. Run the local fixture and negative cases first.
 3. For an authorized live run, configure the chosen model and both runtime gates.
-4. Save the result and check its header with `scripts/image-info.mjs --input FILE`, which reports format, width, height, alpha, and color type for PNG, JPEG, and WebP. Then visually inspect exact labels, subject, and format. Header data is not a decoded image: `image-info.mjs` never inflates pixels, and a file that passes it can still be corrupt.
+4. Save the result and check its header with `scripts/image-info.mjs --input FILE`, which reports format, width, height, alpha, and color type for PNG, JPEG, and WebP. PNG `alpha` is true for an alpha color type or a `tRNS` chunk before the first IDAT. JPEG color type is `gray`, `rgb`, or `cmyk` from the component count. Then visually inspect exact labels, subject, and format. Header data is not a decoded image: `image-info.mjs` never inflates pixels or checks CRC, and a file that passes it can still be corrupt.
 5. Record actual status and output, without keys or claims of unverified quality.
 
 ## Worked example
@@ -50,7 +50,7 @@ The failure fixture `openai-image-failure.json` exits 3 with HTTP 429 and writes
 
 ## Evaluation scenario
 
-Run `node --test tests/provider-transport.test.mjs tests/capability-repair.test.mjs`. Injected transport exercises the real executor, including exact auth/body, model override, saved bytes, disabled/missing auth, HTTP errors, malformed results, and body timeouts. No test uses a provider or real secret. `node skills/image-generation/scripts/image-info.mjs --input result.png` reports `{format, width, height, alpha, colorType}` from the header. Truncated PNG data, a JPEG without a start-of-frame marker, and a WebP whose chunk length runs past the file each exit 1. Signature validation and this header report are not a full image decoder; inspect a real authorized result before acceptance.
+Run `node --test tests/provider-transport.test.mjs tests/capability-repair.test.mjs`. Injected transport exercises the real executor, including exact auth/body, model override, saved bytes, disabled/missing auth, HTTP errors, malformed results, and body timeouts. No test uses a provider or real secret. `node skills/image-generation/scripts/image-info.mjs --input result.png` reports `{format, width, height, alpha, colorType}` from the header. Truncated PNG data, a JPEG without a start-of-frame marker, a JPEG frame shorter than 8 bytes, a VP8X chunk that is not exactly 10 bytes, a VP8L chunk without its `0x2f` signature, and a WebP whose chunk length runs past the file each exit 1. Signature validation and this header report are not a full image decoder; inspect a real authorized result before acceptance.
 
 ## Boundary
 

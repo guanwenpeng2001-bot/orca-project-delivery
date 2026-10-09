@@ -24,7 +24,18 @@ function inspectPng(source) {
   const colorType = source[25];
   const described = { 0: ['gray', false], 2: ['rgb', false], 3: ['indexed', false], 4: ['gray', true], 6: ['rgba', true] }[colorType];
   if (!described) throw new Error('invalid PNG color type');
-  return { format: 'png', width: source.readUInt32BE(16), height: source.readUInt32BE(20), alpha: described[1], colorType: described[0] };
+  return { format: 'png', width: source.readUInt32BE(16), height: source.readUInt32BE(20), alpha: described[1] || pngHasTransparency(source), colorType: described[0] };
+}
+
+function pngHasTransparency(source) {
+  for (let offset = 33; offset + 8 <= source.length;) {
+    const length = source.readUInt32BE(offset);
+    const type = source.toString('ascii', offset + 4, offset + 8);
+    if (offset + 12 + length > source.length || type === 'IDAT') return false;
+    if (type === 'tRNS') return length > 0;
+    offset += 12 + length;
+  }
+  return false;
 }
 
 function inspectJpeg(source) {
@@ -42,9 +53,11 @@ function inspectJpeg(source) {
     const length = source.readUInt16BE(offset);
     if (length < 2 || offset + length > source.length) throw new Error('truncated JPEG segment');
     if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
-      if (length < 7) throw new Error('truncated JPEG start of frame');
+      if (length < 8) throw new Error('truncated JPEG start of frame');
       const components = source[offset + 7];
-      return { format: 'jpeg', width: source.readUInt16BE(offset + 5), height: source.readUInt16BE(offset + 3), alpha: false, colorType: components === 1 ? 'gray' : 'rgb' };
+      const colorType = { 1: 'gray', 3: 'rgb', 4: 'cmyk' }[components];
+      if (!colorType) throw new Error('unsupported JPEG component count');
+      return { format: 'jpeg', width: source.readUInt16BE(offset + 5), height: source.readUInt16BE(offset + 3), alpha: false, colorType };
     }
     offset += length;
   }
@@ -57,6 +70,7 @@ function inspectWebp(source) {
   const chunkLength = source.readUInt32LE(16);
   if (source.length < 20 + chunkLength) throw new Error('truncated WebP chunk');
   if (chunk === 'VP8X') {
+    if (chunkLength !== 10) throw new Error('malformed VP8X chunk');
     const alpha = (source[20] & 0x10) !== 0;
     return { format: 'webp', width: 1 + source.readUIntLE(24, 3), height: 1 + source.readUIntLE(27, 3), alpha, colorType: alpha ? 'rgba' : 'rgb' };
   }
@@ -66,7 +80,7 @@ function inspectWebp(source) {
     return { format: 'webp', width: source.readUInt16LE(26) & 0x3fff, height: source.readUInt16LE(28) & 0x3fff, alpha: false, colorType: 'rgb' };
   }
   if (chunk === 'VP8L') {
-    if (chunkLength < 5) throw new Error('truncated WebP chunk');
+    if (chunkLength < 5 || source[20] !== 0x2f) throw new Error('malformed VP8L chunk');
     const bits = source.readUInt32LE(21);
     const alpha = (source[24] & 0x10) !== 0;
     return { format: 'webp', width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1, alpha, colorType: alpha ? 'rgba' : 'rgb' };
