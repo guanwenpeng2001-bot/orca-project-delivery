@@ -1,50 +1,58 @@
 ---
 name: audio-transcription
-description: Build and validate an offline ElevenLabs transcription request, including validation failure handling. Use only for an explicitly authorized transcript task.
+description: Upload an audio file as multipart data and save an ElevenLabs transcript with offline fixtures and explicit online opt-in.
 ---
 
 # Audio Transcription
 
 ## Core principle
 
-A transcript is evidence only after its text and timestamps are checked against the audio. A provider response can be fluent and still wrong.
+A transcript is evidence only after its wording and timestamps are checked against audio. A fluent provider response can still be wrong.
 
 ## Decision criteria
 
-Identify the audio, language expectation, and whether speaker separation is required before transcription. Do not upload audio to a provider without authorization covering that content. The example connector is ElevenLabs; it is not a decision that the user has chosen it for production.
+Identify source audio, language expectations, and any speaker-separation requirement. Authorization must cover that audio leaving the machine. ElevenLabs is an optional connector, not a production-provider decision. This small example requests the provider's default transcription options with an explicit model; specialized diarization settings require an explicit extension.
 
-The script posts to `https://api.elevenlabs.io/v1/speech-to-text` with `xi-api-key` and a multipart-equivalent body containing `model_id` and `filename`. The fixture model is `scribe_v2`. A 200 response must contain `text` and word entries with timing. A 422 validation fixture exits 3 and writes no transcript. The implementation reads fixtures only.
+The Node 22.15+ script `scripts/elevenlabs-transcription-request.mjs` accepts `--request JSON --audio PATH --output PATH`. Request JSON contains `model_id`, for example `scribe_v2`. It sends `POST https://api.elevenlabs.io/v1/speech-to-text` with `xi-api-key` and actual FormData parts `model_id` and `file`. The file part includes the local bytes and basename; there is no standalone `filename` form field. Native Request serialization supplies the multipart boundary. Do not set the Content-Type boundary yourself.
 
-Word timestamps are sampled, not assumed correct because the field exists. Compare at least the beginning, one middle phrase, and the end with the audio. Speaker labels are accepted only if the task asked for separation and a sample was checked. Low-confidence or inaudible spans remain marked rather than being repaired from imagination.
+`--fixture JSON` needs no credential and never reads `ELEVENLABS_API_KEY` or contacts the service. Actual execution requires both `--online` and `CAPABILITY_ONLINE_PROVIDERS_ENABLED=true`, plus `ELEVENLABS_API_KEY`. The modes are mutually exclusive. `--timeout-ms` bounds the whole operation (default 60000). Reports redact auth and expose only multipart field names, model and basename, not audio bytes. The saved JSON is `{text, words}`; text must be a string and every word must contain text and finite nonnegative start/end times with end >= start. Empty text/words is valid for silence.
 
-The shared `ELEVENLABS_API_KEY` requirement does not authorize speech synthesis or a live request.
+Exit 0 means a validated transcript was saved atomically; 1 means input/filesystem failure; 2 means disabled or missing key; 3 means HTTP/transport/malformed result; 4 means timeout. All failure paths leave existing output intact. Configuration proves neither permission to upload nor quota.
+
+Sample the beginning, a middle phrase, and the end against the audio. Do not invent inaudible words. A valid timestamp shape is not proof of alignment; accept speaker labels only when requested and checked.
 
 ### Reference
 
-The contract was checked against ElevenLabs documentation on 2026-10-09: https://elevenlabs.io/docs/api-reference/speech-to-text/convert. The implementation is original.
+Original implementation based on the ElevenLabs contract checked 2026-10-09: https://elevenlabs.io/docs/api-reference/speech-to-text/convert.
 
 ## Workflow
 
-1. Confirm the audio may be sent and which transcript fields are required.
-2. Validate the offline request and a 422 fixture.
-3. For an authorized live run, submit the audio and retain the response status.
-4. Sample text and timestamps against the source audio.
-5. Mark uncertain spans instead of correcting them silently.
+1. Confirm permitted audio and required transcript fields.
+2. Exercise success and failure fixtures offline using a selected local audio input.
+3. For an authorized call, set both runtime gates and upload once.
+4. Compare sampled words and timestamps against the source.
+5. Mark uncertain spans and retain output/status evidence.
 
 ## Worked example
 
-The fixture names `harbor.mp3` and model `scribe_v2`. The constructed request uses the speech-to-text URL and `xi-api-key`. A 422 body with `detail[0].type = value_error` exits 3 and does not create `transcript.json`. This proves failure handling only; it does not prove a real recording was transcribed.
+From the package root, with an existing local `sample.wav`:
+
+```sh
+node skills/audio-transcription/scripts/elevenlabs-transcription-request.mjs --request tests/fixtures/capability/elevenlabs-transcription-request.json --audio sample.wav --output transcript.json --fixture tests/fixtures/capability/elevenlabs-transcription-success.json
+```
+
+The fixture yields “Harbor” and a word spanning 0 to 0.5 seconds; it does not transcribe the chosen file. The failure fixture `elevenlabs-transcription-failure.json` returns HTTP 422 and writes nothing. For an authorized live task, replace `--fixture PATH` with `--online` after configuring gate/key. The multipart upload and response-save functions are the same ones used by offline injected-transport tests.
 
 ## Failure signals
 
-- A transcript is delivered without listening to any corresponding audio.
-- Validation failure still writes a transcript file.
-- Missing words are filled in because the sentence should contain them.
-- Speaker labels are treated as verified without a sample check.
+- A JSON filename is sent instead of audio bytes.
+- A malformed or failed response creates a transcript.
+- Fixture text is reported as transcription of the chosen local file.
+- Unchecked timestamps or speaker labels are described as verified.
 
 ## Evaluation scenario
 
-Given a 422 fixture, the result checks the endpoint, model, nonzero exit, and absent output file. It fails if it reports a live transcript from fixture input.
+Run `node --test tests/provider-transport.test.mjs tests/capability-repair.test.mjs`. Tests deserialize the real Request multipart body, compare uploaded bytes/model, and inspect the saved successful transcript. Disabled mode, missing auth, HTTP failure, timeout, malformed word timing, and no-output failures remain offline and use synthetic credentials.
 
 ## Boundary
 

@@ -33,7 +33,7 @@ The method is original. Web manifest icon members are defined by W3C: https://ww
 
 ## Worked example
 
-`node skills/web-assets/scripts/web-asset-manifest.mjs --name Harbor --color #123456 --output manifest.json` declares 16, 32, 180, 192, and 512. The 16 and 32 files use the simplified buoy, while 192 and 512 use the full mark. Each PNG measures the declared pixel size, the background is `#123456`, and no declared path is missing.
+`node skills/web-assets/scripts/web-asset-manifest.mjs --name Harbor --color '#123456' --output manifest.json` declares 16, 32, 180, 192, and 512. The 16 and 32 files use the simplified buoy, while 192 and 512 use the full mark. Each PNG measures the declared pixel size, the background is `#123456`, and no declared path is missing.
 
 ## Failure signals
 

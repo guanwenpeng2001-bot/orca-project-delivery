@@ -4,7 +4,7 @@
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-09",
   "releasedAt": "2026-10-09",
-  "revisionNote": "Add 22 original professional methods and 4 roles. Optional OpenAI, Pexo, and ElevenLabs connectors are offline-tested and do not authorize provider calls. See CHANGELOG.md.",
+  "revisionNote": "Add 22 original professional methods and 4 roles. Repair gated provider execution, PNG validation, and local Office/PDF generation with offline regressions. Real provider calls require explicit authorization and runtime opt-in. See CHANGELOG.md.",
   "deliverables": {
     "roles": 16,
     "professionalSkills": 38,

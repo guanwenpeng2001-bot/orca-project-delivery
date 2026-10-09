@@ -1,39 +1,23 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { CapabilityError, cli, execute, jsonResponse, readJson, requireValue } from '../../../scripts/capability-runtime.mjs';
 
-const args = readArgs(process.argv.slice(2));
-const key = process.env.ELEVENLABS_API_KEY ?? '';
-if (!key) {
-  respond(2, { error: 'missing-key', networkCalled: false });
+export function run(args, options = {}) {
+  return execute(args, options, 'ELEVENLABS_API_KEY', async ({ key, call }) => {
+    requireValue(args.output, 'output');
+    const submitted = readJson(args.request);
+    const model = requireValue(submitted.model_id, 'model-id');
+    const audio = readFileSync(requireValue(args.audio, 'audio'));
+    if (!audio.length) throw new CapabilityError(1, 'empty-audio');
+    const body = new FormData();
+    body.set('model_id', model);
+    body.set('file', new Blob([audio], { type: 'application/octet-stream' }), path.basename(args.audio));
+    const response = await call('https://api.elevenlabs.io/v1/speech-to-text', {
+      method: 'POST', headers: { 'xi-api-key': key }, body,
+    }, { parts: ['model_id', 'file'], model_id: model, filename: path.basename(args.audio) });
+    const data = await jsonResponse(response);
+    if (typeof data?.text !== 'string' || !Array.isArray(data.words) || data.words.some((word) => typeof word?.text !== 'string' || !Number.isFinite(word.start) || !Number.isFinite(word.end) || word.start < 0 || word.end < word.start)) throw new CapabilityError(3, 'malformed-result');
+    return { bytes: Buffer.from(`${JSON.stringify({ text: data.text, words: data.words })}\n`) };
+  });
 }
-const submitted = JSON.parse(readFileSync(args.request, 'utf8'));
-const request = {
-  method: 'POST',
-  url: 'https://api.elevenlabs.io/v1/speech-to-text',
-  headers: { 'xi-api-key': key },
-  body: { model_id: submitted.model_id, filename: submitted.filename },
-};
-const fixture = JSON.parse(readFileSync(args.fixture, 'utf8'));
-if (fixture.status !== 200) {
-  respond(3, { request, provider: { status: fixture.status }, networkCalled: false });
-}
-writeFileSync(args.output, `${JSON.stringify({ text: fixture.body.text, words: fixture.body.words })}\n`);
-respond(0, { request, output: args.output, networkCalled: false });
-
-function readArgs(argv) {
-  const values = {};
-  for (let index = 0; index < argv.length; index += 2) {
-    values[argv[index].replace(/^--/, '')] = argv[index + 1];
-  }
-  for (const name of ['request', 'output', 'fixture']) {
-    if (!values[name]) {
-      process.stderr.write(`missing --${name}\n`);
-      process.exit(1);
-    }
-  }
-  return values;
-}
-
-function respond(status, report) {
-  process.stdout.write(`${JSON.stringify(report)}\n`);
-  process.exit(status);
-}
+cli(import.meta.url, run);

@@ -5,7 +5,7 @@ Skills bundled under skills/ in this package. The package under
 test is read-only; all runtime fixtures and copies live in one temporary root.
 ##>
 [CmdletBinding()]
-param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly)
+param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly, [string]$DocumentPython = '')
 
 $ErrorActionPreference = 'Stop'
 $passed = 0
@@ -543,6 +543,22 @@ try {
     if ($failed) { exit 1 }
     exit 0
   }
+  Invoke-Check 'runtime/capability-behavior' {
+    $node = (Get-Command node -CommandType Application | Select-Object -First 1).Source
+    $testFiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*.test.mjs' -File | Sort-Object Name | ForEach-Object FullName)
+    $result = Invoke-Child $node (@('--test') + $testFiles)
+    Assert-Condition ($result.ExitCode -eq 0) "Capability behavior tests failed: $($result.Stdout) $($result.Stderr)"
+  }
+  Invoke-Check 'runtime/capability-config-injection' {
+    $result = Invoke-Child $pwsh @('-NoProfile', '-NonInteractive', '-File', (Join-Path $root 'tests/capability-config.test.ps1'))
+    Assert-Condition ($result.ExitCode -eq 0) "Capability config test failed: $($result.Stdout) $($result.Stderr)"
+  }
+  if ($DocumentPython) {
+    Invoke-Check 'runtime/document-generation-readback' {
+      $result = Invoke-Child $DocumentPython @('-I', (Join-Path $root 'tests/document-production.test.py'))
+      Assert-Condition ($result.ExitCode -eq 0) "Document generation tests failed: $($result.Stdout) $($result.Stderr)"
+    }
+  } else { Write-Host 'SKIP document generation: pass -DocumentPython with the installed document dependencies' }
   Invoke-Check 'runtime/requirements-extension-fixtures' {
     $result = Invoke-Child $pwsh @('-NoProfile', '-NonInteractive', '-File', (Join-Path $root 'scripts/verify-requirements.ps1'), '-PackageRoot', $root)
     Assert-Condition ($result.ExitCode -eq 0 -and $result.Stdout.Contains('REQUIREMENTS SUMMARY')) 'Requirements regressions failed'

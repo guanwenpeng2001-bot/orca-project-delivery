@@ -1,50 +1,62 @@
 ---
 name: document-production
-description: Render structured notes into readable Markdown and check the written result. Use for source-controlled documents rather than proprietary Office binaries.
+description: Produce and reopen Markdown, editable DOCX/PPTX/XLSX, and PDF from structured source using independently written local examples.
 ---
 
 # Document Production
 
 ## Core principle
 
-A document is finished when its structure is readable by a person and mechanically checked against its source. A styled binary that nobody can read back is not evidence.
+A document is finished when its content survives reopening and its layout is readable in the target viewer. A successful save alone proves neither.
 
 ## Decision criteria
 
-Use structured Markdown for source-controlled notes, decisions, and reports. Each document has one title, headings in descending order, and lists whose items are parallel. Tables need a header and one fact per cell. Do not use formatting to compensate for an undefined reading order.
+Choose Markdown for reviewed text, DOCX for prose editing, PPTX for editable slides, XLSX for tabular source values, and PDF for a fixed reading copy. Use appropriate libraries; do not rename Markdown to a binary extension. Preserve facts, numbers, caveats, and reading order.
 
-The script `skills/document-production/scripts/markdown-document.mjs` accepts a title and bullet blocks and writes the Markdown. Unsupported block types fail instead of being dropped silently. This is intentionally small: it proves a structured source can be rendered and read back without a proprietary library.
+`scripts/markdown-document.mjs` retains the small title/bullet Markdown path. `scripts/office-document.py` generates actual Office ZIP/XML packages or PDF, then reopens them before atomically replacing the output. Both accept source shaped as `{"title":"Harbor notes","blocks":[{"type":"bullets","items":["Keep one fact per bullet"]}]}`. Unknown blocks are rejected, not silently dropped. The binary example supports this intentionally bounded source schema, not arbitrary templates, rich tables, charts, macros, or a general document converter.
 
-Editable Office and PDF binaries require a task-specific library whose license has been reviewed. This package does not copy proprietary document-skill text or claim Word, PowerPoint, Excel, or PDF compatibility. When such a library is separately approved, the same read-back rule applies: open the output and verify text, numbers, links, and pagination rather than trusting the conversion log.
+Python 3.10+ and the packages pinned in `scripts/requirements.txt` are required for the binary example. DOCX uses python-docx 1.2.0 (MIT), PPTX uses python-pptx 1.0.2 (MIT), XLSX uses openpyxl 3.1.5 (MIT), and PDF uses ReportLab 5.0.1 (BSD) plus pypdf 6.20.0 (BSD-3-Clause). These maintained libraries are installed separately and not vendored; their licenses remain their own. The script and method are original and contain no proprietary document-Skill text.
 
-Preserve source facts verbatim. Rounding, unit conversion, and omitted caveats are content changes and belong in a reviewed edit, not in rendering.
+The example paginates slides at five bullets, rejects titles over 80 characters and slide bullets over 160 characters or containing newlines, and checks slide count/text. These conservative bounds do not replace visual layout review. Spreadsheet inputs stay literal strings, including `=...`; no formulas are evaluated. DOCX read-back checks paragraph order. PDF checks extracted text and page count. ASCII uses the built-in PDF font; non-ASCII requires `--font PATH` to a licensed TrueType font covering the source glyphs. Without one it fails rather than emitting missing-glyph squares.
 
 ### Reference
 
-The method is original. Markdown structure follows the CommonMark specification: https://spec.commonmark.org/0.31.2/
+Original method and scripts using public library APIs: [python-docx](https://python-docx.readthedocs.io/), [python-pptx](https://python-pptx.readthedocs.io/), [openpyxl](https://openpyxl.readthedocs.io/), [ReportLab](https://docs.reportlab.com/), [pypdf](https://pypdf.readthedocs.io/), and [CommonMark](https://spec.commonmark.org/0.31.2/). Package versions and license metadata were checked during the repair.
 
 ## Workflow
 
-1. Put the title, sections, and repeated items in structured source.
-2. Render with the smallest approved tool.
-3. Read the output back against every source fact.
-4. Reject silent omission of unsupported content.
-5. Use a separately licensed library only when the delivery must be a proprietary format.
+1. Define format and structured source; reject unsupported blocks explicitly.
+2. Install the selected local dependencies in an isolated environment.
+3. Generate, reopen, and compare source text/numbers and object counts.
+4. Open Office output in the actual receiving editor and PDF in a viewer; inspect overflow, pagination, fonts, and links if present.
+5. Report programmatic and visual checks separately; do not claim viewer compatibility from read-back alone.
 
 ## Worked example
 
-`document-input.json` contains title “Harbor notes” and one bullet, “Keep one fact per bullet.” The script writes exactly `# Harbor notes`, a blank line, and `- Keep one fact per bullet`. Adding a table block fails because tables are unsupported by this renderer. The failure prevents a partial document from looking complete.
+Run from the package root. PowerShell installation and execution (use `.venv-documents/bin/python` on POSIX):
+
+```powershell
+python -m venv .venv-documents
+.venv-documents/Scripts/python -m pip install --only-binary=:all: -r skills/document-production/scripts/requirements.txt
+.venv-documents/Scripts/python -I skills/document-production/scripts/office-document.py --input tests/fixtures/capability/document-input.json --format docx --output notes.docx
+.venv-documents/Scripts/python -I skills/document-production/scripts/office-document.py --input tests/fixtures/capability/document-input.json --format pptx --output notes.pptx
+.venv-documents/Scripts/python -I skills/document-production/scripts/office-document.py --input tests/fixtures/capability/document-input.json --format xlsx --output notes.xlsx
+.venv-documents/Scripts/python -I skills/document-production/scripts/office-document.py --input tests/fixtures/capability/document-input.json --format pdf --output notes.pdf
+.venv-documents/Scripts/python -I tests/document-production.test.py
+```
+
+Keep the environment and generated files outside the formal package when developing the package itself. Each successful command emits JSON with `output`, `format`, `reopened: true`, and paragraphs/slides/rows/pages. Missing libraries exit 2; invalid source, unsupported text, or output errors exit 1. Output extension must match the selected format, and the destination parent must exist. Unsupported content and failed read-back never replace an existing document.
 
 ## Failure signals
 
-- The output drops an unsupported block and exits successfully.
-- A binary export is accepted without opening and reading it.
-- Source numbers change during formatting.
-- The result claims Office compatibility without an approved library and read-back.
+- Markdown bytes are distributed with an Office extension.
+- Unsupported source content is dropped during rendering.
+- Spreadsheet text unexpectedly executes as a formula.
+- Reopening is called visual acceptance, or unavailable Office/PDF viewers are reported as checked.
 
 ## Evaluation scenario
 
-Given one bullet document and one unsupported block, the first matches the expected Markdown and the second exits nonzero. It fails if unsupported content disappears silently.
+`python -I tests/document-production.test.py` in the configured environment generates and reopens all four formats, compares exact text and numbers, tests literal spreadsheet formula-like input, checks slide pagination, and verifies failed generation preserves existing output. The package's optional `verify-package.ps1 -DocumentPython PATH` runs this same suite. Actual Office-application rendering, font substitution, accessibility tagging, and visual PDF pagination still require target-viewer inspection.
 
 ## Boundary
 

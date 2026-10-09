@@ -13,7 +13,7 @@ Compression is successful only when the output is smaller and the image still de
 
 Choose lossless compression when boundaries, text, or transparency must remain exact. Use lossy compression only when the task permits visual approximation, and compare the result visually at the displayed size. Never assume a target reduction such as half the bytes; report the measured sizes.
 
-The included `skills/image-compression/scripts/png-compressor.mjs` performs lossless PNG recompression with Node’s zlib. It rejects a non-PNG signature and reports failure rather than writing a partial success. It is a deterministic baseline, not a claim that WebP, JPEG, or external codecs are installed.
+The included `skills/image-compression/scripts/png-compressor.mjs` performs lossless PNG recompression with Node 22.15+ zlib. It validates the signature, every chunk CRC, chunk bounds, header/end markers, consecutive IDATs, palette placement, scanline length and filters before writing. Non-IDAT chunks retain their exact relative position; adjacent IDAT chunks are recompressed into one at the original position. Non-interlaced PNGs up to 256 MiB of inflated scanlines are supported; interlaced PNG, APNG, and unknown critical chunks fail explicitly. This is not a full PNG decoder or a replacement for a visual check. WebP/JPEG conversion is not implemented.
 
 External codecs such as `cwebp`, ImageMagick, or FFmpeg may be used by a task when installed, but they are not package requirements. A missing optional codec is recorded as unavailable. It is not replaced silently by an unrelated format.
 
@@ -33,7 +33,7 @@ The method is original. PNG chunk structure follows the W3C PNG specification: h
 
 ## Worked example
 
-A 64px PNG with an alpha channel is recompressed with `node skills/image-compression/scripts/png-compressor.mjs --input sample.png --output small.png`. The output keeps the PNG signature, dimensions, and alpha, and its byte length is lower. The report states both lengths. No WebP conversion is claimed because `cwebp` is not present.
+A 64px PNG with an alpha channel is recompressed with `node skills/image-compression/scripts/png-compressor.mjs --input sample.png --output small.png`. The output keeps the PNG signature, dimensions, and alpha, and its byte length is lower. JSON stdout reports `status: "compressed"`, `inputBytes`, `outputBytes`, and `output`. If the candidate is not smaller, exit 0 instead reports `status: "no-gain"`, `inputBytes`, and `candidateBytes`, creates no new output and preserves any existing destination. Invalid or unsupported input exits 1 before writing. Use `--sample sample.png` to generate the deterministic 64px test input. No WebP conversion is claimed because `cwebp` is not present.
 
 ## Failure signals
 

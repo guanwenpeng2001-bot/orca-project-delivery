@@ -14,7 +14,7 @@ function runScript(relativePath, args, env = {}) {
   return spawnSync(process.execPath, [path.join(root, relativePath), ...args], {
     cwd: root,
     encoding: 'utf8',
-    env: { ...process.env, ...env },
+    env: { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, ...env },
     timeout: 15000,
   });
 }
@@ -47,7 +47,7 @@ test('openai image request matches the pinned contract and writes decoded bytes'
     const report = JSON.parse(result.stdout);
     assert.equal(report.request.method, 'POST');
     assert.equal(report.request.url, 'https://api.openai.com/v1/images/generations');
-    assert.equal(report.request.headers.Authorization, 'Bearer synthetic-openai-key');
+    assert.equal(report.request.headers.Authorization, 'Bearer [REDACTED]');
     assert.equal(report.request.body.model, 'gpt-image-1.5');
     assert.equal(report.request.body.output_format, 'png');
     assert.equal(report.request.body.response_format, undefined);
@@ -62,8 +62,8 @@ test('openai image connector reports a missing key without building a callable r
   const result = runScript('skills/image-generation/scripts/openai-image-request.mjs', [
     '--request', path.join(fixtureRoot, 'openai-image-request.json'),
     '--output', path.join(tmpdir(), 'unused.png'),
-    '--fixture', path.join(fixtureRoot, 'openai-image-success.json'),
-  ], { OPENAI_API_KEY: '' });
+    '--online',
+  ], { OPENAI_API_KEY: '', CAPABILITY_ONLINE_PROVIDERS_ENABLED: 'true' });
   assert.equal(result.status, 2);
   assert.equal(JSON.parse(result.stdout).error, 'missing-key');
   assert.equal(JSON.parse(result.stdout).request, undefined);
@@ -90,12 +90,12 @@ test('pexo video submission is asynchronous and a timeout stays pending', () => 
   const submitted = runScript(
     'skills/generated-video/scripts/pexo-video-request.mjs',
     ['--request', path.join(fixtureRoot, 'pexo-video-request.json'), '--fixture', path.join(fixtureRoot, 'pexo-video-submitted.json')],
-    { PEXO_API_KEY: 'synthetic-pexo-key', PEXO_BASE_URL: 'https://pexo.example' },
+    { PEXO_API_KEY: 'synthetic-pexo-key' },
   );
   assert.equal(submitted.status, 0, submitted.stderr);
   const submission = JSON.parse(submitted.stdout);
-  assert.equal(submission.request.url, 'https://pexo.example/api/chat');
-  assert.equal(submission.request.headers['X-API-Key'], 'synthetic-pexo-key');
+  assert.equal(submission.request.url, 'https://pexo.ai/api/chat');
+  assert.equal(submission.request.headers.Authorization, 'Bearer [REDACTED]');
   assert.equal(submission.acknowledgement.status, 'submitted');
   assert.equal(submission.networkCalled, false);
 
@@ -121,13 +121,13 @@ test('elevenlabs speech and transcription requests stay offline and handle failu
     assert.equal(speech.status, 0, speech.stderr);
     const speechReport = JSON.parse(speech.stdout);
     assert.equal(speechReport.request.url, 'https://api.elevenlabs.io/v1/text-to-speech/voice_example?output_format=mp3_44100_128');
-    assert.equal(speechReport.request.headers['xi-api-key'], 'synthetic-elevenlabs-key');
-    assert.equal(readFileSync(audio).toString('utf8'), 'synthetic-audio');
+    assert.equal(speechReport.request.headers['xi-api-key'], '[REDACTED]');
+    assert.equal(readFileSync(audio).toString('utf8'), 'ID3synthetic-audio');
 
     const transcript = path.join(directory, 'transcript.json');
     const transcription = runScript(
       'skills/audio-transcription/scripts/elevenlabs-transcription-request.mjs',
-      ['--request', path.join(fixtureRoot, 'elevenlabs-transcription-request.json'), '--output', transcript, '--fixture', path.join(fixtureRoot, 'elevenlabs-transcription-failure.json')],
+      ['--request', path.join(fixtureRoot, 'elevenlabs-transcription-request.json'), '--audio', audio, '--output', transcript, '--fixture', path.join(fixtureRoot, 'elevenlabs-transcription-failure.json')],
       { ELEVENLABS_API_KEY: 'synthetic-elevenlabs-key' },
     );
     assert.equal(transcription.status, 3);

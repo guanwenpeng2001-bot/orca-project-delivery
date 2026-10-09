@@ -1,6 +1,6 @@
 ---
 name: media-transcoding
-description: Construct a deterministic FFmpeg transcoding plan without executing it. Use when output dimensions, frame rate, and codecs must be explicit.
+description: Plan and execute local FFmpeg transcoding with explicit dimensions, frame rate, codecs, and FFprobe acceptance checks.
 ---
 
 # Media Transcoding
@@ -33,7 +33,18 @@ The method is original and uses public FFmpeg option names: https://ffmpeg.org/f
 
 ## Worked example
 
-`node skills/media-transcoding/scripts/ffmpeg-plan.mjs --input input.mov --output output.mp4 --width 1280 --height 720 --fps 30` returns the scale, 30 fps, `libx264`, CRF 20, AAC, and faststart arguments with `executed` false. On a machine without FFmpeg, no output media is claimed. A later authorized run must show FFprobe duration and dimensions before acceptance.
+`node skills/media-transcoding/scripts/ffmpeg-plan.mjs --input input.mov --output output.mp4 --width 1280 --height 720 --fps 30` returns the plan with `executed: false`. With FFmpeg and FFprobe installed, run this complete local sample from a writable output directory (no provider calls):
+
+```sh
+ffmpeg -hide_banner -encoders
+ffmpeg -n -f lavfi -i testsrc2=size=1280x720:rate=30 -f lavfi -i sine=frequency=440:sample_rate=48000 -t 3 -c:v libx264 -pix_fmt yuv420p -c:a aac input.mp4
+ffmpeg -n -i input.mp4 -vf scale=640:360 -r 30 -c:v libx264 -crf 20 -pix_fmt yuv420p -c:a aac -movflags +faststart output.mp4
+ffprobe -v error -show_entries stream=codec_type,codec_name,width,height,avg_frame_rate:format=duration -of json input.mp4
+ffprobe -v error -show_entries stream=codec_type,codec_name,width,height,avg_frame_rate:format=duration -of json output.mp4
+ffmpeg -v error -i output.mp4 -f null -
+```
+
+Require libx264 and AAC in the encoder list; both media commands must exit 0. The output probe must show H.264 640x360 at 30/1 fps plus AAC audio, and duration within one frame (1/30 second) of the 3-second source, allowing codec audio padding when examining individual stream durations. The decode command must exit 0 without errors. Watch the test pattern and listen for the continuous tone; production quality needs representative real content too. `-n` refuses overwriting existing files. Obtain a suitable FFmpeg build from the official [download page](https://ffmpeg.org/download.html) and retain its version/build license. If the binaries or encoders are absent, these commands are instructions only and the render remains unverified.
 
 ## Failure signals
 

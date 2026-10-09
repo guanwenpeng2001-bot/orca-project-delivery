@@ -1,45 +1,24 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { CapabilityError, cli, decodeBase64, execute, jsonResponse, readJson, requireValue } from '../../../scripts/capability-runtime.mjs';
 
-const args = readArgs(process.argv.slice(2));
-const key = process.env.OPENAI_API_KEY ?? '';
-if (!key) {
-  respond(2, { error: 'missing-key', networkCalled: false });
+export function run(args, options = {}) {
+  return execute(args, options, 'OPENAI_API_KEY', async ({ key, env, call }) => {
+    requireValue(args.output, 'output');
+    const body = readJson(args.request);
+    requireValue(body.prompt, 'prompt');
+    body.model = env.OPENAI_IMAGE_MODEL || body.model || 'gpt-image-1.5';
+    body.output_format ??= 'png';
+    if (!['png', 'jpeg', 'webp'].includes(body.output_format) || (body.n !== undefined && body.n !== 1)) throw new CapabilityError(1, 'unsupported-image-options');
+    delete body.response_format;
+    const response = await call('https://api.openai.com/v1/images/generations', {
+      method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }, body);
+    const data = await jsonResponse(response);
+    const bytes = decodeBase64(data?.data?.[0]?.b64_json);
+    const valid = body.output_format === 'png' ? bytes.subarray(0, 8).toString('hex') === '89504e470d0a1a0a'
+      : body.output_format === 'jpeg' ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
+        : bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+    if (!valid) throw new CapabilityError(3, 'invalid-image');
+    return { bytes };
+  });
 }
-
-const requestBody = JSON.parse(readFileSync(args.request, 'utf8'));
-delete requestBody.response_format;
-const request = {
-  method: 'POST',
-  url: 'https://api.openai.com/v1/images/generations',
-  headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-  body: requestBody,
-};
-const fixture = JSON.parse(readFileSync(args.fixture, 'utf8'));
-if (fixture.status !== 200) {
-  respond(3, { request, provider: { status: fixture.status, code: fixture.body?.error?.code ?? null }, networkCalled: false });
-}
-const encoded = fixture.body?.data?.[0]?.b64_json;
-if (!encoded) {
-  respond(3, { request, provider: { status: fixture.status, code: 'missing-image' }, networkCalled: false });
-}
-writeFileSync(args.output, Buffer.from(encoded, 'base64'));
-respond(0, { request, output: args.output, networkCalled: false });
-
-function readArgs(argv) {
-  const values = {};
-  for (let index = 0; index < argv.length; index += 2) {
-    values[argv[index].replace(/^--/, '')] = argv[index + 1];
-  }
-  for (const name of ['request', 'output', 'fixture']) {
-    if (!values[name]) {
-      process.stderr.write(`missing --${name}\n`);
-      process.exit(1);
-    }
-  }
-  return values;
-}
-
-function respond(status, report) {
-  process.stdout.write(`${JSON.stringify(report)}\n`);
-  process.exit(status);
-}
+cli(import.meta.url, run);

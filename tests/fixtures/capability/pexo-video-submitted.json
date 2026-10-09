@@ -1,4 +1,6 @@
 {
-  "status": 200,
-  "body": { "status": "submitted", "submissionMode": "async", "pollAfterSeconds": 60 }
+  "responses": [
+    { "status": 200, "body": { "executionStatus": "IDLE", "serviceStatus": "IDLE" } },
+    { "status": 200, "headers": { "content-type": "text/event-stream" }, "text": ": stream opened\n\n" }
+  ]
 }

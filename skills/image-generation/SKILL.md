@@ -1,50 +1,56 @@
 ---
 name: image-generation
-description: Build and validate an offline OpenAI image-generation request, including missing credentials and provider failures. Use only for an explicitly authorized image task.
+description: Generate and save an OpenAI image with offline fixtures and explicit online opt-in. Use only for an authorized image task.
 ---
 
 # Image Generation
 
 ## Core principle
 
-A generation brief and a constructed request are not a generated image. Only a decoded provider response from an explicitly authorized call is output, and this package does not make that call.
+A prompt and request are not an image. Accept saved output only after checking the requested subject, text, format, and visual constraints.
 
 ## Decision criteria
 
-State the subject, required text, aspect, and forbidden changes before choosing a model. A prompt is not ready while a required label or brand color remains implicit. Keep one provider per task. This package ships one example connector, OpenAI Images; it does not claim that OpenAI is the user’s production provider.
+State subject, exact labels, aspect, and forbidden changes first. OpenAI Images is one optional example, not a choice of production provider. Use Node 22.15+ for native fetch, Request, and FormData across these connectors.
 
-The script `skills/image-generation/scripts/openai-image-request.mjs` builds `POST https://api.openai.com/v1/images/generations` with bearer authentication. The pinned contract uses an explicit GPT image model, `size`, `quality`, and `output_format`. It removes legacy `response_format` because current GPT image models return base64 image data directly. The default model in the example config is `gpt-image-1.5`; a newer model must be named deliberately.
+`scripts/openai-image-request.mjs` sends `POST https://api.openai.com/v1/images/generations` with Bearer authentication and JSON. `OPENAI_IMAGE_MODEL` overrides the request's `model`, then the default is `gpt-image-1.5`. `output_format` defaults to `png` and supports `png`, `jpeg`, and `webp`; this single-output connector accepts `n=1` only. Other generation options such as `size` and `quality` are passed through. Legacy `response_format` is removed for GPT image models. Base64 must be canonical and match the requested image signature before saving.
 
-Missing `OPENAI_API_KEY` exits 2 and emits no request. A fixture status other than 200 exits 3 and writes no file. Timeout or transport failure must follow the same rule: no partial output presented as success. The script reads a local fixture and always reports `networkCalled: false`; it contains no transport call.
+Offline `--fixture JSON` uses an internal synthetic key without reading `OPENAI_API_KEY` or opening a socket. Real execution requires both `--online` and `CAPABILITY_ONLINE_PROVIDERS_ENABLED=true`, plus `OPENAI_API_KEY`; the modes are mutually exclusive. `--request JSON --output PATH` are required. `--timeout-ms` bounds request and body consumption (default 60000). Outputs are atomically replaced only after validation. Reports redact auth and identify `networkCalled`.
 
-Configuration presence proves only that a value exists. It does not prove quota, model entitlement, or permission to spend money. A real call requires separate task authorization.
+Exit 0 means bytes were saved; 1 means invalid input or filesystem failure; 2 means online disabled or missing key; 3 means HTTP, transport, or malformed-result failure; 4 means timeout. HTTP failures preserve status and provider error code. Config presence establishes neither quota nor authorization to spend. Selecting this Skill declares its non-secret gate/model settings and key through the existing requirements mechanism; use `templates/project-config.example.json` for the non-secret defaults.
 
 ### Reference
 
-Request construction was checked against the OpenAI OpenAPI document retrieved 2026-10-09 from https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml. This is an original connector, not a copied skill.
+The request contract follows the OpenAI OpenAPI reference retrieved 2026-10-09: https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml. This is original implementation and method text.
 
 ## Workflow
 
-1. Write the brief and confirm the task permits generation and spending.
-2. Build the request from the example script and a fixture.
-3. Test missing key, success decoding, and provider failure.
-4. For an authorized live run, replace the fixture with a reviewed transport and retain status and cost evidence.
-5. Visually inspect subject, text, colors, and format; reject undeclared alterations.
+1. Write the brief and confirm provider, budget, and content authorization.
+2. Run the local fixture and negative cases first.
+3. For an authorized live run, configure the chosen model and both runtime gates.
+4. Save and decode the result; visually inspect exact labels, subject, and format.
+5. Record actual status and output, without keys or claims of unverified quality.
 
 ## Worked example
 
-The fixture requests a harbor otter at `1024x1024` with model `gpt-image-1.5` and PNG output. With a synthetic key, the script emits the bearer request and decodes `b64_json` to the expected PNG bytes. Removing the key exits 2 with `missing-key`. A 429 fixture exits 3 with `rate_limit_exceeded` and creates no file. No request leaves the machine.
+From the package root, the following saves synthetic PNG fixture bytes with `networkCalled: false` and needs no provider credential:
+
+```sh
+node skills/image-generation/scripts/openai-image-request.mjs --request tests/fixtures/capability/openai-image-request.json --output otter.png --fixture tests/fixtures/capability/openai-image-success.json
+```
+
+The failure fixture `openai-image-failure.json` exits 3 with HTTP 429 and writes no file. For a separately authorized generation, replace `--fixture PATH` with `--online` after configuring the gate and key; no transport replacement is needed. A custom `OPENAI_IMAGE_MODEL` is sent as the actual request model.
 
 ## Failure signals
 
-- The prompt or request JSON is delivered as the image.
-- The connector claims a live provider call while `networkCalled` is false.
-- A failure fixture still writes an image.
-- Model entitlement or price is inferred from a populated environment variable.
+- A constructed request is delivered as an image.
+- An HTTP error or invalid base64 leaves a new output file.
+- Configured model differs from the model actually submitted.
+- A synthetic fixture is described as live generation or visual-quality evidence.
 
 ## Evaluation scenario
 
-Given the success, missing-key, and 429 fixtures, the result matches the URL and body, decodes one PNG, and writes nothing for either failure. It fails if any path contacts the network.
+Run `node --test tests/provider-transport.test.mjs tests/capability-repair.test.mjs`. Injected transport exercises the real executor, including exact auth/body, model override, saved bytes, disabled/missing auth, HTTP errors, malformed results, and body timeouts. No test uses a provider or real secret. Signature validation is not a full image decoder; inspect a real authorized result before acceptance.
 
 ## Boundary
 
