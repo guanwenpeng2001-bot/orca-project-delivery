@@ -70,7 +70,7 @@ export function run(args, options = {}) {
     const project = await get(projectPath);
     let nextAction = projectAction(project);
     if (action === 'submit') {
-      if (['CONFIRM', 'WAIT'].includes(nextAction) && project.executionStatus !== 'IDLE') return { exitCode: 5, nextAction, projectId };
+      if (project.serviceStatus === 'PROCESSING' || ['RUNNING', 'CONFIRM_REQUIRED'].includes(project.executionStatus)) return { exitCode: 5, nextAction, projectId };
       const body = {
         project_id: projectId,
         timestamp: String((options.now ?? Date.now)()),

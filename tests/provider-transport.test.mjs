@@ -169,9 +169,9 @@ test('fixture mode does not read credentials or transport even with online envir
 
 test('Pexo does not resubmit a processing or billing-blocked project', () => temporary(async (directory) => {
   const args = argsFor(providers[3], directory);
-  for (const state of ['RUNNING', 'CONFIRM_REQUIRED']) {
+  for (const [executionStatus, serviceStatus] of [['RUNNING', 'PROCESSING'], ['RUNNING', 'IDLE'], ['CONFIRM_REQUIRED', 'PROCESSING'], ['IDLE', 'PROCESSING']]) {
     const report = await video(args, { env, fetchImpl: async (request) => {
-      assert.equal(request.method, 'GET'); return json({ executionStatus: state, serviceStatus: 'PROCESSING' });
+      assert.equal(request.method, 'GET'); return json({ executionStatus, serviceStatus });
     } });
     assert.equal(report.exitCode, 5); assert.equal(report.acknowledgement, undefined);
   }
