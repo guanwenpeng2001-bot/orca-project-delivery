@@ -8,12 +8,12 @@ with the original sixteen, the package carries **38 professional Skills** and
 **16 Roles**. This guide explains what each new capability is for, what it does
 not do, and how far its claims have actually been checked.
 
-Counts, catalog registration, and the executable dependency surface belong to
-the parallel capability package. Until that package lands, treat the IDs below
-as the approved capability contract, and confirm registration by reading
-`routing/skill-catalog.json`, `roles/catalog.json`, and `PACKAGE-MANIFEST.json`
-in the revision you installed. Do not treat a sentence in this guide as proof
-that a file exists.
+This guide and its relative links target the combined 2.3.0 documentation and
+runtime package. A docs-only checkout based on 2.2.0 lacks the new Skill files
+and catalogs; it is not an installable 2.3.0 release. Confirm `VERSION` is
+`2.3.0`, `routing/skill-catalog.json` contains 38 Skills, `roles/catalog.json`
+contains 16 Roles, and `PACKAGE-MANIFEST.json` agrees before running the
+[tutorial](professional-capability-tutorial.md).
 
 ## How to read a capability
 
@@ -80,8 +80,8 @@ those files anywhere.
 
 `icon-assets` is the one asset Skill that is online by default. The other three
 are local. None of them is a paid API, and none of them has a measured output
-in this release: the acceptance rows in the tutorial are the checks to run, not
-checks that have passed.
+in this release: the [asset acceptance rows](professional-capability-tutorial.md#asset-acceptance)
+list the checks to record for an actual output, not checks already passed.
 
 ## Image methods
 
@@ -147,7 +147,7 @@ stale the moment the package changes.
 | --- | --- | --- |
 | The package verifies its own structure offline. | `scripts/verify-package.ps1` exits 0 with `FAIL=0` on the revision you installed. | A passing suite says nothing about a generated image, video, or document. |
 | Methods are delivered as Skill files. | The Skill file exists at `skills/<id>/SKILL.md` and its hash matches `skills/README.md`. | Loading a Skill is not a test of the method's output. |
-| Dependency helpers run locally. | The tutorial's offline walk uses `check-requirements.ps1` and `invoke-with-requirements.ps1` with fake values and no network. | Their parameters for the new Skills are not asserted here until the capability package defines them. |
+| Dependency helpers run locally. | The tutorial runs PNG compression, the web manifest, Markdown generation, dependency checks, and offline provider fixtures. | Office/PDF generation needs the pinned libraries; fixture success is not provider or generation-quality evidence. |
 | Online connectors exist as examples. | The tutorial names OpenAI for images, Pexo for video, and ElevenLabs for speech and transcription, each as an example. | No call was made. No provider was selected. No generation quality was measured. |
 
 ## Licenses and sources

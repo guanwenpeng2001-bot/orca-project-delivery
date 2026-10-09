@@ -9,6 +9,8 @@
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
+这些指南面向完整的 **2.3.0 包：38 个 Skill、16 个角色**。在旧运行时上仅含文档的检出不等于该版本；请安装匹配的运行时，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。
+
 Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 工作者智能体跑完整条软件交付流水线。它解决的问题是：在同一个仓库里监督许多自主智能体，同时不丢掉分支纪律、独立审查和可核验的证据。它写给担任协调者的人：你已经有 Orca（多代理 IDE）和 Claude Code，希望由隔离的工作者在明确合同下产出、审查、集成并做最终验证大型变更。
 
 - [这是什么](#这是什么)
@@ -117,6 +119,7 @@ orca-project-delivery/
 | [架构](docs/zh-CN/architecture.md) | 控制平面与交付平面、权威来源、角色/工作流/Skill 表、证据模型、协调者锁、12 条不变量 |
 | [常见问题](docs/zh-CN/faq.md) | 常见问题与失败模式排障 |
 | [变更日志](CHANGELOG.md) | 发布历史（英文） |
+| [English](README.md) | English README |
 
 包内参考文档（`references/`）写给运行时的协调者，比公开文档更深；从 `SKILL.md` 开始，顺着它的链接读。
 

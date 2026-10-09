@@ -151,7 +151,7 @@ All assigned cases have evidence and a verdict. Follow the injected Worker Contr
 
 ## 声明依赖
 
-当前随包条目不需要凭据。要在示例中试用可选依赖，向**示例 Skill 的目录对象**添加如下 `requires` 属性（不要放进 Markdown front matter）：
+依赖按条目声明；原有十六个方法不需要凭据，提供方 Skill 则声明其配置名称。要在示例中试用可选依赖，向**示例 Skill 的目录对象**添加如下 `requires` 属性（不要放进 Markdown front matter）：
 
 ```json
 {
@@ -172,7 +172,15 @@ Role 条目也支持同样的可选结构。[requirements.schema.json](../../sch
 
 ## 校验扩展
 
-添加示例后，把清单数量设为最终的目录数量：从 2.3.0 的包（16 个 Role、38 个 Skill）出发时，`deliverables.roles` 为 17、`deliverables.professionalSkills` 为 39。本练习保留 `VERSION` 和清单 `version` 为 `2.3.0`；新增扩展不要求自行编造发布版本。工作流数量也要保持正确。
+添加示例后，从编辑后的目录推导清单计数。把 `deliverables.roles` 和 `deliverables.professionalSkills` 分别设为下面打印的对应值，不要照抄其他修订的计数。完整的 2.3.0 包起始为 16 个 Role / 38 个 Skill，因此添加这两个示例后为 17 / 39。保留原有的 `VERSION` 及与之相同的清单 `version`；扩展旧检出不会使它升级到 2.3.0。工作流数量也要保持正确。
+
+```powershell
+(Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
+(Get-Content -Raw ./routing/skill-catalog.json | ConvertFrom-Json).skills.Count
+(Get-Content -Raw ./VERSION).Trim()
+```
+
+从编辑后的包副本目录运行这些命令。旧的 12 角色 / 16 Skill 检出添加后应为 13 / 17，且保留原版本；它仍然缺少 2.3.0 的能力。
 
 在 PowerShell 7 会话中，将 `$package` 指向已编辑的包副本并计算哈希：
 

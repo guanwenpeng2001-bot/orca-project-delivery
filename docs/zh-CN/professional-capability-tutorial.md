@@ -2,13 +2,9 @@
 
 [English](../professional-capability-tutorial.md) | **简体中文**
 
-本教程不安装任何新东西，也不调用任何提供方。它做三件事：读能力合同，证明包可以离线校验，以及用假值在一个临时项目上运行现有的依赖辅助脚本。这是 2.3.0 里今天就能执行的部分。
+本教程面向完整的 **2.3.0 包：38 个 Skill、16 个角色**。它在临时项目中使用合成值演练本地工具、离线提供方夹具及限定范围的依赖注入。没有发起实际提供方或付费调用；离线模拟不验证生成质量。
 
-本教程有意不做的事：
-
-- 不渲染视频、不生成图像、不合成语音、不转录音频。这些是真实在线或本地执行步骤，本版本都没有跑过。
-- 不把 22 个新 Skill 或 4 个新角色加进目录。注册属于能力包；本教程只消费一个已经包含它的包。
-- 不编造命令旗标。下面的命令是本修订里实际存在的辅助脚本。新 Skill 的走读只在它们的接口进入包内之后才写，并且发布前对照该包核验。
+从包根目录在 PowerShell 7 会话中依次运行代码块，使用 Node.js 或 Python 的示例需要相应运行时可用。旧版 2.2.0 运行时上的纯文档检出缺少新脚本；这里的相对链接和命令指向组合后的 2.3.0 树。
 
 ## 1. 确认你安装的是什么
 
@@ -36,7 +32,18 @@ $roles = (Get-Content -Raw .\roles\catalog.json | ConvertFrom-Json).roles.Count
 "catalog roles: $roles"
 ```
 
-两个计数必须等于清单字段。如果不相等，包内部不一致，本教程的其余部分不适用；停下来报告这个差异，不要继续。
+既要求达到版本目标，也要求内部一致；旧的 16/12 目录即使与自己的清单一致，也不能运行这些示例。
+
+```powershell
+$manifest = Get-Content -Raw ./PACKAGE-MANIFEST.json | ConvertFrom-Json
+$version = (Get-Content -Raw ./VERSION).Trim()
+if ($version -ne '2.3.0' -or $manifest.version -ne $version -or
+    $skills -ne 38 -or $roles -ne 16 -or
+    $manifest.deliverables.professionalSkills -ne $skills -or
+    $manifest.deliverables.roles -ne $roles) {
+  throw 'Install the complete matching 2.3.0 package before continuing.'
+}
+```
 
 ## 2. 离线校验包
 
@@ -98,38 +105,91 @@ $checkExit = $LASTEXITCODE
 Remove-Item -Recurse -Force $project
 ```
 
-### 当新 Skill 声明了依赖时会怎样
+## 5. 运行本地能力示例
 
-一旦能力包为一个 Skill 声明了 `requires`，同样的两条命令不加新旗标即可使用。显式选中该 Skill，辅助脚本就只检查它声明的内容：
+这些命令在完整的 2.3.0 包根目录运行，只写入一个新的临时目录。它们使用已对照能力运行时检出核验的稳定脚本和旗标。没有联系提供方。
 
 ```powershell
-& "$package/scripts/check-requirements.ps1" -ProjectRoot $project -Role media-producer -Skills @('image-compression')
+$work = Join-Path ([IO.Path]::GetTempPath()) ('orca-local-capability-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $work | Out-Null
+node ./skills/image-compression/scripts/png-compressor.mjs --sample "$work/sample.png"
+node ./skills/image-compression/scripts/png-compressor.mjs --input "$work/sample.png" --output "$work/compressed.png"
+$pngExit = $LASTEXITCODE
+node ./skills/web-assets/scripts/web-asset-manifest.mjs --name Harbor --color '#123456' --output "$work/manifest.json"
+$manifestExit = $LASTEXITCODE
+node ./skills/document-production/scripts/markdown-document.mjs --input ./tests/fixtures/capability/document-input.json --output "$work/notes.md"
+$markdownExit = $LASTEXITCODE
 ```
 
-把结果读成四件分开的事实，而不是一个结论：
+预期退出码全部为 `0`。压缩结果打印 `status: "compressed"` 及字节数。无损候选结果没有变小则打印 `status: "no-gain"`，且不创建输出文件。manifest 记录 Harbor、`#123456` 和五种图标尺寸。Markdown 包含夹具中的标题和项目符号。结束后删除 `$work`。
 
-| 字段 | 含义 |
-| --- | --- |
-| `configured` | 文件中存在非空值。 |
-| `availableInProcess` | 当前进程中存在非空值。 |
-| `availableForChild` | 会到达子进程的值。空的进程值覆盖非空的文件值。 |
-| `networkVerified` | API 检查始终为 `false`。存在性不是认证、余额或可达性。 |
+Office/PDF 生成命令是：
 
-在 `media-producer` 和 `image-compression` 进入你正在运行的包的目录之前，不要运行这个示例。对本修订，辅助脚本以 `Unknown role selector.` 拒绝并以 1 退出，这是正确的结果；未知的 Skill ID 同样以 `Unknown skill selector.` 失败。
+```powershell
+python -I ./skills/document-production/scripts/office-document.py --input ./tests/fixtures/capability/document-input.json --format docx --output "$work/notes.docx"
+```
 
-## 5. 知道什么没有运行
+按需要把 `docx` 和 `.docx` 换成 `pptx`、`xlsx` 或 `pdf`。成功时 JSON 含 `reopened: true`。缺少库时打印 `missing-dependency` 并以 `2` 退出；文档或输入失败以 `1` 退出。仅在你选择的环境中安装 `skills/document-production/scripts/requirements.txt` 固定的精确版本。非 ASCII 的 PDF 文本还需要 `--font`，指向覆盖这些字形且许可允许的 TrueType 字体。本教程环境缺少这些库，因此这里没有执行 Office/PDF 生成。
 
-| 步骤 | 标签 | 本教程是否运行 |
+### 资产验收
+
+这些是任务实际产出的验收条件，不表示每项检查都已通过。每个适用行都记录命令、退出码、产物路径和观察结果；没有运行的检查要明确标出。
+
+| Skill | 检查 | 验收条件 |
 | --- | --- | --- |
-| 读取 `VERSION`、清单和目录 | 方法 | 是 |
-| `verify-package.ps1` | 离线验证 | 是 |
-| 对 `software-implementer` 运行 `check-requirements.ps1` | 已实现的本地工具 | 是 |
-| 浏览器、PostgreSQL、FFmpeg、HyperFrames、文档库 | 已实现的本地工具（在包声明它们的地方） | 否。不声称。 |
-| OpenAI 图像、Pexo 视频、ElevenLabs 语音或转录 | 真实在线，未验证 | 否。这些是示例连接器，不是选定的提供方。 |
+| `icon-assets` | 打开选定 SVG；检查来源和图标集许可记录。 | 图标与 viewBox 正确，目标尺寸下无裁切，记录来源和许可。联网查询需要单独的执行批准。 |
+| `svg-logo-design` | 解析 SVG，并以目标小尺寸和大尺寸打开。 | SVG 合法、图形可辨、无裁切或意外外部引用；视觉审查与解析分开。 |
+| `web-assets` | 重新打开导出文件、读取尺寸，并解析 manifest 中的图标路径。 | 尺寸和格式符合要求，必要时保留透明度，manifest 引用的文件全部存在。 |
+| `image-compression` | 校验输入/输出 PNG 结构，对比解码后的像素、alpha 和字节数。 | chunk/CRC 合法且无损像素相同；记录实际节省或明确无收益。无效输入必须失败且不产生新输出。 |
 
-示例连接器展示的是未来配置的形状：一个秘密环境变量名，例如 `OPENAI_API_KEY`、`PEXO_API_KEY` 或 `ELEVENLABS_API_KEY`，一个指向它的 `authEnv`，以及一次返回 `networkVerified: false` 的 API 检查。这些名字是取自各示例所指向上游的占位符。没有提供密钥，没有调用端点，提供方的选择仍是用户按任务做出的决定，并带有预算和上传范围。
+## 6. 运行离线提供方夹具
 
-## 6. 失败时
+夹具模式使用 `--request`、`--fixture` 和内置合成密钥。它从不读取真实提供方密钥，并报告 `networkCalled: false`。不要添加 `--online`；它与 `--fixture` 同时使用会被拒绝。这些示例不测量生成质量。
+
+```powershell
+node ./skills/image-generation/scripts/openai-image-request.mjs --request ./tests/fixtures/capability/openai-image-request.json --fixture ./tests/fixtures/capability/openai-image-success.json --output "$work/image.png"
+$imageSuccess = $LASTEXITCODE
+node ./skills/image-generation/scripts/openai-image-request.mjs --request ./tests/fixtures/capability/openai-image-request.json --fixture ./tests/fixtures/capability/openai-image-failure.json --output "$work/failed-image.png"
+$imageFailure = $LASTEXITCODE
+node ./skills/generated-video/scripts/pexo-video-request.mjs --request ./tests/fixtures/capability/pexo-video-request.json --fixture ./tests/fixtures/capability/pexo-video-submitted.json
+$videoAck = $LASTEXITCODE
+node ./skills/generated-video/scripts/pexo-video-request.mjs --request ./tests/fixtures/capability/pexo-video-request.json --fixture ./tests/fixtures/capability/pexo-video-timeout.json
+$videoTimeout = $LASTEXITCODE
+node ./skills/speech-production/scripts/elevenlabs-speech-request.mjs --request ./tests/fixtures/capability/elevenlabs-speech-request.json --fixture ./tests/fixtures/capability/elevenlabs-speech-success.json --output "$work/speech.mp3"
+$speechSuccess = $LASTEXITCODE
+node ./skills/audio-transcription/scripts/elevenlabs-transcription-request.mjs --request ./tests/fixtures/capability/elevenlabs-transcription-request.json --fixture ./tests/fixtures/capability/elevenlabs-transcription-failure.json --audio "$work/speech.mp3" --output "$work/transcript.json"
+$transcriptionFailure = $LASTEXITCODE
+node ./skills/image-generation/scripts/openai-image-request.mjs --online --request ./tests/fixtures/capability/openai-image-request.json --output "$work/online.png"
+$disabledOnline = $LASTEXITCODE
+```
+
+预期退出码依次为 `0`、`3`、`0`、`4`、`0`、`3`、`2`。图像和语音成功会保存文件。图像与转录夹具模拟 HTTP 失败。Pexo 成功夹具只是 SSE 提交确认；超时以 `4` 退出。最后一条命令在没有单独启用真实执行时以 `2` 退出，错误为 `online-disabled`。
+
+## 7. 真实执行必须显式启用
+
+提供方脚本默认离线。`--request <JSON 路径>`、`--output <路径>` 和 `--fixture <JSON 路径>` 用于本地请求/响应处理，不联系提供方。夹具和注入的传输不能验证凭据、计费、提供方可用性或生成质量。本轮文档工作没有发起实际付费调用。
+
+真实执行必须**同时**提供 `--online` 和 `CAPABILITY_ONLINE_PROVIDERS_ENABLED=true`，并配置所选提供方要求的值。环境开关是技术门，不是授权：用户必须先批准该任务的提供方、预算和上传范围。本节只描述这条路径，不执行它。
+
+| 连接器 | `skills/` 下的脚本 | 真实执行细节 |
+| --- | --- | --- |
+| OpenAI 图像示例 | `image-generation/scripts/openai-image-request.mjs` | `OPENAI_IMAGE_MODEL` 覆盖请求中的 `model`。 |
+| Pexo 视频示例 | `generated-video/scripts/pexo-video-request.mjs` | `--action submit\|status\|download`；状态查询使用 `project_id`，下载还使用 `asset_id`。提交确认不是完成的视频。遵循返回的 `nextAction`，不自动批准计费或重新提交。 |
+| ElevenLabs 语音示例 | `speech-production/scripts/elevenlabs-speech-request.mjs` | 保存返回的音频，并在声称语音可用前单独验证。 |
+| ElevenLabs 转录示例 | `audio-transcription/scripts/elevenlabs-transcription-request.mjs` | `--audio <路径>` 提供 multipart `file`/`model_id` 中的文件。上传录音需要批准。 |
+
+脚本接受 `--timeout-ms`（默认 `60000`）。阅读 JSON stdout 的 `networkCalled` 和保存成功后的 `output`；pending 响应则需要遵循 `nextAction`。不要把单纯的提交确认当成已保存的媒体产物。
+
+| 退出码 | 含义 |
+| --- | --- |
+| `0` | 成功结果或提交确认，须检查响应。 |
+| `1` | 输入无效或文件系统失败。 |
+| `2` | 未启用在线执行，或缺少必需配置。 |
+| `3` | 提供方/响应失败。 |
+| `4` | 超时。 |
+| `5` | 等待中或需要进一步操作。 |
+
+## 8. 失败时
 
 | 你看到的 | 含义 |
 | --- | --- |

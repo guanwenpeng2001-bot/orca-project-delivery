@@ -3,11 +3,14 @@
 **English** | [简体中文](zh-CN/professional-skills.md)
 
 Orca Project Delivery coordinates workers that load **professional Skills** —
-method-only instruction packs (`SKILL.md`) for reconnaissance, product work,
+method instruction packs (`SKILL.md`) for reconnaissance, product work,
 architecture, implementation, review, and verification, plus methods for
 software delivery, local assets, images, and audio, video, and documents.
 All thirty-eight Skills ship **inside this package** under
-`skills/<skill-id>/SKILL.md`.
+`skills/<skill-id>/SKILL.md` in the complete 2.3.0 release. Some methods also ship
+local scripts or provider connectors; execution evidence is separate from
+loading their instructions. An older runtime with newer docs is incomplete;
+check its version and catalogs using the [tutorial](professional-capability-tutorial.md).
 
 ## Upstream sources
 

@@ -4,7 +4,7 @@
 
 2.3.0 为软件交付、本地视觉资产、图像规划，以及音频、视频和文档制作补充专业方法。加上原有的十六个，本包共有 **38 个专业 Skill** 和 **16 个角色**。本指南说明每项新能力做什么、不做什么，以及它的说法实际核到了哪一步。
 
-计数、目录注册和可执行的依赖面属于并行的能力包。在该包落地之前，把下面的 ID 当作已批准的能力合同，并在你安装的那个修订里读取 `routing/skill-catalog.json`、`roles/catalog.json` 和 `PACKAGE-MANIFEST.json` 来确认注册。本指南里的一句话不能当作文件存在的证明。
+本指南及其相对链接面向文档与运行时组合后的 2.3.0 包。基于 2.2.0 的纯文档检出缺少新 Skill 文件及目录条目，不是可安装的 2.3.0 版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `2.3.0`、`routing/skill-catalog.json` 有 38 个 Skill、`roles/catalog.json` 有 16 个角色，且 `PACKAGE-MANIFEST.json` 与之相符。
 
 ## 如何阅读一项能力
 
@@ -55,7 +55,7 @@
 | `web-assets` | 从本地母版生成的 favicon、web manifest 和社交图片尺寸。 | 项目环境中的 Python 与 Pillow。 | 只有位图尺寸。它不生成画作。 |
 | `image-compression` | 压缩后的图片、实测压缩比，并保留透明度。 | 本地编码器，例如 `cwebp` 或 ImageMagick，由实现选定，不由本指南选定。 | 不保证任何压缩比。在 Windows 上失败就是失败，不是跳过。 |
 
-`icon-assets` 是资产 Skill 里默认在线的一个。其余三个是本地的。四个都不是付费 API，本版本也都没有测得的产出：教程里的验收行是要去跑的检查，不是已经通过的检查。
+`icon-assets` 是资产 Skill 里默认在线的一个。其余三个是本地的。四个都不是付费 API，本版本也都没有测得的产出：教程里的[资产验收行](professional-capability-tutorial.md#资产验收)列出实际产出应记录的检查，不是已经通过的检查。
 
 ## 图像方法
 
@@ -106,7 +106,7 @@
 | --- | --- | --- |
 | 本包离线验证自身结构。 | 在你安装的修订上，`scripts/verify-package.ps1` 以 0 退出且 `FAIL=0`。 | 套件通过并不能说明生成的图片、视频或文档。 |
 | 方法以 Skill 文件交付。 | Skill 文件存在于 `skills/<id>/SKILL.md`，且哈希与 `skills/README.md` 一致。 | 加载一个 Skill 不是对其产出的测试。 |
-| 依赖辅助脚本在本地运行。 | 教程的离线走读使用 `check-requirements.ps1` 和 `invoke-with-requirements.ps1`，用假值、不联网。 | 在能力包定义之前，这里不断言它们针对新 Skill 的参数。 |
+| 本地能力脚本和依赖辅助脚本在本地运行。 | 教程运行 PNG 压缩、web manifest、Markdown 生成、依赖检查和离线提供方夹具。 | Office/PDF 生成需要固定版本的库；夹具成功不是提供方或生成质量证据。 |
 | 在线连接器以示例存在。 | 教程把 OpenAI 作为图像示例、Pexo 作为视频示例、ElevenLabs 作为语音和转录示例。 | 没有发起调用。没有选定提供方。没有测量生成质量。 |
 
 ## 许可证与来源

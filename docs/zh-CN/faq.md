@@ -28,7 +28,7 @@
 不是。它们是示例连接器，点名是为了让配置的形状具体。选择提供方、预算和上传范围是按任务做出的用户决定。安装本包并不授权一次调用。
 
 **为什么包声称 38 个 Skill，而我的目录显示 16 个？**
-能力文档描述的是已批准的 2.3.0 合同。注册随能力包落地。以你安装的修订里的目录和清单为准；[教程](professional-capability-tutorial.md)演示如何比较它们，并在不一致时停下来。
+完整的 2.3.0 安装包含 38 个 Skill 和 16 个角色。显示 16 个 Skill 的目录属于旧运行时，即使旁边已有新文档也一样。请安装匹配的版本；[教程](professional-capability-tutorial.md)在运行新命令前核对版本、目录计数和清单。
 
 **可以把 Anthropic 的文档 Skill 或 OpenMontage 复制进来吗？**
 不可以。docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内。OpenMontage 是 AGPL-3.0，不包含在内。`document-production` 和 `media-transcoding` 是独立编写的。见[许可证一节](professional-capabilities.md#许可证与来源)。

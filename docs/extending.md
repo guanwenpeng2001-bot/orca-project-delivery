@@ -151,7 +151,7 @@ For deliverable-driven selection, add `"export-contract-review": "export-reviewe
 
 ## Declare dependencies
 
-Current bundled entries require no credentials. To exercise optional dependencies in the **example Skill's catalog object**, add this `requires` property (not to its Markdown front matter):
+Dependencies are declared per entry; the original sixteen methods require no credentials, while provider Skills declare their configuration names. To exercise optional dependencies in the **example Skill's catalog object**, add this `requires` property (not to its Markdown front matter):
 
 ```json
 {
@@ -172,7 +172,15 @@ Duplicate declarations within an entry fail. Across selected entries, identical 
 
 ## Validate the extension
 
-After adding the example, set the manifest counts to the resulting catalog counts: `deliverables.roles` to 17 and `deliverables.professionalSkills` to 39 when you started from the 2.3.0 package (16 Roles and 38 Skills). Preserve `VERSION` and manifest `version` at `2.3.0` for this exercise; adding an extension does not require inventing a release. Keep workflow counts correct.
+After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 2.3.0 package starts at 16 Roles / 38 Skills, so these illustrative additions yield 17 / 39. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 2.3.0. Keep workflow counts correct.
+
+```powershell
+(Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
+(Get-Content -Raw ./routing/skill-catalog.json | ConvertFrom-Json).skills.Count
+(Get-Content -Raw ./VERSION).Trim()
+```
+
+Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 2.3.0 capabilities.
 
 In a PowerShell 7 session, set `$package` to your edited package copy and compute the hash:
 
