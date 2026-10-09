@@ -4,28 +4,39 @@
 
 Orca Project Delivery coordinates workers that load **professional Skills** —
 method-only instruction packs (`SKILL.md`) for reconnaissance, product work,
-architecture, implementation, review, and verification. All sixteen Skills ship
-**inside this package** under `skills/<skill-id>/SKILL.md`.
+architecture, implementation, review, and verification, plus methods for
+software delivery, local assets, images, and audio, video, and documents.
+All thirty-eight Skills ship **inside this package** under
+`skills/<skill-id>/SKILL.md`.
 
-## Upstream source
+## Upstream sources
 
-| Item | Value |
-| --- | --- |
-| Repository | [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) |
-| Source commit (import) | `d9a174c7143bfb4c76ed042f457fb7785c35cea3` |
-| Vendored layout | `skills/<skill-id>/SKILL.md` in this repository |
-| License | MIT — `skills/LICENSE` (see also package root `LICENSE`) |
-| Integrity table | `skills/README.md` (SHA256 per file) |
+Provenance is recorded **per Skill** in `skills/README.md`: upstream
+repository, pinned commit, license, and the license file shipped beside the
+Skill. There is no single upstream for the package.
 
-The recorded commit is the upstream baseline. Current bodies are package-maintained
-MIT adaptations, enriched with domain methods, decision criteria, worked examples,
-failure signals and evaluation scenarios. Edit them deliberately in place and
-recompute the current-content SHA256 table in `skills/README.md`; retain the
-unchanged upstream MIT notice in `skills/LICENSE`. The hashes track today's
-adaptations, not byte-identical upstream copies. See [Extending](extending.md)
-for authoring, registration and validation.
+| Group | Source | License |
+| --- | --- | --- |
+| The original sixteen | [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) at `d9a174c7143bfb4c76ed042f457fb7785c35cea3`, then maintained in this package | MIT — `skills/LICENSE`, plus the project MIT `LICENSE` |
+| Software, asset, image, audio, and video methods added in 2.3.0 | One pinned upstream per Skill, listed in `skills/README.md` | The upstream's own license, copied to `skills/<id>/LICENSE.txt`. Apache-2.0 stays Apache-2.0 |
+| `document-production`, `media-transcoding` | Written in this project; no upstream text copied | Project MIT |
 
-## The sixteen Skills
+This project's MIT license covers its original work only. It does not relicense
+third-party material. Two upstreams are intentionally absent: the Anthropic
+docx, pptx, pdf, and xlsx Skills are proprietary and are not copied, and
+OpenMontage (AGPL-3.0) is not copied. The rules and the per-capability status
+are in [Professional capabilities](professional-capabilities.md).
+
+The recorded commit is the upstream baseline for the original sixteen. Their
+current bodies are package-maintained MIT adaptations, enriched with domain
+methods, decision criteria, worked examples, failure signals and evaluation
+scenarios. Edit any Skill deliberately in place and recompute its current
+content SHA256 row in `skills/README.md`; retain the unchanged upstream MIT
+notice in `skills/LICENSE` and each Skill's own `LICENSE.txt`. The hashes
+track today's adaptations, not byte-identical upstream copies. See
+[Extending](extending.md) for authoring, registration and validation.
+
+## The original sixteen
 
 Paths in `routing/skill-catalog.json` are relative to this package and resolve as
 `skills/<skill-id>/SKILL.md` under the package root.
@@ -49,6 +60,37 @@ Paths in `routing/skill-catalog.json` are relative to this package and resolve a
 | `integration-verification` | Verify acceptance with commands, runtime evidence, integration checks, and explicit skips. |
 | `merge-conflict-resolution` | Resolve merge conflicts using branch intent, base, history, interfaces, and tests. |
 
+## The twenty-two added in 2.3.0
+
+Scope, evidence labels, and license rules for these are in
+[Professional capabilities](professional-capabilities.md). The one-line purpose
+below is the contract; it is not a test result.
+
+| Skill | Purpose |
+| --- | --- |
+| `frontend-visual-design` | Typography, color, and visual hierarchy, checked against hierarchy, error states, keyboard path, and zoom. |
+| `browser-e2e` | Browser regression: selector strategy, trace capture, fixture handling, on the project's existing Node and Playwright. |
+| `accessibility-audit` | Accessibility evidence: focus order, labels, error association, contrast. An automated scan is not WCAG conformance. |
+| `postgres-practices` | PostgreSQL indexes, `EXPLAIN`, and row-level security, measured on an isolated test database. |
+| `observability` | Decide the runtime question first, then place metrics, logs, and traces. Vendor-neutral. |
+| `ci-pipeline` | Organize quality gates around the checks the project actually has. |
+| `react-performance` | React and Next.js request-waterfall and bundle-cost rules, applied only to React tasks. |
+| `react-composition` | Component composition, shared state, and boolean-prop sprawl. React 19-only advice applies only when named. |
+| `icon-assets` | Icon selection with source and license recorded per icon set. The Iconify lookup needs a network and no key. |
+| `svg-logo-design` | SVG logo design and export check, with local tooling only. |
+| `web-assets` | Favicon, manifest, and social-image sizes from a local master, using Python and Pillow. |
+| `image-compression` | Local image compression with the measured ratio and transparency preserved. No ratio is guaranteed. |
+| `image-generation` | Prompt, aspect ratio, and acceptance checks for one selected image backend. Generation is online and unverified. |
+| `infographic-design` | Layout, reading order, and the claims an infographic must carry. |
+| `editorial-illustration` | Cover and article-illustration direction. |
+| `visual-slide-deck` | A sequence of slides as images. An image deck is not an editable Office document. |
+| `code-video-production` | A code-explainer video planned as frames and rendered locally. HyperFrames is the preferred method. |
+| `generated-video` | A video requested from an online provider. Real online, not verified; no provider is selected. |
+| `speech-production` | Speech synthesis for a named piece of text. Real online, not verified. |
+| `audio-transcription` | Transcript and timestamps for a supplied recording. Real online, not verified. |
+| `media-transcoding` | Local cut, remux, and transcode with FFmpeg, written from FFmpeg's own documentation. |
+| `document-production` | Editable documents, slides, spreadsheets, and PDF, authored against libraries whose licenses allow it. |
+
 ## Installation
 
 1. Clone this coordinator package (see [installation.md](installation.md)).
@@ -62,8 +104,8 @@ Paths in `routing/skill-catalog.json` are relative to this package and resolve a
   workers, merge branches, or widen Task scope.
 - They are **not** a substitute for the global Orca Skills (`orchestration`,
   `orca-cli`, `orca-per-workspace-env`).
-- They do **not** imply affiliation with Anthropic, Orca, or any vendor beyond
-  the MIT-licensed repositories linked above.
+- They do **not** imply affiliation with Anthropic, Orca, or any vendor named
+  as an example connector, and naming a vendor does not select it.
 
 ## When something is missing
 

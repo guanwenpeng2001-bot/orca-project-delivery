@@ -43,7 +43,7 @@ against the installed contract.
 Only the coordinator edits global process state; workers write only their
 assigned report paths.
 
-## The 12 roles
+## The 16 roles
 
 One Primary Role per Task, selected by deliverable via
 `routing/role-selection.json`. Identity comes from the role, method from the
@@ -63,6 +63,14 @@ professional Skills, and the objective from the Task.
 | security-reviewer | quality | security-review, code-review | opus high → **opus xhigh** → fable high |
 | release-verifier | quality | integration-verification | sonnet high → **opus high** → opus xhigh |
 | merge-resolver | quality | merge-conflict-resolution, integration-verification | sonnet medium → **sonnet high** → opus medium |
+| ui-designer | product | product-design, frontend-visual-design | sonnet high → **opus medium** → opus high → opus xhigh |
+| browser-test-engineer | quality | browser-e2e, integration-verification | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
+| media-producer | media | (none; the task selects) | sonnet medium → **sonnet high** → opus medium → opus high |
+| document-specialist | product | document-production | sonnet medium → **sonnet high** → opus medium → opus high |
+
+The four routes at the bottom are the 2.3.0 proposal. They are not a copy of
+`routing/model-routing.json`, which remains the authority; where the two
+differ, the routing file wins and this table needs updating.
 
 Conflicting identities — design, implementation, independent review — are
 split into separate Tasks. Escalation moves one step right along the chain
@@ -86,7 +94,7 @@ The high-risk depth inserts parallel reconnaissance, independent plans,
 adjudication, and architecture before the task graph, and review loops during
 implementation.
 
-## The 16 professional Skills
+## The 38 professional Skills
 
 Skills are vendored under the package `skills/` directory and are delivered to
 workers by `explicit-path` (the absolute `SKILL.md` path named in the Task)
@@ -112,10 +120,37 @@ method — it cannot expand Task scope or grant orchestration control.
 | performance-review | Measure and analyze latency, throughput, complexity, and capacity |
 | integration-verification | Verify Task and final-delivery acceptance with commands and runtime evidence |
 | merge-conflict-resolution | Resolve Git merge conflicts from branch intent, history, and tests |
+| frontend-visual-design | Typography, color, and visual hierarchy for a page or component |
+| browser-e2e | Browser regression: selectors, traces, fixtures, on the project's Node and Playwright |
+| accessibility-audit | Accessibility evidence: focus order, labels, error association, contrast |
+| postgres-practices | PostgreSQL indexes, EXPLAIN, and row-level security |
+| observability | Decide the runtime question first, then place metrics, logs, and traces |
+| ci-pipeline | Organize quality gates around the checks the project actually has |
+| react-performance | React and Next.js waterfall and bundle-cost rules |
+| react-composition | Component composition, shared state, and boolean-prop sprawl |
+| icon-assets | Icon selection with per-set source and license; Iconify lookup needs a network |
+| svg-logo-design | SVG logo design and export check |
+| web-assets | Favicon, manifest, and social-image sizes from a local master |
+| image-compression | Local compression with the measured ratio and transparency preserved |
+| image-generation | Prompt and acceptance checks for one selected image backend; generation unverified |
+| infographic-design | Layout, reading order, and the claims an infographic must carry |
+| editorial-illustration | Cover and article-illustration direction |
+| visual-slide-deck | Slides as images; not editable Office objects |
+| code-video-production | Code-explainer video planned as frames; HyperFrames is the preferred method |
+| generated-video | Online video request; no provider selected, no call verified |
+| speech-production | Online speech synthesis; no provider selected, no call verified |
+| audio-transcription | Online transcript and timestamps; no provider selected, no call verified |
+| media-transcoding | Local cut, remux, and transcode with FFmpeg |
+| document-production | Editable documents, slides, spreadsheets, and PDF |
+
+The twenty-two added Skills are specified in
+[Professional capabilities](professional-capabilities.md), including which are
+methods, which depend on a local tool, and which are real online calls that
+this release has not verified.
 
 ## Native extension and execution configuration
 
-Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes, manifest counts and current Skill hashes. Counts are catalog-driven. Skill bodies are package-maintained MIT adaptations with domain methods and evaluation cases; the upstream license remains intact. No project overlay registry or executable catalog hooks are added.
+Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes, manifest counts and current Skill hashes. Counts are catalog-driven. Skill bodies are package-maintained adaptations with domain methods and evaluation cases. This project's original work is MIT; third-party Skills keep the license they arrived with, recorded per Skill in `skills/README.md`. No project overlay registry or executable catalog hooks are added.
 
 Optional `requires` metadata names CLI, env and API dependencies. Assembly labels required and conditional sets without adding a new top-level contract section. On the actual execution host, helpers use explicit selectors and ProjectRoot. Configuration precedence is inherited process values (even empty), root `.env`, then explicit non-secret JSON. Only selected declared file variables are added to the child; inherited variables remain and the parent is unchanged. API checks are presence-only. Config paths stay inside the root, while an authorized executable may be outside; direct batch-launch compatibility is not guaranteed. See [Extending](extending.md) for registration and runnable examples.
 

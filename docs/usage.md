@@ -110,8 +110,11 @@ Assembly resolves only those paths (`explicit-path`) or inlines the same bodies
 (`inline-extract`); a missing bundled file fails at assembly with no fallback to
 `~/.agents/skills`. Provenance and SHA256 checks are documented in
 `skills/README.md` and enforced offline by `metadata/bundled-skill-integrity` in
-`scripts/verify-package.ps1`. See [professional-skills.md](professional-skills.md)
-and [installation.md](installation.md).
+`scripts/verify-package.ps1`. See [professional-skills.md](professional-skills.md),
+[professional-capabilities.md](professional-capabilities.md), and
+[installation.md](installation.md). A walkthrough that checks the install and
+the dependency helpers without calling a provider is in
+[professional-capability-tutorial.md](professional-capability-tutorial.md).
 
 Assembly places catalog `requires` names/purposes under Inputs and Dependencies, separating Role plus required-Skill dependencies from conditional Skills. Conditional dependencies activate only when the Task calls for them. On the execution host, run `check-requirements.ps1` with explicit `-ProjectRoot`, `-Role`, and an in-session `-Skills @(...)` array of selected IDs. Helpers do not select Role defaults for you. File configuration does not mean the current shell has those values; an authorized child can receive selected file additions through `invoke-with-requirements.ps1`, preserving its parent's environment. See [Extending and configuration](extending.md) for exact interfaces and an offline walkthrough. The ten-part Task order and applicable `AGENTS.md` last are unchanged.
 
@@ -212,6 +215,15 @@ Default routes (chain index 1 of each role's chain):
 | security-reviewer | opus / xhigh |
 | release-verifier | opus / high |
 | merge-resolver | sonnet / high |
+| ui-designer | opus / medium |
+| browser-test-engineer | sonnet / high |
+| media-producer | sonnet / high |
+| document-specialist | sonnet / high |
+
+The last four are the 2.3.0 proposal for the added Roles. The routing file is
+the authority; if it disagrees with this table, the file wins. What each new
+Role does and refuses is in
+[Professional capabilities](professional-capabilities.md).
 
 Escalation moves one step right along the chain (effort first, then tier);
 downgrades happen only on explicit rate-limit, quota, or model-unavailability

@@ -6,6 +6,14 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 
 ## Unreleased
 
+### 2.3.0 — professional capabilities
+
+- Documented 22 added professional Skills and 4 added Roles, bringing the package to 38 Skills and 16 Roles: software methods (`frontend-visual-design`, `browser-e2e`, `accessibility-audit`, `postgres-practices`, `observability`, `ci-pipeline`, `react-performance`, `react-composition`), local assets (`icon-assets`, `svg-logo-design`, `web-assets`, `image-compression`), image methods (`image-generation`, `infographic-design`, `editorial-illustration`, `visual-slide-deck`), and audio, video, and documents (`code-video-production`, `generated-video`, `speech-production`, `audio-transcription`, `media-transcoding`, `document-production`). Roles added: `ui-designer`, `browser-test-engineer`, `media-producer`, `document-specialist`.
+- Added bilingual [professional capabilities](docs/professional-capabilities.md) and a [capability tutorial](docs/professional-capability-tutorial.md). Each capability is labeled as a method, an implemented local tool, an offline verification, or a real online call; no generation is reported as tested.
+- Code video prefers the HyperFrames method and local FFmpeg transcoding. OpenAI image, Pexo video, and ElevenLabs speech and transcription appear only as example connectors, not as selected providers. No provider call is authorized or made.
+- Provenance is per Skill. This project's original work stays MIT; third-party material keeps its own license. The Anthropic docx, pptx, pdf, and xlsx Skills and OpenMontage (AGPL-3.0) are not copied.
+- The executable surface for the new Skills is not asserted here. The tutorial exercises only the existing dependency helpers, `check-requirements.ps1` and `invoke-with-requirements.ps1`, with an explicit execution-host `-ProjectRoot` and caller-selected Skill IDs.
+
 - Added bilingual [extension and configuration recipes](docs/extending.md) for native Skill/Role authoring, catalog registration, model and selection routes, current hashes, manifest counts, and metadata/full verification. Added offline synthetic dependency and child-execution examples; refreshed public indexes and the concise coordinator entry without changing the 17-section contract.
 - Documented optional catalog `requires` and the accepted dependency helpers: explicit execution-host roots, literal dotenv, optional non-secret JSON, process-over-file precedence including empty overrides, selected file additions to inherited child environment, unchanged parent, presence-only API checks, and direct-executable limitations. No generic project override loader is implied.
 - Enriched the 16 professional Skills with domain methods, decision criteria, worked examples, failure signals and evaluation scenarios. Public provenance now describes package-maintained MIT adaptations and current-content hashes; the upstream MIT notice is unchanged. Package version remains 2.2.0.

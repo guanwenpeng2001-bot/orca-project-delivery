@@ -16,7 +16,7 @@
 
 ## 原生注册
 
-在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。目前随包提供 16 个 Skill 和 12 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
+在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。2.3.0 的包随附 38 个 Skill 和 16 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
 
 | 文件 | 新增或更新内容 |
 | --- | --- |
@@ -78,7 +78,7 @@ Return checks, observed results, and unverified items. This method grants no sou
 }
 ```
 
-核心方法留在 `SKILL.md`：必需 Skill 同时支持路径交付和全文内联。修改随包 Skill 时，它是基于记录的上游基线、采用 MIT 许可的**包内维护改编版**，不是冻结的逐字节副本。保留 `skills/LICENSE` 中未改动的上游 MIT 声明；每次有意修改正文后重新计算当前内容哈希。示例用于展示推理，不是测得的生产结果。参见[专业 Skill](professional-skills.md)。
+核心方法留在 `SKILL.md`：必需 Skill 同时支持路径交付和全文内联。修改随包 Skill 时，它是基于记录的上游基线的**包内维护改编版**，不是冻结的逐字节副本。本项目的原创部分是 MIT；第三方 Skill 保留自己的许可证。保留 `skills/LICENSE` 或该 Skill 的 `LICENSE.txt` 中未改动的上游声明；每次有意修改正文后重新计算当前内容哈希。示例用于展示推理，不是测得的生产结果。参见[专业 Skill](professional-skills.md)。
 
 ## 编写 Role
 
@@ -172,7 +172,7 @@ Role 条目也支持同样的可选结构。[requirements.schema.json](../../sch
 
 ## 校验扩展
 
-添加示例后，把清单的 `deliverables.roles` 设为 13、`deliverables.professionalSkills` 设为 17（或副本中实际的目录数量）。本练习保留 `VERSION` 和清单 `version` 为 `2.2.0`；新增扩展不要求自行编造发布版本。工作流数量也要保持正确。
+添加示例后，把清单数量设为最终的目录数量：从 2.3.0 的包（16 个 Role、38 个 Skill）出发时，`deliverables.roles` 为 17、`deliverables.professionalSkills` 为 39。本练习保留 `VERSION` 和清单 `version` 为 `2.3.0`；新增扩展不要求自行编造发布版本。工作流数量也要保持正确。
 
 在 PowerShell 7 会话中，将 `$package` 指向已编辑的包副本并计算哈希：
 

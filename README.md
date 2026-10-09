@@ -4,7 +4,7 @@
 
 A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue)
+![Version](https://img.shields.io/badge/version-2.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
@@ -78,8 +78,8 @@ and user decisions.
 
 | Capability | Detail | Source |
 | --- | --- | --- |
-| Roles | 12 (research, product, architecture, engineering, quality) | `roles/catalog.json` |
-| Professional Skills | 16 bundled under package `skills/` | `routing/skill-catalog.json` |
+| Roles | 16 (research, product, architecture, engineering, quality, media) | `roles/catalog.json` |
+| Professional Skills | 38 bundled under package `skills/` | `routing/skill-catalog.json` |
 | Workflows | 4: feature-development, bug-fix, refactor, audit | `workflows/` |
 | Adaptive depth | light / standard / high-risk stage chains | `routing/workflow-selection.json` |
 | Model routing | per-role chains over haiku / sonnet / opus / fable with effort levels, defaults, floors | `routing/model-routing.json` |
@@ -87,13 +87,17 @@ and user decisions.
 | Helper scripts | PowerShell bootstrap, assembly, dependency checks, scoped child execution, validation and release | `scripts/` |
 | Offline acceptance | Full synthetic package suite; require exit 0 and `FAIL=0` | `scripts/verify-package.ps1` |
 | Native extensions | Register Roles and Skills, declare optional CLI/env/API requirements | [Extension guide](docs/extending.md) |
+| Professional capabilities | 22 added methods for software, local assets, images, and audio/video/documents, with 4 added Roles | [Capability guide](docs/professional-capabilities.md) |
 | Git evidence | 6 validation phases: sourceRegistered, review, preMerge, postMerge, final, audit | `scripts/validate-git-evidence.ps1` |
 
 ## Quick start
 
 Requirements: Windows, PowerShell 7+, Git, Claude Code, the Orca Runtime, and
-this package (professional Skills are included under `skills/`). Upstream
-provenance: [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills).
+this package (professional Skills are included under `skills/`). The original
+sixteen trace to
+[orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills);
+later Skills keep their own upstreams and licenses, per
+[docs/professional-capabilities.md](docs/professional-capabilities.md).
 Full details and troubleshooting:
 [docs/installation.md](docs/installation.md).
 
@@ -101,7 +105,7 @@ Full details and troubleshooting:
 # 1. Clone the package into your skills root
 git clone https://github.com/guanwenpeng2001-bot/orca-project-delivery.git "$env:USERPROFILE\.agents\skills\orca-project-delivery"
 
-# 2. Verify the package offline (expects: SUMMARY PASS=65 FAIL=0, exit 0)
+# 2. Verify the package offline (expects: SUMMARY PASS=<n> FAIL=0, exit 0)
 pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scripts\verify-package.ps1"
 ```
 
@@ -116,7 +120,7 @@ integrate, and close. The walkthrough lives in
 orca-project-delivery/
 ├── SKILL.md                  # Coordinator entry point (17 sections, <= 250 lines)
 ├── LICENSE                   # MIT
-├── VERSION                   # 2.2.0
+├── VERSION                   # 2.3.0
 ├── PACKAGE-MANIFEST.json     # Package metadata and deliverable counts
 ├── CHANGELOG.md
 ├── README.md                 # English (default)
@@ -127,12 +131,14 @@ orca-project-delivery/
 │   ├── architecture.md       # Design: planes, roles, workflows, evidence, invariants
 │   ├── extending.md          # Native Role/Skill extensions and execution configuration
 │   ├── professional-skills.md
+│   ├── professional-capabilities.md
+│   ├── professional-capability-tutorial.md
 │   ├── faq.md                # FAQ and troubleshooting
-│   └── zh-CN/                # Simplified Chinese translations of the six guides above
+│   └── zh-CN/                # Simplified Chinese translations of the guides above
 ├── references/               # 11 deep-dive references (runtime, branch model, evidence, ...)
-├── roles/                    # 12 role contracts + catalog.json
+├── roles/                    # 16 role contracts + catalog.json
 ├── routing/                  # Model, role, skill, and workflow routing tables
-├── skills/                   # 16 maintained professional Skills + LICENSE + README
+├── skills/                   # 38 maintained professional Skills + LICENSE + README
 ├── workflows/                # 4 workflow definitions
 ├── schemas/                  # State, evidence, requirements and configuration schemas
 ├── scripts/                  # Delivery and configuration PowerShell helpers
@@ -144,7 +150,9 @@ orca-project-delivery/
 | Document | Contents |
 | --- | --- |
 | [Installation](docs/installation.md) | Prerequisites, directory conventions, install steps, verification, upgrade, uninstall, common install failures |
-| [Professional Skills](docs/professional-skills.md) | The 16 worker Skills, source repository, install layout, and troubleshooting |
+| [Professional Skills](docs/professional-skills.md) | All 38 worker Skills, per-Skill sources, install layout, and troubleshooting |
+| [Professional capabilities](docs/professional-capabilities.md) | The 22 added methods and 4 added Roles: scope, evidence labels, licenses |
+| [Capability tutorial](docs/professional-capability-tutorial.md) | Offline install check and dependency-helper walkthrough; no provider calls |
 | [Extending and configuration](docs/extending.md) | Native Role/Skill recipes, dependency declarations, literal configuration, offline child-execution walkthrough |
 | [Usage](docs/usage.md) | Starting a delivery from the coordinator entry, the full stage sequence, role/model routing, branch and worktree rules, evidence and reports, worker receipts, Q&A |
 | [Architecture](docs/architecture.md) | Control vs. delivery plane, authority sources, role/workflow/skill tables, evidence model, coordinator lock, the 12 invariants |
@@ -158,9 +166,14 @@ coordinator at runtime and goes deeper than the public docs; start with
 
 ## License
 
-This project is licensed under the MIT License — see
+This project's original work is licensed under the MIT License — see
 [LICENSE](LICENSE). In short: you may use, copy, modify, merge, publish,
 distribute, sublicense, and/or sell copies of this software, provided the
 copyright notice and permission notice are included in all copies or
 substantial portions of the Software. The software is provided "as is",
 without warranty of any kind.
+
+Third-party material keeps the license it was included under. Adapted Skills
+record their upstream, pinned commit, and license in `skills/README.md`; an
+Apache-2.0 Skill is not relicensed as MIT. See
+[Professional capabilities](docs/professional-capabilities.md#licenses-and-sources).

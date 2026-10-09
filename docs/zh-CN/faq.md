@@ -19,6 +19,20 @@
 **如何更新这个包？**
 拉取最新修订并重跑 `scripts/verify-package.ps1` — 见 [installation.md](installation.md#升级)。每个项目的 `.dev-work/` 状态都经过 schema 校验，旧运行保持可读。
 
+## 专业能力
+
+**2.3.0 会生成图像、视频、语音或文档吗？**
+不会。它新增的是方法和角色。[能力指南](professional-capabilities.md)把每一项标为方法、已实现的本地工具、离线验证或真实在线调用。最后一类没有任何一次被调用过，本版本也不报告测得的产出。
+
+**OpenAI、Pexo 和 ElevenLabs 是选定的提供方吗？**
+不是。它们是示例连接器，点名是为了让配置的形状具体。选择提供方、预算和上传范围是按任务做出的用户决定。安装本包并不授权一次调用。
+
+**为什么包声称 38 个 Skill，而我的目录显示 16 个？**
+能力文档描述的是已批准的 2.3.0 合同。注册随能力包落地。以你安装的修订里的目录和清单为准；[教程](professional-capability-tutorial.md)演示如何比较它们，并在不一致时停下来。
+
+**可以把 Anthropic 的文档 Skill 或 OpenMontage 复制进来吗？**
+不可以。docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内。OpenMontage 是 AGPL-3.0，不包含在内。`document-production` 和 `media-transcoding` 是独立编写的。见[许可证一节](professional-capabilities.md#许可证与来源)。
+
 ## 扩展与配置
 
 **可以新增 Skill/Role，或修改随包方法吗？**
