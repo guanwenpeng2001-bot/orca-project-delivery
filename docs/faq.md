@@ -30,6 +30,32 @@ Pull the latest revision and re-run `scripts/verify-package.ps1` — see
 [installation.md](installation.md#upgrade). Per-project `.dev-work/` state is
 schema-validated, and old runs stay readable.
 
+## Professional capabilities
+
+**Does 2.3.0 generate images, video, speech, or documents?**
+No. It adds methods and Roles. The [capability guide](professional-capabilities.md)
+labels each one as a method, an implemented local tool, an offline
+verification, or a real online call. Nothing in the last category has been
+called, and this release reports no measured output.
+
+**Are OpenAI, Pexo, and ElevenLabs the chosen providers?**
+No. They are example connectors, named so the configuration shape is concrete.
+Selecting a provider, a budget, and an upload scope is a per-task user
+decision. Installing the package does not authorize a call.
+
+**Why does the package claim 38 Skills when my catalog shows 16?**
+A complete 2.3.0 install contains 38 Skills and 16 Roles. A catalog showing
+16 Skills belongs to a version that does not match this release, even if newer
+documentation is present. Install the complete matching release; the
+[tutorial](professional-capability-tutorial.md) checks the version, catalog
+counts, and manifest before running new commands.
+
+**Can I copy the Anthropic document Skills or OpenMontage in?**
+No. The docx, pptx, pdf, and xlsx Skills are proprietary and are not included.
+OpenMontage is AGPL-3.0 and is not included. `document-production` and
+`media-transcoding` are written independently. See the
+[license section](professional-capabilities.md#licenses-and-sources).
+
 ## Extensions and configuration
 
 **Can I add a Skill or Role, or edit a bundled method?**

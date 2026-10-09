@@ -16,7 +16,7 @@
 
 ## 原生注册
 
-在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。目前随包提供 16 个 Skill 和 12 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
+在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。2.3.0 的包随附 38 个 Skill 和 16 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
 
 | 文件 | 新增或更新内容 |
 | --- | --- |
@@ -78,7 +78,7 @@ Return checks, observed results, and unverified items. This method grants no sou
 }
 ```
 
-核心方法留在 `SKILL.md`：必需 Skill 同时支持路径交付和全文内联。修改随包 Skill 时，它是基于记录的上游基线、采用 MIT 许可的**包内维护改编版**，不是冻结的逐字节副本。保留 `skills/LICENSE` 中未改动的上游 MIT 声明；每次有意修改正文后重新计算当前内容哈希。示例用于展示推理，不是测得的生产结果。参见[专业 Skill](professional-skills.md)。
+核心方法留在 `SKILL.md`：必需 Skill 同时支持路径交付和全文内联。修改随包 Skill 时，它是基于记录的上游基线的**包内维护改编版**，不是冻结的逐字节副本。本项目的原创部分是 MIT；第三方 Skill 保留自己的许可证。保留 `skills/LICENSE` 或该 Skill 的 `LICENSE.txt` 中未改动的上游声明；每次有意修改正文后重新计算当前内容哈希。示例用于展示推理，不是测得的生产结果。参见[专业 Skill](professional-skills.md)。
 
 ## 编写 Role
 
@@ -151,7 +151,7 @@ All assigned cases have evidence and a verdict. Follow the injected Worker Contr
 
 ## 声明依赖
 
-当前随包条目不需要凭据。要在示例中试用可选依赖，向**示例 Skill 的目录对象**添加如下 `requires` 属性（不要放进 Markdown front matter）：
+依赖按条目声明；原有十六个方法不需要凭据，提供方 Skill 则声明其配置名称。要在示例中试用可选依赖，向**示例 Skill 的目录对象**添加如下 `requires` 属性（不要放进 Markdown front matter）：
 
 ```json
 {
@@ -172,7 +172,15 @@ Role 条目也支持同样的可选结构。[requirements.schema.json](../../sch
 
 ## 校验扩展
 
-添加示例后，把清单的 `deliverables.roles` 设为 13、`deliverables.professionalSkills` 设为 17（或副本中实际的目录数量）。本练习保留 `VERSION` 和清单 `version` 为 `2.2.0`；新增扩展不要求自行编造发布版本。工作流数量也要保持正确。
+添加示例后，从编辑后的目录推导清单计数。把 `deliverables.roles` 和 `deliverables.professionalSkills` 分别设为下面打印的对应值，不要照抄其他修订的计数。完整的 2.3.0 包起始为 16 个 Role / 38 个 Skill，因此添加这两个示例后为 17 / 39。保留原有的 `VERSION` 及与之相同的清单 `version`；扩展旧检出不会使它升级到 2.3.0。工作流数量也要保持正确。
+
+```powershell
+(Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
+(Get-Content -Raw ./routing/skill-catalog.json | ConvertFrom-Json).skills.Count
+(Get-Content -Raw ./VERSION).Trim()
+```
+
+从编辑后的包副本目录运行这些命令。旧的 12 角色 / 16 Skill 检出添加后应为 13 / 17，且保留原版本；它仍然缺少 2.3.0 的能力。
 
 在 PowerShell 7 会话中，将 `$package` 指向已编辑的包副本并计算哈希：
 

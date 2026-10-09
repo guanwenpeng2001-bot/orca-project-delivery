@@ -16,7 +16,7 @@ Extend the package's native catalogs when a reusable method or a distinct delive
 
 ## Native registration
 
-Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The package currently ships 16 Skills and 12 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
+Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 2.3.0 package ships 38 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
 
 | File | What to add or update |
 | --- | --- |
@@ -78,7 +78,7 @@ Append this object to `routing/skill-catalog.json`'s existing `skills` array:
 }
 ```
 
-Keep essential method content in `SKILL.md`: required Skills work with both path delivery and full-body inline delivery. If changing a bundled Skill, it is an MIT-licensed **package-maintained adaptation** of the recorded upstream baseline, not a frozen byte-identical import. Preserve the unchanged upstream MIT notice in `skills/LICENSE`; recompute the current-content hash after every intentional body edit. Examples demonstrate reasoning, not measured production outcomes. See [Professional Skills](professional-skills.md).
+Keep essential method content in `SKILL.md`: required Skills work with both path delivery and full-body inline delivery. If changing a bundled Skill, it is a **package-maintained adaptation** of its recorded upstream baseline, not a frozen byte-identical import. This project's original work is MIT; a third-party Skill keeps its own license. Preserve the unchanged upstream notice in `skills/LICENSE` or that Skill's `LICENSE.txt`; recompute the current-content hash after every intentional body edit. Examples demonstrate reasoning, not measured production outcomes. See [Professional Skills](professional-skills.md).
 
 ## Author a Role
 
@@ -151,7 +151,7 @@ For deliverable-driven selection, add `"export-contract-review": "export-reviewe
 
 ## Declare dependencies
 
-Current bundled entries require no credentials. To exercise optional dependencies in the **example Skill's catalog object**, add this `requires` property (not to its Markdown front matter):
+Dependencies are declared per entry; the original sixteen methods require no credentials, while provider Skills declare their configuration names. To exercise optional dependencies in the **example Skill's catalog object**, add this `requires` property (not to its Markdown front matter):
 
 ```json
 {
@@ -172,7 +172,15 @@ Duplicate declarations within an entry fail. Across selected entries, identical 
 
 ## Validate the extension
 
-After adding the example, set manifest `deliverables.roles` to 13 and `deliverables.professionalSkills` to 17 (or the actual catalog counts in your copy). Preserve `VERSION` and manifest `version` at `2.2.0` for this exercise; adding an extension does not require inventing a release. Keep workflow counts correct.
+After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 2.3.0 package starts at 16 Roles / 38 Skills, so these illustrative additions yield 17 / 39. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 2.3.0. Keep workflow counts correct.
+
+```powershell
+(Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
+(Get-Content -Raw ./routing/skill-catalog.json | ConvertFrom-Json).skills.Count
+(Get-Content -Raw ./VERSION).Trim()
+```
+
+Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 2.3.0 capabilities.
 
 In a PowerShell 7 session, set `$package` to your edited package copy and compute the hash:
 

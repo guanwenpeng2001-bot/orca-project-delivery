@@ -29,7 +29,7 @@
 
 在任何编排动词之前，协调者加载已安装的全局 `orchestration` Skill，并用当前 `--help` 确认语法；本包把业务动作映射到运行时概念；命令示例必须对照已安装的合同检查。只有协调者编辑全局过程状态；工作者只写分配给自己的报告路径。
 
-## 12 个角色
+## 16 个角色
 
 每个任务一个主角色，按交付物经 `routing/role-selection.json` 选择。身份来自角色，方法来自专业 Skill，目标来自任务。
 
@@ -47,6 +47,12 @@
 | security-reviewer | quality | security-review, code-review | opus high → **opus xhigh** → fable high |
 | release-verifier | quality | integration-verification | sonnet high → **opus high** → opus xhigh |
 | merge-resolver | quality | merge-conflict-resolution, integration-verification | sonnet medium → **sonnet high** → opus medium |
+| ui-designer | product | product-design, frontend-visual-design | sonnet high → **opus medium** → opus high → opus xhigh |
+| browser-test-engineer | quality | browser-e2e, integration-verification | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
+| media-producer | media | （无；由任务选择） | sonnet medium → **sonnet high** → opus medium → opus high |
+| document-specialist | product | document-production | sonnet medium → **sonnet high** → opus medium → opus high |
+
+底部四条路由是 2.3.0 新增角色的当前路由。它们不是 `routing/model-routing.json` 的副本，该文件仍是权威；两者不一致时以路由文件为准，并需要更新本表。
 
 互相冲突的身份 — 设计、实施、独立审查 — 拆成不同的任务。升档沿链向右一步（先提推理档，再提档位）；降档需要明确的速率限制、配额或模型不可用证据，且绝不低于角色的最低档。
 
@@ -63,7 +69,7 @@
 
 high-risk 深度会在任务图之前插入并行侦察、独立方案、裁决和架构，并在实施期间插入审查循环。
 
-## 16 个专业 Skill
+## 38 个专业 Skill
 
 Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `SKILL.md` 绝对路径）交付给工作者；作为回退，也可以用 `inline-extract`，并记录来源路径和哈希。单独一个 Skill 名称绝不是加载证据，Skill 只提供方法 — 它不能扩大任务范围，也不能授予编排控制。
 
@@ -85,10 +91,34 @@ Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `
 | performance-review | 测量并分析延迟、吞吐、复杂度和容量 |
 | integration-verification | 用命令和运行时证据验证任务与最终交付的验收 |
 | merge-conflict-resolution | 依据分支意图、历史和测试解决 Git 合并冲突 |
+| frontend-visual-design | 页面或组件的排版、色彩和视觉层级 |
+| browser-e2e | 浏览器回归：选择器、trace、夹具，基于项目的 Node 和 Playwright |
+| accessibility-audit | 可访问性证据：焦点顺序、标签、错误关联、对比度 |
+| postgres-practices | PostgreSQL 索引、EXPLAIN 和行级安全 |
+| observability | 先确定要回答的运行问题，再布置指标、日志和追踪 |
+| ci-pipeline | 按项目真实拥有的检查来组织质量门 |
+| react-performance | React 和 Next.js 的请求瀑布与包体积规则 |
+| react-composition | 组件组合、状态共享和布尔属性膨胀 |
+| icon-assets | 图标选择，按图标集记录来源和许可；Iconify 查询需要网络 |
+| svg-logo-design | SVG Logo 设计与导出检查 |
+| web-assets | 从本地母版生成 favicon、manifest 和社交图片尺寸 |
+| image-compression | 本地压缩，给出实测压缩比并保留透明度 |
+| image-generation | 针对一个选定图像后端的提示词和验收检查；生成未验证 |
+| infographic-design | 信息图的版式、阅读顺序，以及它必须承载的结论 |
+| editorial-illustration | 封面和文章配图的方向 |
+| visual-slide-deck | 以图片呈现的幻灯片；不是可编辑的 Office 对象 |
+| code-video-production | 以帧规划的代码讲解视频；HyperFrames 是优先方法 |
+| generated-video | 在线视频请求；未选定提供方，未验证调用 |
+| speech-production | 在线语音合成；未选定提供方，未验证调用 |
+| audio-transcription | 在线转录和时间戳；未选定提供方，未验证调用 |
+| media-transcoding | 用 FFmpeg 在本地剪切、重封装和转码 |
+| document-production | 可编辑的文档、幻灯片、电子表格和 PDF |
+
+新增的二十二个 Skill 在[专业能力](professional-capabilities.md)中说明，包括哪些是方法、哪些依赖本地工具、哪些是本版本尚未验证的真实在线调用。
 
 ## 原生扩展与执行配置
 
-Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由、清单数量及当前 Skill 哈希。数量由目录驱动。Skill 正文是包内维护的 MIT 改编版，包含领域方法和评估用例；上游许可声明保留。不新增项目覆盖注册表或目录可执行 hook。
+Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由、清单数量及当前 Skill 哈希。数量由目录驱动。Skill 正文是包内维护的改编版，包含领域方法和评估用例。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。不新增项目覆盖注册表或目录可执行 hook。
 
 可选 `requires` 元数据声明 CLI、env 和 API 依赖名称。组装标出必需与条件集合，不新增顶层合同段。在实际执行主机上，辅助脚本使用显式选择器和 ProjectRoot。配置优先级为继承进程值（包括空值）、根 `.env`、显式非秘密 JSON。只有所选声明的文件变量补入子进程；已有变量继承，父进程不变。API 检查仅判断存在性。配置路径留在根内，授权可执行文件可以在外；直接批处理启动不保证兼容。注册与可运行示例见[扩展](extending.md)。
 
