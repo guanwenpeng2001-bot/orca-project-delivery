@@ -37,10 +37,11 @@ function fixture(testContext) {
     selection: `-ProjectRoot ${quote(project)} -Role software-implementer -Skills vendor-method -ConfigPath project-config.json` };
 }
 
-function assemble(fixtureData, skills, mode = 'explicit-path', configured = true) {
+function assemble(fixtureData, skills, mode = 'explicit-path', configured = true, mutateTask = () => {}) {
   const task = JSON.parse(readFileSync(path.join(packageRoot, 'templates/task-definition.json')));
   task.role = 'software-implementer'; task.branch.worktree = fixtureData.project; task.skillDeliveryMode = mode;
   if (skills === undefined) delete task.skills; else task.skills = skills;
+  mutateTask(task);
   const taskPath = path.join(fixtureData.project, 'task.json');
   const output = path.join(fixtureData.project, 'brief.md');
   writeFileSync(taskPath, JSON.stringify(task));
@@ -56,13 +57,89 @@ test('mixed configured bindings supply omitted selection and explicit arrays ove
   assert.match(result.brief, /defaultSkills:\r?\n  - test-driven-development\r?\n  - vendor-method/);
   assert.match(result.brief, /optionalSkills:\r?\n  - integration-verification/);
   assert.ok(result.brief.trimEnd().endsWith('PROJECT-RULES-LAST'));
-  const explicit = assemble(fixtureData, { required: [], conditional: [] });
-  assert.equal(explicit.code, 0, explicit.text);
-  assert.deepEqual(JSON.parse(explicit.stdout).skills, { required: [], conditional: [] });
-  assert.ok(!explicit.brief.includes('### Skill Provenance'));
-  const legacy = assemble(fixtureData, undefined, 'explicit-path', false);
-  assert.equal(legacy.code, 0, legacy.text);
-  assert.ok(!legacy.brief.includes('### Skill Provenance'));
+  assert.match(result.brief, /#### 默认专业 Skill\r?\n- test-driven-development, vendor-method/);
+  assert.match(result.brief, /#### 可选专业 Skill\r?\n- integration-verification/);
+});
+
+for (const configured of [false, true]) {
+  const malformed = [
+    ['null', null], ['empty object', {}], ['string', 'code-review'], ['array', []], ['number', 1], ['boolean', false],
+    ['missing required', { conditional: [] }], ['missing conditional', { required: [] }],
+    ['required string', { required: 'code-review', conditional: [] }],
+    ['conditional string', { required: [], conditional: 'code-review' }],
+    ['required null', { required: null, conditional: [] }],
+    ['conditional null', { required: [], conditional: null }],
+    ['invalid item', { required: [null], conditional: [] }],
+    ['extra field', { required: [], conditional: [], require: [] }],
+    ['mistyped skillz', undefined, (task) => { task.skillz = { required: ['code-review'], conditional: [] }; }],
+  ];
+  for (const [label, skills, mutateTask] of malformed) {
+    test(`invalid task skills (${label}, configured=${configured}) fail before writing output`, (testContext) => {
+      const fixtureData = fixture(testContext);
+      const result = assemble(fixtureData, skills, 'explicit-path', configured, mutateTask);
+      assert.equal(result.code, 1, result.text);
+      assert.match(result.text, /Task.*skills|skillz.*not supported/);
+      assert.ok(!existsSync(result.output));
+    });
+  }
+}
+
+for (const configKind of ['none', 'v1', 'unbound', 'other-role']) {
+  test(`omitted task skills with ${configKind} config require a binding for the selected role`, (testContext) => {
+    const fixtureData = fixture(testContext);
+    if (configKind === 'v1') fixtureData.config = { schemaVersion: 1, env: {} };
+    if (configKind === 'unbound') fixtureData.config.roleBindings = {};
+    if (configKind === 'other-role') fixtureData.config.roleBindings = { 'code-reviewer': fixtureData.config.roleBindings['software-implementer'] };
+    writeFileSync(fixtureData.configPath, JSON.stringify(fixtureData.config));
+    const result = assemble(fixtureData, undefined, 'explicit-path', configKind !== 'none');
+    assert.equal(result.code, 1, result.text);
+    assert.match(result.text, /Task skills.*required.*software-implementer.*configured.*binding/s);
+    assert.ok(!existsSync(result.output));
+  });
+}
+
+for (const mode of ['explicit-path', 'inline-extract']) {
+  for (const skills of [{ required: ['code-review'], conditional: ['systematic-debugging'] }, { required: [], conditional: [] }]) {
+    test(`explicit task overrides update embedded role selection (${mode}, empty=${skills.required.length === 0})`, (testContext) => {
+      const fixtureData = fixture(testContext);
+      const rolePath = path.join(packageRoot, 'roles/engineering/software-implementer.md');
+      const roleHash = hash(rolePath);
+      const result = assemble(fixtureData, skills, mode);
+      assert.equal(result.code, 0, result.text);
+      assert.deepEqual(JSON.parse(result.stdout).skills, skills);
+      assert.deepEqual(JSON.parse(result.stdout).roleBinding, fixtureData.config.roleBindings['software-implementer']);
+      const roleBody = result.brief.split('## Primary Role')[1].split('## Required and Conditional Skills')[0];
+      for (const [field, heading, selected] of [['defaultSkills', '默认专业 Skill', skills.required], ['optionalSkills', '可选专业 Skill', skills.conditional]]) {
+        assert.ok(roleBody.includes(selected.length ? `${field}:\n  - ${selected[0]}\n` : `${field}: []\n`), roleBody);
+        assert.ok(roleBody.includes(`#### ${heading}\n- ${selected.join(', ') || 'None'}\n`), roleBody);
+      }
+      assert.ok(!roleBody.includes('vendor-method') && !roleBody.includes('integration-verification'), roleBody);
+      assert.ok(!result.brief.includes('### Skill Provenance'));
+      assert.equal(hash(rolePath), roleHash);
+    });
+  }
+}
+
+test('empty configured bindings explicitly render no skills in the embedded role', (testContext) => {
+  const fixtureData = fixture(testContext);
+  fixtureData.config.roleBindings['software-implementer'] = { defaultSkills: [], optionalSkills: [] };
+  fixtureData.save();
+  const result = assemble(fixtureData);
+  assert.equal(result.code, 0, result.text);
+  assert.deepEqual(JSON.parse(result.stdout).skills, { required: [], conditional: [] });
+  assert.match(result.brief, /defaultSkills: \[\]/);
+  assert.match(result.brief, /optionalSkills: \[\]/);
+  assert.match(result.brief, /#### 默认专业 Skill\r?\n- None/);
+  assert.match(result.brief, /#### 可选专业 Skill\r?\n- None/);
+  assert.doesNotMatch(result.brief, /^-\s*$/m);
+});
+
+test('valid legacy task extensions and explicit empty skills remain accepted', (testContext) => {
+  const fixtureData = fixture(testContext);
+  const result = assemble(fixtureData, { required: [], conditional: [] }, 'explicit-path', false, (task) => { task.projectExtension = 'retained'; });
+  assert.equal(result.code, 0, result.text);
+  assert.deepEqual(JSON.parse(result.stdout).skills, { required: [], conditional: [] });
+  assert.match(result.brief, /Skill delivery mode: `explicit-path`\r?\n\r?\n- None/);
 });
 
 test('both delivery modes preserve origin resources and invoke from a separate project', (testContext) => {

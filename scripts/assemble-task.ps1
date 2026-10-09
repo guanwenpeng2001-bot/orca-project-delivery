@@ -21,12 +21,17 @@ if ($task.skillDeliveryMode -cnotin @('explicit-path', 'inline-extract')) {
   throw "skillDeliveryMode must be explicit-path or inline-extract."
 }
 . (Join-Path $PSScriptRoot 'requirements-lib.ps1')
+if ($task.PSObject.Properties.Name -contains 'skillz') {
+  throw "Task property 'skillz' is not supported; use skills with required and conditional arrays."
+}
+Assert-RequirementsSchema $task 'task-definition' 'Task definition (including skills)'
 $context = Get-ProjectRequirementsContext $skillRoot $root $ConfigPath
 $catalog = $context.Catalog
 $role = (Get-SelectedRequirements $catalog $task.role @()).Role
 $binding = if ($context.Config.roleBindings) { $context.Config.roleBindings[$task.role] } else { $null }
 $effectiveSkills = $task.skills
-if ($task.PSObject.Properties.Name -notcontains 'skills' -and $binding) {
+if ($task.PSObject.Properties.Name -notcontains 'skills') {
+  if (-not $binding) { throw "Task skills are required: role '$($task.role)' has no configured role binding." }
   $effectiveSkills = [pscustomobject]@{ required = @($binding.defaultSkills); conditional = @($binding.optionalSkills) }
 }
 $requiredDependencies = Get-SelectedRequirements $catalog $task.role @($effectiveSkills.required)
@@ -65,12 +70,15 @@ function ConvertTo-EmbeddedMarkdown {
 
 $roleText = Get-Content $rolePath -Raw
 if ($binding) {
+  $roleSkills = @{ defaultSkills = @($effectiveSkills.required); optionalSkills = @($effectiveSkills.conditional) }
   foreach ($field in @('defaultSkills', 'optionalSkills')) {
-    $replacement = if ($role[$field].Count) { $field + ":`n" + (($role[$field] | ForEach-Object { "  - $_" }) -join "`n") + "`n" } else { $field + ": []`n" }
+    $replacement = if ($roleSkills[$field].Count) { $field + ":`n" + (($roleSkills[$field] | ForEach-Object { "  - $_" }) -join "`n") + "`n" } else { $field + ": []`n" }
     $roleText = [regex]::Replace($roleText, "(?m)^${field}:[^\r\n]*\r?\n(?:[ \t]+[^\r\n]*\r?\n)*", [Text.RegularExpressions.MatchEvaluator]{ param($match) $replacement })
   }
-  $roleText = [regex]::Replace($roleText, '(?ms)(^## 默认专业 Skill\r?\n).*?(?=^## |\z)', [Text.RegularExpressions.MatchEvaluator]{ param($match) $match.Groups[1].Value + '- ' + ($role.defaultSkills -join ', ') + "`n`n" })
-  $roleText = [regex]::Replace($roleText, '(?ms)(^## 可选专业 Skill\r?\n).*?(?=^## |\z)', [Text.RegularExpressions.MatchEvaluator]{ param($match) $match.Groups[1].Value + '- ' + ($role.optionalSkills -join ', ') + "`n`n" })
+  $defaultSkillsText = if ($roleSkills.defaultSkills.Count) { $roleSkills.defaultSkills -join ', ' } else { 'None' }
+  $optionalSkillsText = if ($roleSkills.optionalSkills.Count) { $roleSkills.optionalSkills -join ', ' } else { 'None' }
+  $roleText = [regex]::Replace($roleText, '(?ms)(^## 默认专业 Skill\r?\n).*?(?=^## |\z)', [Text.RegularExpressions.MatchEvaluator]{ param($match) $match.Groups[1].Value + '- ' + $defaultSkillsText + "`n`n" })
+  $roleText = [regex]::Replace($roleText, '(?ms)(^## 可选专业 Skill\r?\n).*?(?=^## |\z)', [Text.RegularExpressions.MatchEvaluator]{ param($match) $match.Groups[1].Value + '- ' + $optionalSkillsText + "`n`n" })
 }
 $roleBody = ConvertTo-EmbeddedMarkdown $roleText
 
