@@ -1,5 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,9 +13,6 @@ export function runTideJourneys({ fixturePath, executablePath, html, journeys, s
   if (!executablePath) {
     throw new Error('missing dependency: Chromium executable path was not provided');
   }
-  if (pythonPath !== 'python' && !existsSync(pythonPath)) {
-    throw new Error('missing dependency: Python interpreter was not found at ' + pythonPath);
-  }
   const result = spawnSync(pythonPath, [...pythonArgs, script], {
     input: JSON.stringify({
       fixture: fixturePath,
@@ -28,8 +24,11 @@ export function runTideJourneys({ fixturePath, executablePath, html, journeys, s
     encoding: 'utf8',
     timeout: 30000,
   });
-  if (result.error && result.error.code === 'ENOENT') {
-    throw new Error('missing dependency: Python interpreter "' + pythonPath + '" was not found on PATH');
+  if (result.error) {
+    const detail = result.error.code === 'ENOENT'
+      ? 'was not found on PATH'
+      : 'could not be started (' + result.error.code + ')';
+    throw new Error('missing dependency: Python interpreter "' + pythonPath + '" ' + detail);
   }
   if (result.status !== 0) {
     throw new Error(result.stderr || 'journey runner exited ' + result.status);

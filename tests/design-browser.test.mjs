@@ -212,7 +212,7 @@ test('a missing Python interpreter is a named dependency failure, not an exited 
   );
 });
 
-test('a Python without Playwright is a named dependency failure, not a traceback', async () => {
+test('a Python without Playwright is a named dependency failure, not a traceback', { skip: pythonUnavailable() }, async () => {
   const runnerPath = path.join(root, 'skills', 'browser-e2e', 'scripts', 'run-tide-journeys.mjs');
   const runner = await import(pathToFileURL(runnerPath).href);
   const fixture = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-page.html');
@@ -258,6 +258,41 @@ test('a missing Chromium executable is a named dependency failure, not a KeyErro
     },
   );
 });
+
+test('a PATH-resolvable interpreter name other than python is accepted', { skip: pythonUnavailable() }, async () => {
+  const runnerPath = path.join(root, 'skills', 'browser-e2e', 'scripts', 'run-tide-journeys.mjs');
+  const runner = await import(pathToFileURL(runnerPath).href);
+  const fixture = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-page.html');
+  const directory = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-python-name');
+  mkdirSync(directory, { recursive: true });
+  const located = spawnSync('python', ['-I', '-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', timeout: 15000 });
+  assert.equal(located.status, 0, located.stderr);
+  const executable = located.stdout.trim();
+  const alias = path.join(directory, path.basename(executable, '.exe') === 'python' ? 'tidepython.exe' : 'tidepython');
+  const copied = spawnSync('cmd.exe', ['/d', '/c', 'copy', '/y', executable, alias], { encoding: 'utf8', timeout: 15000 });
+  assert.equal(copied.status, 0, copied.stderr);
+  const previous = process.env.PATH;
+  process.env.PATH = directory + path.delimiter + previous;
+  try {
+    const report = runner.runTideJourneys({
+      fixturePath: fixture,
+      executablePath: path.join(directory, 'missing-chrome.exe'),
+      pythonPath: 'tidepython',
+    });
+    assert.equal(report.ok, false);
+    assert.match(report.failures.join('\n'), /missing dependency: Chromium executable was not found/);
+  } finally {
+    process.env.PATH = previous;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+function pythonUnavailable() {
+  const python = spawnSync('python', ['-I', '-c', 'import sys'], { encoding: 'utf8', timeout: 15000 });
+  if (python.error && python.error.code === 'ENOENT') return 'missing dependency: Python interpreter was not found on PATH';
+  if (python.status !== 0) return 'missing dependency: Python interpreter did not run';
+  return false;
+}
 
 function browserUnavailable() {
   const python = spawnSync('python', ['-I', '-c', 'import playwright'], { encoding: 'utf8', timeout: 15000 });
