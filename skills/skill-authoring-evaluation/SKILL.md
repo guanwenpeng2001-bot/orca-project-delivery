@@ -7,7 +7,7 @@ description: Evaluate a method Skill for triggering, counterexamples, and observ
 
 ## Core principle
 
-A method Skill is judged by the decision it changes, not by the headings it contains. Headings being present is necessary and never sufficient: the same seven headings can carry a method or carry filler.
+A method Skill is judged by the decision it changes, not by the headings it contains. Headings being present is necessary and never sufficient: the same eight headings can carry a method or carry filler.
 
 ## Decision criteria
 
@@ -21,7 +21,7 @@ Score three layers separately. A high score on one does not repair a low score o
 | Counterexamples | At least one concrete case names an input that looks related but must not load this Skill, and says which Skill owns it | Every example is a positive case, so over-triggering is invisible |
 | Task outcome | The evaluation scenario names an observable result a reviewer can check without running an unrun experiment | The scenario says the result "should be good" or "should follow the method" |
 
-The structural floor is the seven sections this package already uses, in order: Core principle, Decision criteria, Workflow, Worked example, Failure signals, Evaluation scenario, then Output and Boundary. Missing a section fails the floor. Having all of them decides nothing about quality.
+The structural floor is the eight sections this package already uses, in order: Core principle, Decision criteria, Workflow, Worked example, Failure signals, Evaluation scenario, then Output and Boundary. Missing a section fails the floor. Having all of them decides nothing about quality.
 
 Keep the worked example inside the Skill directory. It must show a realistic input, the decision, and the expected result. An example that restates the criteria in different words teaches nothing.
 
@@ -41,7 +41,7 @@ A Skill is ready to propose for registration only at 2 on every layer plus a pas
 
 ## Workflow
 
-1. Check `name`, `description`, and the seven-section floor. Stop and report the floor failure before scoring prose.
+1. Check `name`, `description`, and the eight-section floor. Stop and report the floor failure before scoring prose.
 2. List the neighboring Skills a worker could confuse with this one.
 3. Score triggering: underline the phrase that includes the right work and the phrase that excludes the neighbor.
 4. Score counterexamples: find the case that should not load this Skill and confirm it names the owner.
@@ -83,7 +83,7 @@ The weak text can have every heading present and still scores 0. Headings did no
 
 ## Evaluation scenario
 
-Given one Skill whose description is "Helps with data and models" and one whose description names schema and persistence changes, excludes `domain-modeling`, and states a pass-fail ordering check, the result should score the first 0 on all three layers and the second 2 on all three, with a quoted line for each score. It fails the method if both pass because both files contain the seven headings, or if the scores are reported as the outcome of an agent run.
+Given one Skill whose description is "Helps with data and models" and one whose description names schema and persistence changes, excludes `domain-modeling`, and states a pass-fail ordering check, the result should score the first 0 on all three layers and the second 2 on all three, with a quoted line for each score. It fails the method if both pass because both files contain the eight headings, or if the scores are reported as the outcome of an agent run.
 
 ## Output
 

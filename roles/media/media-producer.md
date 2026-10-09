@@ -17,6 +17,8 @@ optionalSkills:
   - speech-production
   - audio-transcription
   - media-transcoding
+  - subtitle-production
+  - technical-diagrams
 ---
 
 # Media Producer
@@ -62,6 +64,7 @@ optionalSkills:
 - `icon-assets`、`svg-logo-design`、`web-assets`、`image-compression`
 - `image-generation`、`infographic-design`、`editorial-illustration`、`visual-slide-deck`
 - `code-video-production`、`generated-video`、`speech-production`、`audio-transcription`、`media-transcoding`
+- `subtitle-production`、`technical-diagrams`
 
 ## 完成条件
 - 成品规格有实测或文件证据；未执行的在线调用明确标为未执行

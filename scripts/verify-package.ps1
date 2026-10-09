@@ -546,6 +546,8 @@ try {
   Invoke-Check 'runtime/capability-behavior' {
     $node = (Get-Command node -CommandType Application | Select-Object -First 1).Source
     $testFiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*.test.mjs' -File | Sort-Object Name | ForEach-Object FullName)
+    $exampleFiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'skills') -Recurse -Filter '*.test.mjs' -File | Sort-Object FullName | ForEach-Object FullName)
+    $testFiles += $exampleFiles
     $result = Invoke-Child $node (@('--test') + $testFiles)
     Assert-Condition ($result.ExitCode -eq 0) "Capability behavior tests failed: $($result.Stdout) $($result.Stderr)"
   }
@@ -555,8 +557,11 @@ try {
   }
   if ($DocumentPython) {
     Invoke-Check 'runtime/document-generation-readback' {
-      $result = Invoke-Child $DocumentPython @('-I', (Join-Path $root 'tests/document-production.test.py'))
-      Assert-Condition ($result.ExitCode -eq 0) "Document generation tests failed: $($result.Stdout) $($result.Stderr)"
+      $pythonFiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Filter '*.test.py' -File | Sort-Object Name | ForEach-Object FullName)
+      foreach ($pythonFile in $pythonFiles) {
+        $result = Invoke-Child $DocumentPython @('-I', $pythonFile)
+        Assert-Condition ($result.ExitCode -eq 0) "Document generation tests failed for $(Split-Path -Leaf $pythonFile): $($result.Stdout) $($result.Stderr)"
+      }
     }
   } else { Write-Host 'SKIP document generation: pass -DocumentPython with the installed document dependencies' }
   Invoke-Check 'runtime/requirements-extension-fixtures' {

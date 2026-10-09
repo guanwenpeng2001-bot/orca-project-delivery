@@ -8,6 +8,10 @@ optionalSkills:
   - api-design
   - database-design
   - security-review
+  - domain-modeling
+  - migration-upgrade
+  - mcp-server-development
+  - technical-diagrams
 ---
 
 # Software Architect
@@ -54,6 +58,7 @@ optionalSkills:
 
 ## 可选专业 Skill
 - `api-design`、`database-design`、`security-review`
+- `domain-modeling`、`migration-upgrade`、`mcp-server-development`、`technical-diagrams`
 
 ## 完成条件
 - 边界、接口、数据所有权及错误行为明确且一致

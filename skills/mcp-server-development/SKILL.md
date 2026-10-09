@@ -24,7 +24,7 @@ Split failures:
 | Unknown tool, malformed request, server failure | JSON-RPC error | `error.code`, `error.message`; no `result` |
 | Bad argument value, downstream failure, business rule | Tool result | `result.isError: true` with text the model can correct |
 
-The published examples use `-32602` for an unknown tool. That code is JSON-RPC's invalid-params code; method-not-found is `-32601` and is for an unknown method such as `tools/missing`, not an unknown tool name. Codes `-32700` to `-32603` are the defined protocol errors, and `-32000` to `-32099` is reserved for implementation-defined server errors. A response carries `result` or `error`, never both.
+The published examples use `-32602` for an unknown tool. That code is JSON-RPC's invalid-params code; method-not-found is `-32601` and is for an unknown method such as `tools/missing`, not an unknown tool name. The specification defines five protocol error codes, `-32700`, `-32600`, `-32601`, `-32602`, and `-32603`; other codes inside the reserved range are not defined protocol errors, and `-32000` to `-32099` is reserved for implementation-defined server errors. A response carries `result` or `error`, never both.
 
 Annotations such as `readOnlyHint`, `destructiveHint`, and `idempotentHint` are claims. The specification tells clients to treat annotations as untrusted unless the server is trusted, so an annotation never replaces server-side validation, access control, or rate limiting.
 

@@ -11,6 +11,10 @@ optionalSkills:
   - systematic-debugging
   - security-review
   - product-design
+  - migration-upgrade
+  - mcp-server-development
+  - localization
+  - skill-authoring-evaluation
 ---
 
 # Software Implementer
@@ -59,6 +63,7 @@ optionalSkills:
 
 ## 可选专业 Skill
 - `api-design`、`database-design`、`systematic-debugging`、`security-review`、`product-design`
+- `migration-upgrade`、`mcp-server-development`、`localization`、`skill-authoring-evaluation`
 
 ## 完成条件
 - 验收条件满足，相关测试通过，关键行为有证据

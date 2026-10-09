@@ -8,6 +8,8 @@ defaultSkills:
 optionalSkills:
   - accessibility-audit
   - icon-assets
+  - design-system
+  - localization
 ---
 
 # UI Designer
@@ -50,6 +52,7 @@ optionalSkills:
 
 ## 可选专业 Skill
 - `accessibility-audit`、`icon-assets`
+- `design-system`、`localization`
 
 ## 完成条件
 - 每个视觉结论有可观察的值或对比证据
