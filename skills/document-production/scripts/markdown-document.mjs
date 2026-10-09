@@ -92,7 +92,8 @@ function renderTable(block) {
 }
 
 function escapeCell(value) {
-  const escaped = value.split('|').join(`${String.fromCharCode(92)}|`);
+  const slash = String.fromCharCode(92);
+  const escaped = value.split(slash).join(slash + slash).split('|').join(slash + '|');
   return escaped.replace(/\r?\n/g, ' ');
 }
 

@@ -72,6 +72,26 @@ class DocumentDepthTests(unittest.TestCase):
             self.assertTrue(all(cell.data_type == "s" for row in sheet["A3:B5"] for cell in row))
             workbook.close()
 
+    def test_xlsx_keeps_an_empty_cell_and_its_column(self):
+        from openpyxl import load_workbook
+        cases = [
+            (["Berth", "Note"], [["North", ""]], [["Berth", "Note"], ["North", ""]]),
+            (["A", "B"], [["", "y"]], [["A", "B"], ["", "y"]]),
+            (["A", "B", "C"], [["a", "", "c"]], [["A", "B", "C"], ["a", "", "c"]]),
+            (["A"], [["x"], [""]], [["A"], ["x"], [""]]),
+        ]
+        for columns, rows, expected in cases:
+            with self.subTest(rows=rows), tempfile.TemporaryDirectory() as directory:
+                result, output = self.generate(directory, "xlsx", {
+                    "title": "Harbor notes", "blocks": [{"type": "table", "columns": columns, "rows": rows}],
+                })
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                workbook = load_workbook(output)
+                sheet = workbook.active
+                actual = [[cell.value for cell in row] for row in sheet["A3":chr(64 + len(columns)) + str(3 + len(expected) - 1)]]
+                self.assertEqual([[value if value is not None else "" for value in row] for row in actual], expected)
+                workbook.close()
+
     def test_old_bullets_schema_still_renders(self):
         source = {"title": "Harbor notes", "blocks": [{"type": "bullets", "items": ["Keep one fact per bullet"]}]}
         for format_name in ["docx", "xlsx"]:

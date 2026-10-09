@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
-const script = 'skills/document-production/scripts/markdown-document.mjs';
+const root = dirname(fileURLToPath(import.meta.url));
+const fixture = join(root, 'fixtures/capability/document-blocks.json');
+const script = join(root, '../skills/document-production/scripts/markdown-document.mjs');
 
 function render(source) {
   const directory = mkdtempSync(join(tmpdir(), 'document-depth-'));
@@ -16,16 +19,32 @@ function render(source) {
   return { result, output, directory };
 }
 
-const source = {
-  title: 'Harbor notes',
-  blocks: [
-    { type: 'heading', text: 'Berth plan' },
-    { type: 'paragraph', text: 'Draft stays at 12.4 m through Friday.' },
-    { type: 'list', ordered: true, items: ['Sound the basin', 'Log the tide'] },
-    { type: 'bullets', items: ['Keep one fact per bullet'] },
-    { type: 'table', columns: ['Berth', 'Draft m'], rows: [['North', '12.4'], ['South', '9.8']] },
-  ],
-};
+const source = JSON.parse(readFileSync(fixture, 'utf8'));
+
+test('the shared document-blocks fixture renders the bounded blocks', () => {
+  const { result, output } = render(source);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(
+    readFileSync(output, 'utf8').trim(),
+    [
+      '# Harbor notes',
+      '',
+      '## Berth plan',
+      '',
+      'Draft stays at 12.4 m through Friday.',
+      '',
+      '1. Sound the basin',
+      '2. Log the tide',
+      '',
+      '- Keep one fact per bullet',
+      '',
+      '| Berth | Draft m |',
+      '| --- | --- |',
+      '| North | 12.4 |',
+      '| South | 9.8 |',
+    ].join('\n'),
+  );
+});
 
 test('paragraph, heading, ordered list and table render as real Markdown', () => {
   const { result, output } = render(source);
@@ -69,6 +88,14 @@ test('pipe and newline characters in cells are escaped, not split', () => {
   assert.equal(result.status, 0, result.stderr);
   const escapedPipe = '# Notes\n\n| A' + '\\' + '|B |\n| --- |\n| one two |';
   assert.equal(readFileSync(output, 'utf8').trim(), escapedPipe);
+});
+
+test('a literal backslash in a cell is escaped so it cannot escape the closing pipe', () => {
+  const { result, output } = render({ title: 'Notes', blocks: [{ type: 'table', columns: ['A', 'B'], rows: [['ends\\', 'a\\|b']] }] });
+  assert.equal(result.status, 0, result.stderr);
+  const slash = String.fromCharCode(92);
+  const rendered = '# Notes\n\n| A | B |\n| --- | --- |\n| ends' + slash + slash + ' | a' + slash + slash + slash + '|b |';
+  assert.equal(readFileSync(output, 'utf8').trim(), rendered);
 });
 
 test('a malformed table is rejected and leaves an existing file untouched', () => {

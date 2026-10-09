@@ -169,22 +169,23 @@ def render_xlsx(output, title, blocks, font):
     workbook.close()
     reopened = load_workbook(output)
     try:
-        actual = [trim_row(row) for row in reopened.active.iter_rows()]
+        actual = [read_row(row) for row in reopened.active.iter_rows()]
         literal = all(cell.data_type == "s" for row in reopened.active.iter_rows() for cell in row if cell.value is not None)
-        if actual != [trim_values(row) for row in rows] or not literal:
+        if actual != [written_row(row) for row in rows] or not literal:
             raise ValueError("XLSX read-back differs from literal source text")
         return {"rows": len(actual), "formulasEvaluated": False}
     finally:
         reopened.close()
 
 
-def trim_row(row):
-    return trim_values([cell.value for cell in row])
+def read_row(row):
+    values = ["" if cell.value is None else cell.value for cell in row]
+    return written_row(values)
 
 
-def trim_values(values):
+def written_row(values):
     trimmed = list(values)
-    while trimmed and trimmed[-1] is None:
+    while trimmed and trimmed[-1] == "":
         trimmed.pop()
     return trimmed
 
