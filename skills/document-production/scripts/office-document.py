@@ -6,40 +6,130 @@ import tempfile
 from xml.sax.saxutils import escape
 
 
+BLOCK_FIELDS = {
+    "bullets": {"type", "items"},
+    "list": {"type", "ordered", "items"},
+    "heading": {"type", "text"},
+    "paragraph": {"type", "text"},
+    "table": {"type", "columns", "rows"},
+}
+
+
+def nonempty_text(value, detail):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(detail)
+    return value
+
+
 def load_source(filename):
     source = json.loads(Path(filename).read_text(encoding="utf-8"))
     if not isinstance(source, dict) or set(source) != {"title", "blocks"}:
         raise ValueError("expected title and blocks")
-    if not isinstance(source["title"], str) or not source["title"].strip():
-        raise ValueError("title must be nonempty text")
+    nonempty_text(source["title"], "title must be nonempty text")
     if not isinstance(source["blocks"], list):
         raise ValueError("blocks must be a list")
-    items = []
-    for block in source["blocks"]:
-        if not isinstance(block, dict) or set(block) != {"type", "items"} or block["type"] != "bullets":
-            raise ValueError("only bullet blocks are supported")
-        if not isinstance(block["items"], list) or any(not isinstance(item, str) or not item.strip() for item in block["items"]):
-            raise ValueError("bullet items must be nonempty text")
-        items.extend(block["items"])
-    return source["title"], items
+    blocks = [validate_block(block) for block in source["blocks"]]
+    return source["title"], blocks
 
 
-def render_docx(output, title, items, font):
+def validate_block(block):
+    if not isinstance(block, dict) or block.get("type") not in BLOCK_FIELDS:
+        raise ValueError(f"unsupported block {block.get('type') if isinstance(block, dict) else block}")
+    if set(block) != BLOCK_FIELDS[block["type"]]:
+        raise ValueError(f"{block['type']} block has unexpected fields")
+    kind = block["type"]
+    if kind in {"bullets", "list"}:
+        if kind == "list" and block["ordered"] is not True:
+            raise ValueError("list blocks must set ordered true")
+        items = block["items"]
+        if not isinstance(items, list) or any(not isinstance(item, str) or not item.strip() for item in items):
+            raise ValueError(f"{kind} items must be nonempty text")
+    elif kind in {"heading", "paragraph"}:
+        nonempty_text(block["text"], f"{kind} text must be nonempty text")
+    else:
+        columns = block["columns"]
+        rows = block["rows"]
+        if not isinstance(columns, list) or not columns or any(not isinstance(column, str) or not column.strip() for column in columns):
+            raise ValueError("table columns must be nonempty text")
+        if not isinstance(rows, list):
+            raise ValueError("table rows must be a list")
+        for index, row in enumerate(rows, start=1):
+            if not isinstance(row, list) or len(row) != len(columns):
+                raise ValueError(f"row {index} has {len(row) if isinstance(row, list) else 0} cells but {len(columns)} columns")
+            if any(not isinstance(cell, str) for cell in row):
+                raise ValueError(f"row {index} cells must be text")
+    return block
+
+
+def render_docx(output, title, blocks, font):
     from docx import Document
     document = Document()
     document.add_heading(title, 0)
-    for item in items:
-        document.add_paragraph(item, style="List Bullet")
+    expected_rows = []
+    for block in blocks:
+        kind = block["type"]
+        if kind == "heading":
+            document.add_heading(block["text"], level=2)
+        elif kind == "paragraph":
+            document.add_paragraph(block["text"])
+        elif kind == "list":
+            for item in block["items"]:
+                document.add_paragraph(item, style="List Number")
+        elif kind == "bullets":
+            for item in block["items"]:
+                document.add_paragraph(item, style="List Bullet")
+        else:
+            table = document.add_table(rows=1 + len(block["rows"]), cols=len(block["columns"]))
+            for column, heading in enumerate(block["columns"]):
+                table.rows[0].cells[column].text = heading
+            for row_index, row in enumerate(block["rows"], start=1):
+                for column, value in enumerate(row):
+                    table.rows[row_index].cells[column].text = value
+            expected_rows.append([block["columns"], *block["rows"]])
     document.save(output)
-    actual = [paragraph.text for paragraph in Document(output).paragraphs]
-    if actual != [title, *items]:
+    reopened = Document(output)
+    actual = [(paragraph.style.name, paragraph.text) for paragraph in reopened.paragraphs]
+    if actual != expected_paragraphs(title, blocks):
         raise ValueError("DOCX read-back differs from source")
-    return {"paragraphs": len(actual)}
+    actual_rows = [[[cell.text for cell in row.cells] for row in table.rows] for table in reopened.tables]
+    if actual_rows != expected_rows:
+        raise ValueError("DOCX table read-back differs from source")
+    return {"paragraphs": len(actual), "tables": len(actual_rows)}
 
 
-def render_pptx(output, title, items, font):
+DOCX_STYLES = {"heading": "Heading 2", "paragraph": "Normal", "list": "List Number", "bullets": "List Bullet"}
+
+
+def expected_paragraphs(title, blocks):
+    paragraphs = [("Title", title)]
+    for block in blocks:
+        kind = block["type"]
+        if kind in {"heading", "paragraph"}:
+            paragraphs.append((DOCX_STYLES[kind], block["text"]))
+        elif kind in {"list", "bullets"}:
+            paragraphs.extend((DOCX_STYLES[kind], item) for item in block["items"])
+    return paragraphs
+
+
+def slide_lines(blocks):
+    lines = []
+    for block in blocks:
+        kind = block["type"]
+        if kind == "table":
+            raise ValueError("pptx does not support table blocks; use docx, xlsx, or markdown")
+        if kind == "heading":
+            lines.append(block["text"])
+        elif kind == "paragraph":
+            lines.append(block["text"])
+        else:
+            lines.extend(block["items"])
+    return lines
+
+
+def render_pptx(output, title, blocks, font):
     from pptx import Presentation
     from pptx.util import Inches, Pt
+    items = slide_lines(blocks)
     if len(title) > 80 or any(len(item) > 160 or "\n" in item for item in items):
         raise ValueError("PPTX sample needs title <=80 and single-line bullets <=160 characters; edit layout for longer text")
     deck = Presentation()
@@ -63,34 +153,78 @@ def render_pptx(output, title, items, font):
     return {"slides": len(reopened.slides)}
 
 
-def render_xlsx(output, title, items, font):
+def render_xlsx(output, title, blocks, font):
     from openpyxl import Workbook, load_workbook
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "Notes"
-    for row, value in enumerate([title, *items], start=1):
-        cell = sheet.cell(row=row, column=1, value=value)
-        cell.data_type = "s"
+    rows = sheet_rows(title, blocks)
+    for row_index, row in enumerate(rows, start=1):
+        for column, value in enumerate(row, start=1):
+            cell = sheet.cell(row=row_index, column=column, value=value)
+            cell.data_type = "s"
     sheet.column_dimensions["A"].width = 80
     sheet.freeze_panes = "A2"
     workbook.save(output)
     workbook.close()
     reopened = load_workbook(output)
     try:
-        cells = list(reopened.active["A"])
-        if [cell.value for cell in cells] != [title, *items] or any(cell.data_type != "s" for cell in cells):
+        actual = [trim_row(row) for row in reopened.active.iter_rows()]
+        literal = all(cell.data_type == "s" for row in reopened.active.iter_rows() for cell in row if cell.value is not None)
+        if actual != [trim_values(row) for row in rows] or not literal:
             raise ValueError("XLSX read-back differs from literal source text")
-        return {"rows": len(cells), "formulasEvaluated": False}
+        return {"rows": len(actual), "formulasEvaluated": False}
     finally:
         reopened.close()
 
 
-def render_pdf(output, title, items, font):
+def trim_row(row):
+    return trim_values([cell.value for cell in row])
+
+
+def trim_values(values):
+    trimmed = list(values)
+    while trimmed and trimmed[-1] is None:
+        trimmed.pop()
+    return trimmed
+
+
+def sheet_rows(title, blocks):
+    rows = [[title]]
+    for block in blocks:
+        kind = block["type"]
+        if kind == "table":
+            rows.append([])
+        if kind in {"heading", "paragraph"}:
+            rows.append([block["text"]])
+        elif kind in {"list", "bullets"}:
+            rows.extend([item] for item in block["items"])
+        else:
+            rows.append(list(block["columns"]))
+            rows.extend(list(row) for row in block["rows"])
+    return rows
+
+
+def pdf_lines(blocks):
+    lines = []
+    for block in blocks:
+        kind = block["type"]
+        if kind == "table":
+            raise ValueError("pdf does not support table blocks; use docx, xlsx, or markdown")
+        if kind in {"heading", "paragraph"}:
+            lines.append(block["text"])
+        else:
+            lines.extend(block["items"])
+    return lines
+
+
+def render_pdf(output, title, blocks, font):
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from pypdf import PdfReader
+    items = pdf_lines(blocks)
     if font:
         pdfmetrics.registerFont(TTFont("DocumentFont", str(font)))
     elif not all(value.isascii() for value in [title, *items]):
@@ -122,12 +256,12 @@ def main():
     try:
         if args.output.suffix.lower() != f".{args.format}":
             raise ValueError("output extension must match format")
-        title, items = load_source(args.input)
+        title, blocks = load_source(args.input)
         descriptor, filename = tempfile.mkstemp(suffix=f".{args.format}", dir=args.output.parent)
         os.close(descriptor)
         temporary = Path(filename)
         renderers = {"docx": render_docx, "pptx": render_pptx, "xlsx": render_xlsx, "pdf": render_pdf}
-        details = renderers[args.format](temporary, title, items, args.font)
+        details = renderers[args.format](temporary, title, blocks, args.font)
         os.replace(temporary, args.output)
         print(json.dumps({"output": str(args.output), "format": args.format, "reopened": True, **details}))
         return 0
