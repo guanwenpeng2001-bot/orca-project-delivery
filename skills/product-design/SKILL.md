@@ -62,6 +62,8 @@ The state matrix:
 
 The acceptance criteria: submitting an empty name shows the validation message and does not send a request; while saving, the button is disabled; on network failure the typed name remains and the error is announced through an aria live region; the field is reachable by tab and its focus indicator is visible.
 
+The handoff names the states the next screen must not re-decide: validation runs on submission, the error text is "Tide time is required." when the same pattern is used for a required field, and the empty state reads "No readings today." rather than an empty region. A later visual pass chooses type and color; it does not rewrite these words.
+
 The contrast of the hint text is specified against the AA ratio rather than assumed, and the confirmation uses text rather than color alone.
 
 ## Failure signals

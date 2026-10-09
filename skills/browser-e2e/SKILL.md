@@ -37,6 +37,14 @@ The method is original. Accessible-role locators follow the W3C ARIA role model:
 
 A tide-entry journey submits a valid time and expects the new row. A second journey submits a blank time and expects the field error. With validation absent, the blank submission creates a row and the second test fails; its trace shows the row count increasing. After the server rejects the blank value, the same test passes and the valid submission still creates one row.
 
+`skills/browser-e2e/scripts/sample.spec.mjs` records both journeys: one that saves a tide reading and one that refuses a blank tide time, including the keyboard steps and the trace to retain. Serve the fixture on loopback only:
+
+```
+node skills/browser-e2e/scripts/serve-fixture.mjs
+```
+
+It prints `listening http://127.0.0.1:<port>` and stops when its input ends. The blank-time journey is the seeded failure; keep its trace even after the suite is green.
+
 ## Failure signals
 
 - The suite contains page objects but no command output from a browser run.

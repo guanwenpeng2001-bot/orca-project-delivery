@@ -33,13 +33,28 @@ The method is original. Criteria referenced are WCAG 2.2: 1.4.3 Contrast, 1.4.10
 
 ## Worked example
 
-A scanner reports no image-alt errors on a tide form. Manual checks find that the time field has no label, its red border has no text error, and the dialog does not return focus to the button that opened it. Contrast of the body text passes at 12.6:1. The audit therefore fails on names, errors, and focus despite the clean scanner summary.
+A scanner reports no image-alt errors on a tide form. Manual checks find that the time field has no label, its red border has no text error, and the dialog does not return focus to the button that opened it. Contrast is measured with the shared calculator rather than taken from the scanner:
+
+```
+node skills/frontend-visual-design/scripts/contrast-ratio.mjs --foreground "#000000" --background "#FFFFFF"
+```
+
+That pair reports 21 and meets both thresholds. The audit still fails on names, errors, and focus, which the table records separately:
+
+| Check | Source | Result |
+| --- | --- | --- |
+| Image alternatives | Automatic | No failures |
+| Text contrast of body copy | Automatic | 21:1, passes |
+| Field has a programmatic name | Manual | Fails, no label |
+| Error stated in text | Manual | Fails, color only |
+| Focus returns to the opener | Manual | Fails, not restored |
 
 ## Failure signals
 
 - A conformance claim cites only an automated score.
 - Focus is visible by browser default but disappears under the application’s CSS.
 - Errors are announced by color or icon alone.
+- An automatic contrast pass is allowed to stand in for the keyboard and name checks.
 - Zoom causes overlapping text that the report calls responsive because no horizontal page scrollbar appeared.
 
 ## Evaluation scenario
