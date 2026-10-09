@@ -84,7 +84,7 @@ Stop when remaining unknowns cannot change the approach, or explicitly record th
 ## Role and Skill routing
 
 1. Select exactly one Primary Role from `roles/catalog.json`, by deliverable using `routing/role-selection.json`.
-2. Select 1–3 required Skills from the current `routing/skill-catalog.json`, following Role defaults and `routing/skill-selection.json`; explain irrelevant defaults in the Task.
+2. Select 1–3 required Skills from `routing/skill-catalog.json` or explicit project external registrations, following effective Role defaults and `routing/skill-selection.json`; explain irrelevant defaults in the Task.
 3. Add 0–2 conditional Skills only for material risk.
 4. Derive capability, permission, scope, branch, input, output and completion contracts from the role and Task.
 5. Choose the role's model/effort route, then assemble the input.
@@ -111,7 +111,12 @@ Upgrade, downgrade, suspension, trivial read-only adjustment and user-pinned beh
 
 Under `skills/`, the original 16 Skills are package-maintained adaptations of the MIT-licensed baseline; the 30 methods added in versions 2.3.0 and 2.4.0 are original package content. `skills/README.md` records provenance and current hashes. See `docs/extending.md` for native authoring/registration and metadata/full verification.
 - `explicit-path` is the default: give the absolute `SKILL.md` path in the Task and require reading it.
-- `inline-extract` is the fallback: include the required sections and record source path and hash.
+- `inline-extract` is the fallback: embed required Skill bodies as a snapshot and record source path and hash.
+Version 2 explicit `-ConfigPath` registers installed external aliases and mixed Role bindings; `env` remains required. Version 1 is env-only. See `docs/external-skills.md` for the tested flow and limitations.
+Assembly validates the complete Task. Omitted `skills` requires that Role's configured binding; explicit required/conditional arrays, including empty arrays, override it. With a binding, embedded Role Skill metadata follows effective selection; JSON `roleBinding` retains the configured binding. Legacy top-level extensions remain accepted; only `skillz` is explicitly rejected.
+Pass assembly's resolved `skills.required` plus activated conditional IDs to both requirement helpers with the execution root/config; they never infer bindings. External `requires` uses the existing CLI/env/API schema, not prose or frontmatter inference.
+Both modes preserve the original `resourceBase` for relative scripts/resources. Provenance distinguishes observed entry SHA256 from unverified `declaredVersion`; `configPath` echoes the supplied argument. Registration never rewrites originals or changes bundled counts.
+No automatic install/scanning or host-feature emulation occurs; arbitrary host loading/effectiveness is not guaranteed. External absolute paths may be outside ProjectRoot; relative paths resolve from it, while config stays inside it. Links/reparse points and traversal are unsupported.
 A Skill name alone is not loading evidence. Skills supply method and cannot expand Task scope or grant orchestration control.
 Catalog `requires` declares CLI/env/API names and purposes only. Assembly lists required and conditional requirements inside Inputs and Dependencies, preserving the ten-part order and AGENTS last.
 On the execution host, use `check-requirements.ps1` with explicit `-ProjectRoot`, `-Role` and in-session `-Skills @(...)` for required plus activated conditional IDs; helpers do not infer Role defaults.

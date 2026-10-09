@@ -2,6 +2,8 @@
 
 [English](../extending.md) | **简体中文**
 
+版本 2 项目注册、混合绑定、解析后的依赖选择及原位置同级资源，见[已安装外部 Skill 演练](external-skills.md)。包内 Skill 不需要单独安装。
+
 缺少可复用方法或独立交付职责时，扩展包的原生目录。**Role** 定义身份、责任、权限边界和输出；**Skill** 提供方法。两者都不能授予超出 Task 和适用 `AGENTS.md` 的权限。派发和生命周期仍由 Orca 管理。工作者不加载协调者入口 Skill，也不创建自己的 `.dev-work/`。
 
 - [原生注册](#原生注册)
@@ -16,7 +18,7 @@
 
 ## 原生注册
 
-在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。2.4.0 的包随附 46 个 Skill 和 16 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
+在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。2.5.0 的包随附 46 个 Skill 和 16 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
 
 | 文件 | 新增或更新内容 |
 | --- | --- |
@@ -30,7 +32,7 @@
 | `routing/skill-selection.json` → `riskRoutes` | 仅在相关时新增风险到方法的映射 |
 | `PACKAGE-MANIFEST.json` → `deliverables` | 与最终 Role、Skill 目录匹配的数量；工作流数量保持准确 |
 
-ID 和 Role 类别匹配 `^[a-z0-9][a-z0-9-]*$`；ID 在各自目录内唯一。Skill 路径必须是 `skills/<id>/SKILL.md`；Role 路径必须是 `roles/<category>/<id>.md`。允许正反斜杠，但不允许别名、路径穿越、包外文件、缺失文件或含链接的目录路径。Role 的默认和可选 Skill 数组必须存在，并引用已注册 ID。没有同级 Skill 回退，也没有项目目录覆盖解析器。
+ID 和 Role 类别匹配 `^[a-z0-9][a-z0-9-]*$`；ID 在各自目录内唯一。Skill 路径必须是 `skills/<id>/SKILL.md`；Role 路径必须是 `roles/<category>/<id>.md`。允许正反斜杠，但不允许别名、路径穿越、包外文件、缺失文件或含链接的目录路径。Role 的默认和可选 Skill 数组必须存在，并引用已注册 ID。这些约束针对原生目录条目。要使用已安装文件而不改变包内容或计数，请使用[配置外部 Skill](external-skills.md)；版本 2 项目配置支持显式外部注册及混合 Role 绑定，没有同级回退。
 
 从 [skill-authoring.md](../../templates/skill-authoring.md) 和 [role-authoring.md](../../templates/role-authoring.md) 开始。下面给出完成后的合同示例；应把模板的编写提示替换成有用内容。
 
@@ -172,7 +174,7 @@ Role 条目也支持同样的可选结构。[requirements.schema.json](../../sch
 
 ## 校验扩展
 
-添加示例后，从编辑后的目录推导清单计数。把 `deliverables.roles` 和 `deliverables.professionalSkills` 分别设为下面打印的对应值，不要照抄其他修订的计数。完整的 2.4.0 包起始为 16 个 Role / 46 个 Skill，因此添加这两个示例后为 17 / 47。保留原有的 `VERSION` 及与之相同的清单 `version`；扩展旧检出不会使它升级到 2.4.0。工作流数量也要保持正确。
+添加示例后，从编辑后的目录推导清单计数。把 `deliverables.roles` 和 `deliverables.professionalSkills` 分别设为下面打印的对应值，不要照抄其他修订的计数。完整的 2.5.0 包起始为 16 个 Role / 46 个 Skill，因此添加这两个示例后为 17 / 47。保留原有的 `VERSION` 及与之相同的清单 `version`；扩展旧检出不会使它升级到 2.5.0。工作流数量也要保持正确。
 
 ```powershell
 (Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
@@ -180,7 +182,7 @@ Role 条目也支持同样的可选结构。[requirements.schema.json](../../sch
 (Get-Content -Raw ./VERSION).Trim()
 ```
 
-从编辑后的包副本目录运行这些命令。旧的 12 角色 / 16 Skill 检出添加后应为 13 / 17，且保留原版本；它仍然缺少 2.4.0 的能力。
+从编辑后的包副本目录运行这些命令。旧的 12 角色 / 16 Skill 检出添加后应为 13 / 17，且保留原版本；它仍然缺少 2.5.0 的能力。
 
 在 PowerShell 7 会话中，将 `$package` 指向已编辑的包副本并计算哈希：
 
@@ -238,7 +240,7 @@ Dotenv 语法刻意保持简单：
 }
 ```
 
-显式传入 `-ConfigPath 'project-config.json'`。相对路径从 `ProjectRoot` 解析；绝对路径仍必须在其内部，含链接的配置路径被拒绝。每个提供的名称都必须在包目录某处声明为非秘密；未知名称或在任意条目中标为秘密的名称会被拒绝，即使更高来源覆盖它也一样。值必须是字符串；重复 JSON 属性、未知属性、无效 JSON 和 NUL 值均失败。只有所选声明的变量才从文件加入子进程。
+显式传入 `-ConfigPath 'project-config.json'`。相对路径从 `ProjectRoot` 解析；绝对路径仍必须在其内部，含链接的配置路径被拒绝。版本 1 仍只支持 env；版本 2 另允许[外部注册及 Role 绑定](external-skills.md)，两者都要求 `env`。每个提供的名称都必须在包目录或已配置的外部注册项中声明为非秘密；未知名称或在任意条目中标为秘密的名称会被拒绝，即使更高来源覆盖它也一样。值必须是字符串；重复 JSON 属性、未知属性、无效 JSON 和 NUL 值均失败。只有所选声明的变量才从文件加入子进程。
 
 优先级先判断**键是否存在**，再判断值是否非空：进程 > `.env` > 显式配置。空进程覆盖会阻止非空 `.env`；空 `.env` 会阻止非空 JSON，都不向低优先级回退。`configured` 表示文件中存在非空值，`availableInProcess` 表示当前进程中存在非空值，`availableForChild` 反映最终来源。因此 `configured: true` 不代表当前 shell 或子进程可以使用它。`source` 为 `process-env`、`project-env-file`、`project-config` 或 `absent`（CLI 为 `process-command`/`absent`）。
 
@@ -304,7 +306,7 @@ foreach ($name in $demoNames) {
 
 | 症状 | 下一步检查 |
 | --- | --- |
-| 未知 Role/Skill 或无效路径 | 在辅助脚本实际使用的包副本中注册精确 ID 和文件；拒绝链接及包外路径 |
+| 未知 Role/Skill 或无效路径 | 检查原生目录 ID 或显式外部注册及执行 ProjectRoot；不支持链接和路径穿越，但外部绝对路径可在根目录之外 |
 | 哈希/数量/路由失败 | 重新计算已审阅当前内容的哈希，对齐清单数量，注册新 Role 的路由 |
 | `configured: true`、`availableForChild: false` | 查找空进程覆盖，不打印它的值 |
 | 文件只在协调者工作树 | 在显式执行主机根目录准备目标文件；不存在自动复制 |

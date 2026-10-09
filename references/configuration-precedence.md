@@ -10,9 +10,25 @@ Highest to lowest:
 6. Package catalog selection and `routing/model-routing.json` policies.
 7. Agent defaults.
 
-This is instruction precedence, not an implemented JSON overlay loader. Run decisions
-may record explicit choices, but no generic `.dev-work/config/` or run-level override
-resolver merges catalogs, routing or execution environment files.
+This is instruction precedence. Version 2 project config has a narrow explicit
+`externalSkills` / `roleBindings` resolver through `-ConfigPath`; it does not merge
+arbitrary catalogs or routing, scan installed directories, or load `.dev-work/config/`.
+Version 1 remains env-only; both versions require `env`, even when `{}`.
+
+Assembly uses a configured Role binding only when the entire Task `skills` property
+is absent; without that Role's binding, omission fails before output. Explicit
+required/conditional arrays, including empty arrays, override bindings. Whole-Task
+schema validation applies. Only `skillz` is specially rejected; legacy top-level
+extension fields remain accepted. With a binding, embedded Role Skill metadata
+reflects effective selection, while JSON `roleBinding` preserves the configured value.
+Requirement helpers never infer this selection: pass assembly's `skills.required`
+plus activated conditional selectors explicitly to both helpers.
+
+External absolute paths may be outside ProjectRoot; relative registrations resolve
+from ProjectRoot. Config files remain confined to that root. Traversal and linked
+paths are unsupported. Both delivery modes retain the original resource base for
+relative scripts. See [installed external Skills](../docs/external-skills.md) for
+registration, provenance, declared requirements and an executable offline walkthrough.
 
 ## Execution configuration
 

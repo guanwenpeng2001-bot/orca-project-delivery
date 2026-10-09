@@ -2,12 +2,14 @@
 
 **English** | [简体中文](zh-CN/usage.md)
 
+Use the [installed external Skill walkthrough](external-skills.md) for version 2 project registration, mixed bindings, resolved requirement selectors and original sibling resources. No separate installation is required for bundled Skills.
+
 This walkthrough shows one complete delivery from the coordinator's seat. It
 summarizes the workflow defined in `SKILL.md` and its references; the Skill
 itself is the authority at runtime, and the installed global `orchestration`
 Skill plus current `--help` output are the authority for every Orca command.
 
-This guide targets 2.4.0: **46 Skills, 16 Roles, 4 workflows**. Select
+This guide targets 2.5.0: **46 Skills, 16 Roles, 4 workflows**. Select
 only the methods needed by the Task: shared tokens use `design-system`, domain
 invariants use `domain-modeling`, upgrades use `migration-upgrade`, and tool
 protocols use `mcp-server-development`. Diagrams, localization, Skill evaluation

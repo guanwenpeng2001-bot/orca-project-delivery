@@ -21,14 +21,14 @@
 
 ## 专业能力
 
-**2.4.0 会生成图像、视频、语音或文档吗？**
+**2.5.0 会生成图像、视频、语音或文档吗？**
 它附带本地 PNG、字幕、manifest、Markdown 和 Office/PDF 工具，以及方法和有门控的提供方连接器。Windows 上运行过有界的 Chromium 与 FFmpeg 检查，但不声称真实提供方调用、HyperFrames 渲染或 Office 视觉审查通过。证据和限制见[能力指南](professional-capabilities.md)；仅加载 Skill 不会执行命令。
 
 **OpenAI、Pexo 和 ElevenLabs 是选定的提供方吗？**
 不是。它们是示例连接器，点名是为了让配置的形状具体。选择提供方、预算和上传范围是按任务做出的用户决定。安装本包并不授权一次调用。
 
 **为什么包声称 46 个 Skill，而我的目录显示 16 个？**
-完整的 2.4.0 安装包含 46 个 Skill 和 16 个角色。显示 16 个 Skill 的目录属于与本版本不匹配的版本，即使旁边已有新文档也一样。请安装完整且匹配的版本；[教程](professional-capability-tutorial.md)在运行新命令前核对版本、目录计数和清单。
+完整的 2.5.0 安装包含 46 个 Skill 和 16 个角色。显示 16 个 Skill 的目录属于与本版本不匹配的版本，即使旁边已有新文档也一样。请安装完整且匹配的版本；[教程](professional-capability-tutorial.md)在运行新命令前核对版本、目录计数和清单。
 
 **可以把 Anthropic 的文档 Skill 或 OpenMontage 复制进来吗？**
 不可以。docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内。OpenMontage 是 AGPL-3.0，不包含在内。`document-production` 和 `media-transcoding` 是独立编写的。见[许可证一节](professional-capabilities.md#许可证与来源)。

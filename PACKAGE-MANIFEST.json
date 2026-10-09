@@ -1,10 +1,10 @@
 {
   "name": "orca-project-delivery",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-10",
   "releasedAt": "2026-10-10",
-  "revisionNote": "Register eight original professional Skills and deepen design, browser, document, image, subtitle, and media methods. Include nested example and document read-back tests in package verification; preserve explicit opt-in for provider calls.",
+  "revisionNote": "Support explicitly configured installed external Skills, mixed role bindings, validated Task selection, declared requirements and original-resource provenance. Preserve 46 bundled Skills, 16 Roles and 4 workflows; document and verify the offline flow in English and Chinese.",
   "deliverables": {
     "roles": 16,
     "professionalSkills": 46,

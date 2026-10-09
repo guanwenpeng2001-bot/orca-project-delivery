@@ -2,12 +2,14 @@
 
 **English** | [简体中文](zh-CN/installation.md)
 
+Use the [installed external Skill walkthrough](external-skills.md) for version 2 project registration, mixed bindings, resolved requirement selectors and original sibling resources. No separate installation is required for bundled Skills.
+
 This guide installs the `orca-project-delivery` coordinator Skill so a Claude
 Code coordinator session can load it from your control worktree. The package
 is a plain directory of files — there is no installer, no package registry,
 and no build step.
 
-This guide describes the 2.4.0 package (46 Skills / 16 Roles / 4 workflows). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
+This guide describes the 2.5.0 package (46 Skills / 16 Roles / 4 workflows). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
 
 ## Prerequisites
 
@@ -103,7 +105,7 @@ Expected shape of the output on a healthy install:
 
 - many `PASS <check>` lines (parse, encoding, routing, metadata, runtime
   fixtures, evidence fixtures, ...);
-- a `skills: N/N resolved (... package-bundled)` summary line, where N is the Skill count of the revision you installed (46 for the 2.4.0 capability release);
+- a `skills: N/N resolved (... package-bundled)` summary line, where N is the Skill count of the revision you installed (46 for the 2.5.0 capability release);
 - a final line of the form `SUMMARY PASS=<n> FAIL=0`;
 - process exit code 0.
 
@@ -130,7 +132,7 @@ audio, video, and documents. Installing it does not run any of them. The
 and bounded local tools and dependency helpers; it makes no provider call, and a passing
 package suite is not evidence about generated output.
 
-Bootstrap creates `.env.example` and `project-config.example.json` only when missing, preserving existing files. It adds `/.env` to local Git `info/exclude`, shared by this clone's worktrees. Keep populated `.env` untracked on the actual execution host. Workers must supply their own explicit `ProjectRoot`; helpers neither copy coordinator config nor create worker `.dev-work/` state. The original sixteen declare no credential requirements. A 2.4.0 Skill declares a credential only when it names one, and an online connector named in the docs is an example, not a provider you have selected. No real key belongs in the repository.
+Bootstrap creates `.env.example` and `project-config.example.json` only when missing, preserving existing files. It adds `/.env` to local Git `info/exclude`, shared by this clone's worktrees. Keep populated `.env` untracked on the actual execution host. Workers must supply their own explicit `ProjectRoot`; helpers neither copy coordinator config nor create worker `.dev-work/` state. The original sixteen declare no credential requirements. A 2.5.0 Skill declares a credential only when it names one, and an online connector named in the docs is an example, not a provider you have selected. No real key belongs in the repository.
 
 ## Upgrade
 

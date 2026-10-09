@@ -126,7 +126,7 @@ Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `
 
 ## 原生扩展与执行配置
 
-Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由、清单数量及当前 Skill 哈希。数量由目录驱动。原有十六个 Skill 是 MIT 改编版，其后三十个为引用公开资料的原创方法。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。不新增项目覆盖注册表或目录可执行 hook。
+Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由、清单数量及当前 Skill 哈希。数量由目录驱动。原有十六个 Skill 是 MIT 改编版，其后三十个为引用公开资料的原创方法。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。显式版本 2 项目配置另支持已安装外部 Skill 和混合 Role 绑定，无需编辑这些目录，见[外部 Skill](external-skills.md)。不支持目录可执行 hook 或通用路由覆盖。
 
 可选 `requires` 元数据声明 CLI、env 和 API 依赖名称。组装标出必需与条件集合，不新增顶层合同段。在实际执行主机上，辅助脚本使用显式选择器和 ProjectRoot。配置优先级为继承进程值（包括空值）、根 `.env`、显式非秘密 JSON。只有所选声明的文件变量补入子进程；已有变量继承，父进程不变。API 检查仅判断存在性。配置路径留在根内，授权可执行文件可以在外；直接批处理启动不保证兼容。注册与可运行示例见[扩展](extending.md)。
 

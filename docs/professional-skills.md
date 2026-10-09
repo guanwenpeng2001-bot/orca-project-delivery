@@ -2,12 +2,14 @@
 
 **English** | [简体中文](zh-CN/professional-skills.md)
 
+Use the [installed external Skill walkthrough](external-skills.md) for version 2 project registration, mixed bindings, resolved requirement selectors and original sibling resources. No separate installation is required for bundled Skills.
+
 Orca Project Delivery coordinates workers that load **professional Skills** —
 method instruction packs (`SKILL.md`) for reconnaissance, product work,
 architecture, implementation, review, and verification, plus methods for
 software delivery, local assets, images, and audio, video, and documents.
 All forty-six Skills ship **inside this package** under
-`skills/<skill-id>/SKILL.md` in the 2.4.0 release. Some methods also
+`skills/<skill-id>/SKILL.md` in the 2.5.0 release. Some methods also
 ship local scripts or provider connectors; execution evidence is separate from
 loading their instructions. Install the complete matching release, and check
 its version and catalogs using the [tutorial](professional-capability-tutorial.md).

@@ -4,7 +4,14 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
-## Unreleased
+## 2.5.0 — 2026-10-10
+
+- Added explicit version 2 project configuration for already-installed external Skills: absolute or project-relative paths, unique registration aliases, declared requirements and mixed bundled/external Role bindings. Version 1 remains env-only; bundled counts remain 46 Skills, 16 Roles and 4 workflows.
+- Assembly validates the complete Task. Omitted `skills` requires a configured binding for the selected Role; explicit required/conditional arrays, including empty arrays, override it. Bound Role metadata reflects effective selection. Legacy top-level extensions remain accepted; only `skillz` receives a dedicated typo diagnostic.
+- Explicit-path and inline delivery preserve original resource bases and report observed entry SHA256 separately from declared version. Dependency helpers consume explicit resolved selectors and retain presence-only checks and parent-environment isolation. No installation, scanning, frontmatter feature emulation or universal host compatibility is promised.
+- Added matching English/Chinese [installed external Skill walkthroughs](docs/external-skills.md), executed offline in both delivery modes with original sibling resources and unchanged source hashes. Updated current-version guards and documentation links; historical feature introductions below remain unchanged.
+
+## Earlier capability changes
 
 ### 2.4.0 — professional skill depth
 

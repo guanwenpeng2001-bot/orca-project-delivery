@@ -2,6 +2,8 @@
 
 **English** | [简体中文](zh-CN/extending.md)
 
+Use the [installed external Skill walkthrough](external-skills.md) for version 2 project registration, mixed bindings, resolved requirement selectors and original sibling resources. No separate installation is required for bundled Skills.
+
 Extend the package's native catalogs when a reusable method or a distinct deliverable is missing. A **Role** defines identity, responsibility, authority boundaries, and outputs; a **Skill** supplies a method. Neither grants permission beyond the Task and applicable `AGENTS.md`. Orca still owns dispatch and lifecycle. Workers do not load the coordinator entry Skill or create their own `.dev-work/`.
 
 - [Native registration](#native-registration)
@@ -16,7 +18,7 @@ Extend the package's native catalogs when a reusable method or a distinct delive
 
 ## Native registration
 
-Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 2.4.0 package ships 46 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
+Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 2.5.0 package ships 46 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
 
 | File | What to add or update |
 | --- | --- |
@@ -30,7 +32,7 @@ Work in a separate development checkout or a disposable copy, preserve existing 
 | `routing/skill-selection.json` → `riskRoutes` | A new risk-to-method mapping only when relevant |
 | `PACKAGE-MANIFEST.json` → `deliverables` | Counts matching the resulting Role and Skill catalogs; workflow count remains accurate |
 
-IDs and Role categories match `^[a-z0-9][a-z0-9-]*$`; IDs must be unique within their catalog. Skill paths are exactly `skills/<id>/SKILL.md`; Role paths are exactly `roles/<category>/<id>.md`. Forward or backward separators are accepted, but aliases, traversal, external files, missing files and linked catalog paths are not. Role default/optional Skill arrays must exist and refer to registered IDs. There is no sibling Skill fallback or project catalog overlay resolver.
+IDs and Role categories match `^[a-z0-9][a-z0-9-]*$`; IDs must be unique within their catalog. Skill paths are exactly `skills/<id>/SKILL.md`; Role paths are exactly `roles/<category>/<id>.md`. Forward or backward separators are accepted, but aliases, traversal, external files, missing files and linked catalog paths are not. Role default/optional Skill arrays must exist and refer to registered IDs. These restrictions apply to native catalog entries. To use already-installed files without changing package content or counts, use [configured external Skills](external-skills.md); version 2 project config supplies explicit external registrations and mixed Role bindings, with no sibling fallback.
 
 Start from [skill-authoring.md](../templates/skill-authoring.md) and [role-authoring.md](../templates/role-authoring.md). The following bodies show the finished contract; replace the templates' authoring instructions with useful content.
 
@@ -172,7 +174,7 @@ Duplicate declarations within an entry fail. Across selected entries, identical 
 
 ## Validate the extension
 
-After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 2.4.0 package starts at 16 Roles / 46 Skills, so these illustrative additions yield 17 / 47. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 2.4.0. Keep workflow counts correct.
+After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 2.5.0 package starts at 16 Roles / 46 Skills, so these illustrative additions yield 17 / 47. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 2.5.0. Keep workflow counts correct.
 
 ```powershell
 (Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
@@ -180,7 +182,7 @@ After adding the example, derive the manifest counts from the edited catalogs. S
 (Get-Content -Raw ./VERSION).Trim()
 ```
 
-Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 2.4.0 capabilities.
+Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 2.5.0 capabilities.
 
 In a PowerShell 7 session, set `$package` to your edited package copy and compute the hash:
 
@@ -238,7 +240,7 @@ Non-secret config uses [project-config.schema.json](../schemas/project-config.sc
 }
 ```
 
-Pass `-ConfigPath 'project-config.json'` explicitly. Relative paths resolve under `ProjectRoot`; absolute paths must still be inside it, and linked config paths are rejected. Every supplied name must be declared non-secret somewhere in the package catalogs; unknown names or names marked secret anywhere are rejected, even if another source overrides them. Values must be strings; duplicate JSON properties, unknown properties, malformed JSON and NUL values fail. Only selected declared variables are added from files to the child.
+Pass `-ConfigPath 'project-config.json'` explicitly. Relative paths resolve under `ProjectRoot`; absolute paths must still be inside it, and linked config paths are rejected. Version 1 remains env-only; version 2 also permits [external registrations and Role bindings](external-skills.md), and both require `env`. Every supplied name must be declared non-secret in the package catalogs or configured external registrations; unknown names or names marked secret anywhere are rejected, even if another source overrides them. Values must be strings; duplicate JSON properties, unknown properties, malformed JSON and NUL values fail. Only selected declared variables are added from files to the child.
 
 Precedence chooses **presence of a key**, then checks whether its value is nonempty: process > `.env` > explicit config. An empty process override blocks a nonempty `.env`; an empty `.env` blocks nonempty JSON. Neither falls through. `configured` means a nonempty file value exists, `availableInProcess` means a nonempty current-process value exists, and `availableForChild` reflects the effective source. Thus `configured: true` does not prove the current shell or child can use it. `source` is `process-env`, `project-env-file`, `project-config`, or `absent` (CLI uses `process-command`/`absent`).
 
@@ -304,7 +306,7 @@ The shared helper parameters are mandatory `-ProjectRoot <string>` and `-Role <i
 
 | Symptom | Next check |
 | --- | --- |
-| Unknown Role/Skill or invalid path | Register exact IDs and files in the package copy used by the helper; reject links and out-of-package paths |
+| Unknown Role/Skill or invalid path | Check native catalog IDs or explicit external registrations and the execution ProjectRoot; links/traversal are unsupported, but absolute external paths may be outside the root |
 | Hash/count/routing failure | Recompute reviewed current hashes, align manifest counts, and register the new Role's route |
 | `configured: true`, `availableForChild: false` | Look for an empty process override; do not print its value |
 | File exists only in coordinator worktree | Provision the intended file at the explicit execution-host root; no automatic copying occurs |
