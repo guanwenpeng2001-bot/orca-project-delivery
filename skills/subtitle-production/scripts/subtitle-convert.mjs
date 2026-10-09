@@ -2,7 +2,7 @@ import { readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 
-const MAX_HOURS = 100000;
+const MAX_HOURS = 100000; // bounded policy for WebVTT, which has no spec ceiling; milliseconds stay exact far past it
 const values = readArgs(process.argv.slice(2));
 if (!['srt', 'vtt'].includes(values.to)) fail(`--to must be srt or vtt, got ${values.to}`);
 
@@ -50,7 +50,7 @@ function parseSrt(text) {
     const lines = block.split('\n');
     const timingAt = lines.findIndex((line) => line.includes('-->'));
     if (timingAt < 0) fail('malformed srt: a block has no timing line');
-    const [start, end] = readTiming(lines[timingAt], ',').map((part) => part.millis);
+    const [start, end] = readTiming(lines[timingAt], ',', false).map((part) => part.millis);
     const payload = lines.slice(timingAt + 1);
     if (payload.length === 0 || payload.every((line) => line.trim() === '')) fail('empty cue text');
     return { start, end, text: payload.join('\n'), warnings: [] };
@@ -73,7 +73,7 @@ function parseVtt(text) {
     if (timingAt > 1) fail('malformed webvtt: unexpected lines before the timing line');
     const warnings = [];
     if (timingAt === 1) warnings.push(`cue identifier "${lines[0]}" has no srt equivalent`);
-    const timing = readTiming(lines[timingAt], '.');
+    const timing = readTiming(lines[timingAt], '.', true);
     if (timing[1].setting !== null) fail('unsupported webvtt cue setting on the timing line');
     const payload = lines.slice(timingAt + 1);
     if (payload.some((line) => /<v[\s>]/.test(line))) fail('unsupported webvtt voice span');
@@ -93,10 +93,10 @@ function blocks(text) {
   return text.split('\n\n').map((block) => block.trim()).filter((block) => block !== '');
 }
 
-function readTiming(line, separator) {
+function readTiming(line, separator, allowSetting) {
   const parts = line.split('-->');
   if (parts.length !== 2) fail(`malformed timestamp line: ${line}`);
-  return parts.map((part, index) => readTimestamp(part.trim(), separator, index === 1));
+  return parts.map((part, index) => readTimestamp(part.trim(), separator, allowSetting && index === 1));
 }
 
 function readTimestamp(value, separator, allowSetting) {

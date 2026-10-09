@@ -236,6 +236,34 @@ test('an empty source converts to an empty file and warns that it has no cues', 
   assert.equal(readFileSync(output, 'utf8'), 'WEBVTT\n\n');
 });
 
+test('trailing text on an srt timestamp is rejected and the destination stays untouched', () => {
+  const end = writeTemp('end-junk.srt', '1\n00:00:01,000 --> 00:00:02,000 X1:0 X2:100 Y1:0 Y2:50\nText\n');
+  const endOutput = path.join(directory, 'end-junk.vtt');
+  writeFileSync(endOutput, 'pre-existing');
+  const endResult = runScript(CONVERT, ['--input', end, '--output', endOutput, '--to', 'vtt']);
+  assert.notEqual(endResult.status, 0);
+  assert.match(endResult.stderr, /timestamp/i);
+  assert.equal(readFileSync(endOutput, 'utf8'), 'pre-existing');
+
+  const start = writeTemp('start-junk.srt', '1\n00:00:01,000 foo --> 00:00:02,000\nText\n');
+  const startOutput = path.join(directory, 'start-junk.vtt');
+  writeFileSync(startOutput, 'pre-existing');
+  const startResult = runScript(CONVERT, ['--input', start, '--output', startOutput, '--to', 'vtt']);
+  assert.notEqual(startResult.status, 0);
+  assert.match(startResult.stderr, /timestamp/i);
+  assert.equal(readFileSync(startOutput, 'utf8'), 'pre-existing');
+});
+
+test('a webvtt cue setting is still rejected and the destination stays untouched', () => {
+  const input = writeTemp('setting-kept.vtt', 'WEBVTT\n\n00:00:01.000 --> 00:00:02.000 align:start\nPlain words\n');
+  const output = path.join(directory, 'setting-kept.srt');
+  writeFileSync(output, 'pre-existing');
+  const result = runScript(CONVERT, ['--input', input, '--output', output, '--to', 'srt']);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /cue setting/);
+  assert.equal(readFileSync(output, 'utf8'), 'pre-existing');
+});
+
 // --- Composition precheck -----------------------------------------------------
 
 const SAMPLE_HTML = [
