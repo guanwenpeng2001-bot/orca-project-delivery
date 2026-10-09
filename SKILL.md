@@ -109,7 +109,7 @@ Upgrade, downgrade, suspension, trivial read-only adjustment and user-pinned beh
 
 ## Skill delivery
 
-Professional Skills are sibling global directories under `.agents/skills`.
+Professional Skills are vendored under this package's `skills/` directory.
 - `explicit-path` is the default: give the absolute `SKILL.md` path in the Task and require reading it.
 - `inline-extract` is the fallback: include the required sections and record source path and hash.
 A Skill name alone is not loading evidence. Skills supply method and cannot expand Task scope or grant orchestration control.

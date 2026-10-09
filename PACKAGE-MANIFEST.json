@@ -4,7 +4,7 @@
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-09",
   "releasedAt": "2026-10-09",
-  "revisionNote": "Claude-only delivery with a single role-to-model/effort routing authority, 12 roles, explicit Skill delivery, conservative capability evidence, and offline package regression checks. 2.2.0 links the public orca-professional-skills repository and clarifies Git evidence path placeholders. See CHANGELOG.md.",
+  "revisionNote": "Claude-only delivery with a single role-to-model/effort routing authority, 12 roles, and 16 professional Skills vendored under package skills/ (upstream orca-professional-skills). Explicit Skill delivery, conservative capability evidence, and offline package regression checks. See CHANGELOG.md.",
   "deliverables": {
     "roles": 12,
     "professionalSkills": 16,

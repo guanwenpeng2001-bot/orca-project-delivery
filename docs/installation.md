@@ -14,9 +14,9 @@ and no build step.
 | Git | On `PATH`; used for branches, worktrees, merges, and evidence validation. |
 | Claude Code | Installed, on `PATH`, and authenticated. All workers are Claude Code agents. |
 | Orca Runtime | The `orca` CLI plus the installed global `orchestration`, `orca-cli`, and `orca-per-workspace-env` Skills. They own Run/Task/Dispatch/Worker lifecycle; this package never replaces them. |
-| 16 professional sibling Skills | The package routes to 16 sibling Skills that live **next to** this package under `~/.agents/skills` (for example `~/.agents/skills/code-review/SKILL.md`). They are separate packages and are not included in this repository. |
+| Professional Skills | **Bundled** — all 16 professional Skills ship inside this package under `skills/<skill-id>/SKILL.md`. No separate install step. Upstream provenance: [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) (see `skills/README.md`). |
 
-The sibling Skills referenced by `routing/skill-catalog.json` are:
+The Skills referenced by `routing/skill-catalog.json` are:
 codebase-reconnaissance, technical-research, product-discovery,
 product-design, requirements-analysis, solution-architecture, api-design,
 database-design, implementation-planning, test-driven-development,
@@ -32,10 +32,7 @@ The package is designed to live in your skills root:
 ├── orchestration/                # global Orca skill - do not overwrite
 ├── orca-cli/                     # global Orca skill - do not overwrite
 ├── orca-per-workspace-env/       # global Orca skill - do not overwrite
-├── orca-project-delivery/        # <-- this package
-├── codebase-reconnaissance/      # sibling professional skills
-├── code-review/
-└── ...                           # 14 more siblings
+└── orca-project-delivery/        # <-- this package (includes skills/ subtree)
 ```
 
 Two rules:
@@ -43,9 +40,9 @@ Two rules:
 1. Do not overwrite the Orca-provided Skills (`orchestration`,
    `orca-cli`, `orca-per-workspace-env`). This package adds to them; it never
    replaces them.
-2. Keep the 16 professional sibling Skills in sibling directories. The
-   verification suite resolves each one as `../<skill-id>/SKILL.md` relative
-   to this package, with a fallback to `~/.agents/skills/<skill-id>/SKILL.md`.
+2. Professional Skills resolve only from this package's `skills/` directory.
+   The verification suite does **not** fall back to sibling directories under
+   `~/.agents/skills`.
 
 Project-local state created at runtime (`AGENTS.md`, `.dev-work/`) lives in
 each *project* you deliver, not in this package directory.
@@ -58,15 +55,6 @@ sections recorded. Naming a Skill alone is not proof that it was loaded.
 
 ## Installation steps
 
-Clone the companion repository
-[orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills),
-then copy each of the sixteen skill directories from that clone into
-`~/.agents/skills/` so they sit beside this package as siblings (matching
-`routing/skill-catalog.json`, which resolves `..\<skill-id>\SKILL.md` from the
-package root). Full steps are in
-[Professional Skills](professional-skills.md). A clone of this package alone is
-not a complete installation.
-
 ```powershell
 # 1. Clone the package into your skills root (adjust if your root differs)
 git clone https://github.com/guanwenpeng2001-bot/orca-project-delivery.git "$env:USERPROFILE\.agents\skills\orca-project-delivery"
@@ -75,12 +63,16 @@ git clone https://github.com/guanwenpeng2001-bot/orca-project-delivery.git "$env
 pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scripts\verify-package.ps1"
 ```
 
+See [Professional Skills](professional-skills.md) for the Skill list and upstream
+source. A clone of this repository is a complete installation for professional
+Skills — no companion copy step.
+
 If your skills root already contains an older copy, see
 [Upgrade](#upgrade) instead of cloning over it.
 
-If you prefer not to use the default location, you may clone anywhere — but
-then the 16 sibling Skills must be present under `~/.agents/skills` for the
-package check to resolve them.
+If you prefer not to use the default location, you may clone anywhere — workers
+still resolve Skills from the package's own `skills/` directory via
+`scripts/assemble-task.ps1`.
 
 ## Verifying the installation
 
@@ -94,8 +86,8 @@ Expected shape of the output on a healthy install:
 
 - many `PASS <check>` lines (parse, encoding, routing, metadata, runtime
   fixtures, evidence fixtures, ...);
-- a `skills: 16/16 resolved (...)` summary line;
-- a final line: `SUMMARY PASS=55 FAIL=0`;
+- a `skills: 16/16 resolved (... package-bundled)` summary line;
+- a final line: `SUMMARY PASS=59 FAIL=0`;
 - process exit code 0.
 
 The suite is read-only with respect to the package: all fixtures and copies
@@ -121,8 +113,8 @@ pwsh -NoProfile -File scripts\verify-package.ps1
 
 Check `git status --short` and preserve local changes before updating; do
 not overwrite a customized installation. For a copy-based installation,
-back up the old directory before replacing package files. Keep sibling
-Skills and project-local state intact.
+back up the old directory before replacing package files. Project-local state
+is unaffected.
 
 Old runs remain readable, but an unfinished source merge must have its
 evidence rebuilt to meet the current gates. Validate project state with
@@ -141,23 +133,25 @@ Remove-Item -Recurse -Force "$env:USERPROFILE\.agents\skills\orca-project-delive
 That is the whole footprint. The package keeps no registry entries and no
 state outside the projects you deliver; each delivered project keeps its own
 `AGENTS.md` and `.dev-work/`, which you delete independently if desired. Do
-not remove the global Orca Skills or the sibling professional Skills unless
-you no longer use anything that depends on them.
+not remove the global Orca Skills unless you no longer use anything that
+depends on them.
 
 ## Troubleshooting installation failures
 
-### Missing sibling skill
+### Missing bundled skill
 
 Symptom: the verification suite prints
 
 ```text
-FAIL metadata/skill-paths: skill file missing: tried <...>\..\code-review\SKILL.md and <...>\.agents\skills\code-review\SKILL.md
+FAIL metadata/skill-paths: skill file missing: <...>\skills\code-review\SKILL.md
 ```
 
-Cause: one of the 16 professional Skills is not installed next to the package
-or under `~/.agents/skills`. Fix: install the missing sibling Skill into
-`~/.agents/skills/<skill-id>/` so its `SKILL.md` resolves, then re-run the
-suite. The suite reports every missing skill in one run.
+or a hash failure under `metadata/bundled-skill-integrity`.
+
+Cause: a vendored `skills/<skill-id>/SKILL.md` is missing, was deleted locally,
+or no longer matches the SHA256 table in `skills/README.md`. Fix: restore the
+file from Git (`git checkout -- skills/`) or re-clone the package, then re-run
+the suite.
 
 ### PowerShell 7 not found
 
@@ -210,14 +204,12 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File '<script>'
 ```
 
 If the skills directory itself is not writable by your account, grant write
-access or relocate the skills root and keep the sibling-Skill layout intact.
+access or relocate the skills root.
 
-### Verification reports fewer than 55 checks
+### Verification reports unexpected FAIL count
 
-A lower check count is not sufficient evidence of success. Missing sibling
-Skills can prevent fixture staging, and setup problems can truncate the
-run. Inspect every `FAIL` line and the `skills: ... resolved` line before
-checking whether you invoked an older or different package copy. Confirm you are running `scripts/verify-package.ps1` from the
+Inspect every `FAIL` line and the `skills: ... resolved` line before
+assuming success. Confirm you are running `scripts/verify-package.ps1` from the
 directory you just installed, that `VERSION` matches the release you expect,
 and that no `FAIL` line scrolled past. Any `FAIL` line means the
 installation is not accepted, regardless of the PASS count.

@@ -2,23 +2,26 @@
 
 Orca Project Delivery coordinates workers that load **professional Skills** —
 method-only instruction packs (`SKILL.md`) for reconnaissance, product work,
-architecture, implementation, review, and verification. This package does **not**
-ship those files; they live in a separate public repository.
+architecture, implementation, review, and verification. All sixteen Skills ship
+**inside this package** under `skills/<skill-id>/SKILL.md`.
 
-## Source repository
+## Upstream source
 
 | Item | Value |
 | --- | --- |
 | Repository | [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) |
-| Layout | One directory per Skill at the repository root (`<skill-id>/SKILL.md`) |
-| License | MIT (same copyright holder as this package) |
-| Coordinator package | [orca-project-delivery](https://github.com/guanwenpeng2001-bot/orca-project-delivery) |
+| Source commit (import) | `d9a174c7143bfb4c76ed042f457fb7785c35cea3` |
+| Vendored layout | `skills/<skill-id>/SKILL.md` in this repository |
+| License | MIT — `skills/LICENSE` (see also package root `LICENSE`) |
+| Integrity table | `skills/README.md` (SHA256 per file) |
+
+Re-import from upstream when you intentionally refresh content; do not edit vendored
+`SKILL.md` bodies in place.
 
 ## The sixteen Skills
 
-Paths in `routing/skill-catalog.json` are relative to this package and resolve
-as `..\<skill-id>\SKILL.md`, so each Skill directory must be a **sibling** of
-`orca-project-delivery` under your skills root (typically `~/.agents/skills/`).
+Paths in `routing/skill-catalog.json` are relative to this package and resolve as
+`skills/<skill-id>/SKILL.md` under the package root.
 
 | Skill ID | Purpose |
 | --- | --- |
@@ -42,32 +45,9 @@ as `..\<skill-id>\SKILL.md`, so each Skill directory must be a **sibling** of
 ## Installation
 
 1. Clone this coordinator package (see [installation.md](installation.md)).
-2. Clone the professional Skills repository to a temporary or sibling path:
-
-   ```powershell
-   git clone https://github.com/guanwenpeng2001-bot/orca-professional-skills.git "$env:USERPROFILE\.agents\skills\orca-professional-skills"
-   ```
-
-3. Copy each of the sixteen `<skill-id>` directories from that clone into
-   `~/.agents/skills/` so they sit next to `orca-project-delivery` (not inside
-   the `orca-professional-skills` folder). On Windows PowerShell:
-
-   ```powershell
-   $root = "$env:USERPROFILE\.agents\skills"
-   $ids = @(
-     'codebase-reconnaissance','technical-research','product-discovery','product-design',
-     'requirements-analysis','solution-architecture','api-design','database-design',
-     'implementation-planning','test-driven-development','systematic-debugging',
-     'code-review','security-review','performance-review','integration-verification',
-     'merge-conflict-resolution'
-   )
-   foreach ($id in $ids) {
-     Copy-Item -Recurse -Force "$root\orca-professional-skills\$id" "$root\$id"
-   }
-   ```
-
-4. Re-run `scripts/verify-package.ps1`; skill-path checks expect each
-   `..\<skill-id>\SKILL.md` to resolve from the package directory.
+2. Run `scripts/verify-package.ps1` — skill-path checks expect each bundled
+   `skills/<skill-id>/SKILL.md` to exist inside the package. No separate Skills
+   clone or copy step is required.
 
 ## What these Skills are not
 
@@ -82,10 +62,10 @@ as `..\<skill-id>\SKILL.md`, so each Skill directory must be a **sibling** of
 
 | Symptom | Likely cause | What to check |
 | --- | --- | --- |
-| `verify-package.ps1` skill-path FAIL | Skill not installed as sibling | `Test-Path ~/.agents/skills/<skill-id>/SKILL.md` |
-| Worker cannot read assigned Skill | Wrong path in Task or sandbox | Task `explicit-path` matches an existing `SKILL.md` |
-| Catalog lists Skill but file missing | Only coordinator package cloned | Complete [Installation](#installation) step 3 |
-| Old copy after upgrade | Stale sibling directories | Re-copy from latest `orca-professional-skills` tag or `main` |
+| `verify-package.ps1` skill-path FAIL | Bundled file missing or corrupt | `Test-Path <package>/skills/<skill-id>/SKILL.md`; compare hashes in `skills/README.md` |
+| Worker cannot read assigned Skill | Wrong path in Task or sandbox | Task `explicit-path` matches an existing bundled `SKILL.md` |
+| Catalog lists Skill but file missing | Incomplete checkout or local deletion | Restore from Git; re-run integrity check |
+| Hash mismatch after manual edit | In-place edit of vendored body | Re-import from upstream at the recorded commit |
 
 For coordinator behavior and evidence paths, see [usage.md](usage.md) and
 `references/evidence-binding.md`.

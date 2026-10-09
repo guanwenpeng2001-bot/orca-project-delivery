@@ -1,7 +1,7 @@
 #requires -Version 7.0
 <##
-Offline package acceptance. Requires PowerShell 7, Git and the declared sibling
-skills (or their installed copies under $HOME/.agents/skills). The package under
+Offline package acceptance. Requires PowerShell 7, Git and the 16 professional
+Skills bundled under skills/ in this package. The package under
 test is read-only; all runtime fixtures and copies live in one temporary root.
 ##>
 [CmdletBinding()]
@@ -126,10 +126,9 @@ function Assert-AbsentPaths([string]$Directory, [string[]]$Paths) {
   }
 }
 
-function Resolve-SkillFile([string]$Sibling, [string]$Installed) {
-  if (Test-Path -LiteralPath $Sibling -PathType Leaf) { return [pscustomobject]@{ Path = $Sibling; Origin = 'package-sibling' } }
-  if (Test-Path -LiteralPath $Installed -PathType Leaf) { return [pscustomobject]@{ Path = $Installed; Origin = 'installed-home' } }
-  throw "skill file missing: tried $Sibling and $Installed"
+function Resolve-SkillFile([string]$BundledPath) {
+  if (Test-Path -LiteralPath $BundledPath -PathType Leaf) { return [pscustomobject]@{ Path = $BundledPath; Origin = 'package-bundled' } }
+  throw "skill file missing: $BundledPath"
 }
 
 function Get-PackageFiles([string]$Directory) {
@@ -484,16 +483,30 @@ try {
     $missing = [Collections.Generic.List[string]]::new()
     foreach ($skill in (Read-PackageJson 'routing/skill-catalog.json').skills) {
       Assert-Condition ($skill.id -match '^[a-z0-9][a-z0-9-]*$') "Invalid skill ID: $($skill.id)"
-      $expected = "../$($skill.id)/SKILL.md"
+      $expected = "skills/$($skill.id)/SKILL.md"
       Assert-Condition ($skill.path.Replace('\', '/') -ceq $expected) "Unexpected catalog path for $($skill.id): $($skill.path)"
-      $sibling = [IO.Path]::GetFullPath((Join-Path $root $expected))
-      $installed = [IO.Path]::GetFullPath((Join-Path ([Environment]::GetFolderPath('UserProfile')) ".agents/skills/$($skill.id)/SKILL.md"))
-      try { $resolved = Resolve-SkillFile $sibling $installed }
+      $bundled = [IO.Path]::GetFullPath((Join-Path $root $expected))
+      try { $resolved = Resolve-SkillFile $bundled }
       catch { $missing.Add("$($skill.id): $($_.Exception.Message)"); continue }
       $resolvedSkills.Add([pscustomobject]@{ Id = $skill.id; Path = $resolved.Path; Origin = $resolved.Origin })
       Write-Host "SKILL $($skill.id): $($resolved.Origin) $($resolved.Path)"
     }
     Assert-Condition ($missing.Count -eq 0) ($missing -join '; ')
+  }
+  Invoke-Check 'metadata/bundled-skill-integrity' {
+    $readmePath = Join-Path $root 'skills/README.md'
+    Assert-Condition (Test-Path -LiteralPath $readmePath -PathType Leaf) 'skills/README.md missing'
+    $readme = [IO.File]::ReadAllText($readmePath, $utf8)
+    $rows = [regex]::Matches($readme, '\|\s*`([^`]+)`\s*\|\s*([A-F0-9]{64})\s*\|')
+    Assert-Condition ($rows.Count -ge 17) 'Expected SHA256 table in skills/README.md'
+    foreach ($match in $rows) {
+      $relative = $match.Groups[1].Value
+      $expectedHash = $match.Groups[2].Value
+      $filePath = Join-Path $root (Join-Path 'skills' ($relative.Replace('/', '\')))
+      Assert-Condition (Test-Path -LiteralPath $filePath -PathType Leaf) "Bundled file missing for integrity check: $relative"
+      $actualHash = (Get-FileHash -LiteralPath $filePath -Algorithm SHA256).Hash
+      Assert-Condition ($actualHash -ceq $expectedHash) "Hash mismatch for $relative"
+    }
   }
   Invoke-Check 'metadata/manifest-counts-and-version' {
     $manifest = Read-PackageJson 'PACKAGE-MANIFEST.json'
@@ -563,23 +576,19 @@ try {
       Copy-Item -LiteralPath $file.FullName -Destination $destination
     }
     foreach ($skill in $resolvedSkills) {
-      $destination = Join-Path $temporaryRoot "skills/$($skill.Id)"
-      Write-Host "TEMP skill copy: $destination"
-      Copy-Item -LiteralPath (Split-Path -Parent $skill.Path) -Destination $destination -Recurse
+      $bundledInCopy = Join-Path $stagedPackage "skills/$($skill.Id)/SKILL.md"
+      Assert-Condition (Test-Path -LiteralPath $bundledInCopy -PathType Leaf) "Staged package missing bundled skill: $($skill.Id)"
     }
     Assert-Condition ($resolvedSkills.Count -eq @((Read-PackageJson 'routing/skill-catalog.json').skills).Count) 'Cannot stage every declared skill'
   }
-  Invoke-Check 'regression/skill-path-resolution' {
-    $sibling = Join-Path $temporaryRoot 'sibling-skill.md'
-    $installed = Join-Path $temporaryRoot 'installed-skill.md'
-    Assert-Rejected 'missing-both-skill-paths' { Resolve-SkillFile $sibling $installed } 'skill file missing:'
-    [void][IO.Directory]::CreateDirectory($sibling)
-    Assert-Rejected 'skill-path-is-directory' { Resolve-SkillFile $sibling $installed } 'skill file missing:'
-    Remove-Item -LiteralPath $sibling
-    [IO.File]::WriteAllText($installed, 'installed skill', $utf8)
-    Assert-Condition ((Resolve-SkillFile $sibling $installed).Origin -eq 'installed-home') 'Installed fallback failed'
-    [IO.File]::WriteAllText($sibling, 'sibling skill', $utf8)
-    Assert-Condition ((Resolve-SkillFile $sibling $installed).Origin -eq 'package-sibling') 'Sibling precedence failed'
+  Invoke-Check 'regression/bundled-skill-resolution' {
+    $bundled = Join-Path $stagedPackage 'skills/code-review/SKILL.md'
+    Assert-Condition ((Resolve-SkillFile $bundled).Origin -eq 'package-bundled') 'Bundled resolution failed'
+    $missingPath = Join-Path $temporaryRoot 'missing-bundled-skill.md'
+    Assert-Rejected 'missing-bundled-skill' { Resolve-SkillFile $missingPath } 'skill file missing:'
+    $dirPath = Join-Path $temporaryRoot 'skill-path-directory'
+    [void][IO.Directory]::CreateDirectory($dirPath)
+    Assert-Rejected 'skill-path-is-directory' { Resolve-SkillFile $dirPath } 'skill file missing:'
   }
   Invoke-Check 'regression/forbidden-paths' {
     $fixture = Join-Path $temporaryRoot 'forbidden-path-fixture'
@@ -601,6 +610,82 @@ try {
     Assert-OkResult (Invoke-PackageScript 'bootstrap-project.ps1' @('-ProjectRoot', $healthyRepository))
     Assert-OkResult (Invoke-PackageScript 'create-run.ps1' @('-ProjectRoot', $healthyRepository, '-Objective', 'Offline package verification', '-RunSlug', 'package-verification'))
     Assert-OkResult (Invoke-PackageScript 'validate-run.ps1' @('-ProjectRoot', $healthyRepository, '-IncludeTemplates'))
+  }
+  Invoke-Check 'regression/assemble-task-skill-paths' {
+    Assert-Condition ([bool]$healthyRepository) 'Healthy fixture unavailable'
+    $skillsDir = Join-Path $stagedPackage 'skills'
+    $taskPath = Join-Path $temporaryRoot 'assemble-task-explicit.json'
+    $outputPath = Join-Path $temporaryRoot 'assemble-task-explicit.md'
+    $task = [ordered]@{
+      schemaVersion = 1
+      taskKey = 'assemble-fixture'
+      title = 'Assemble fixture'
+      objective = 'Offline assemble regression'
+      role = 'software-implementer'
+      skills = [ordered]@{ required = @('test-driven-development'); conditional = @('integration-verification') }
+      skillDeliveryMode = 'explicit-path'
+      inputs = @()
+      allowedScope = @()
+      forbiddenScope = @()
+      branch = [ordered]@{ delivery = 'main'; base = 'main'; work = 'fixture/assemble'; mergeTarget = 'main'; worktree = $healthyRepository }
+      artifacts = [ordered]@{ reportPath = (Join-Path $temporaryRoot 'report.md'); evidencePath = '' }
+      acceptance = @('paths resolve')
+      tests = @()
+      orca = [ordered]@{ runId = 'run_test'; taskId = 'task_test'; dispatchId = 'ctx_test' }
+      applicableAgentsFiles = @()
+    }
+    [IO.File]::WriteAllText($taskPath, ($task | ConvertTo-Json -Depth 10), $utf8)
+    Assert-OkResult (Invoke-PackageScript 'assemble-task.ps1' @('-ProjectRoot', $healthyRepository, '-TaskDefinitionPath', $taskPath, '-OutputPath', $outputPath))
+    $assembled = [IO.File]::ReadAllText($outputPath, $utf8)
+    $bundledTdd = (Join-Path $skillsDir 'test-driven-development/SKILL.md').Replace('\', '/')
+    Assert-Condition ($assembled.Contains($bundledTdd.Replace('/', '\')) -or $assembled.Contains($bundledTdd)) 'Explicit-path output must reference bundled test-driven-development path'
+    $inlineTaskPath = Join-Path $temporaryRoot 'assemble-task-inline.json'
+    $inlineOutput = Join-Path $temporaryRoot 'assemble-task-inline.md'
+    $task.skillDeliveryMode = 'inline-extract'
+    [IO.File]::WriteAllText($inlineTaskPath, ($task | ConvertTo-Json -Depth 10), $utf8)
+    Assert-OkResult (Invoke-PackageScript 'assemble-task.ps1' @('-ProjectRoot', $healthyRepository, '-TaskDefinitionPath', $inlineTaskPath, '-OutputPath', $inlineOutput))
+    $inlined = [IO.File]::ReadAllText($inlineOutput, $utf8)
+    $sourceBody = [IO.File]::ReadAllText((Join-Path $skillsDir 'test-driven-development/SKILL.md'), $utf8).Trim()
+    Assert-Condition ($inlined.Contains($sourceBody.Substring(0, [Math]::Min(80, $sourceBody.Length)))) 'inline-extract must include bundled Skill body'
+  }
+  Invoke-Check 'regression/standalone-relocated-package' {
+    Assert-Condition ([bool]$healthyRepository) 'Healthy fixture unavailable'
+    $relocated = Join-Path $temporaryRoot 'relocated-orca-project-delivery'
+    if (Test-Path -LiteralPath $relocated) { Remove-Item -LiteralPath $relocated -Recurse -Force }
+    Copy-Item -LiteralPath $stagedPackage -Destination $relocated -Recurse
+    $taskPath = Join-Path $temporaryRoot 'assemble-task-relocated.json'
+    $outputPath = Join-Path $temporaryRoot 'assemble-task-relocated.md'
+    $task = [ordered]@{
+      schemaVersion = 1
+      taskKey = 'relocated-fixture'
+      title = 'Relocated package fixture'
+      objective = 'Standalone bundled skills'
+      role = 'software-implementer'
+      skills = [ordered]@{ required = @('test-driven-development'); conditional = @() }
+      skillDeliveryMode = 'explicit-path'
+      inputs = @()
+      allowedScope = @()
+      forbiddenScope = @()
+      branch = [ordered]@{ delivery = 'main'; base = 'main'; work = 'fixture/relocated'; mergeTarget = 'main'; worktree = $healthyRepository }
+      artifacts = [ordered]@{ reportPath = (Join-Path $temporaryRoot 'report-relocated.md'); evidencePath = '' }
+      acceptance = @()
+      tests = @()
+      orca = [ordered]@{ runId = 'run_test'; taskId = 'task_test'; dispatchId = 'ctx_test' }
+      applicableAgentsFiles = @()
+    }
+    [IO.File]::WriteAllText($taskPath, ($task | ConvertTo-Json -Depth 10), $utf8)
+    $relocatedScript = Join-Path $relocated 'scripts/assemble-task.ps1'
+    $ok = Invoke-Child $pwsh @('-NoProfile', '-NonInteractive', '-File', $relocatedScript, '-ProjectRoot', $healthyRepository, '-TaskDefinitionPath', $taskPath, '-OutputPath', $outputPath)
+    Assert-Condition ($ok.ExitCode -eq 0) "Relocated assemble-task failed: $($ok.Stderr) $($ok.Stdout)"
+    $missingSkill = Join-Path $relocated 'skills/test-driven-development/SKILL.md'
+    Remove-Item -LiteralPath $missingSkill -Force
+    $fail = Invoke-Child $pwsh @('-NoProfile', '-NonInteractive', '-File', $relocatedScript, '-ProjectRoot', $healthyRepository, '-TaskDefinitionPath', $taskPath, '-OutputPath', (Join-Path $temporaryRoot 'assemble-task-should-fail.md'))
+    Assert-Condition ($fail.ExitCode -ne 0) 'assemble-task must fail when bundled Skill is missing'
+    $globalDecoy = Join-Path $temporaryRoot 'decoy-skills/test-driven-development/SKILL.md'
+    [void][IO.Directory]::CreateDirectory((Split-Path -Parent $globalDecoy))
+    [IO.File]::WriteAllText($globalDecoy, 'decoy sibling skill', $utf8)
+    $failWithDecoy = Invoke-Child $pwsh @('-NoProfile', '-NonInteractive', '-File', $relocatedScript, '-ProjectRoot', $healthyRepository, '-TaskDefinitionPath', $taskPath, '-OutputPath', (Join-Path $temporaryRoot 'assemble-task-decoy-fail.md'))
+    Assert-Condition ($failWithDecoy.ExitCode -ne 0) 'assemble-task must not resolve a decoy outside the package skills directory'
   }
   Invoke-Check 'runtime/dirty-git-bootstrap-and-create' {
     $repository = New-FixtureRepository 'dirty-git-repository'
@@ -1232,10 +1317,9 @@ Assert-Condition (($problems.ToArray() -join "`n") -ceq ($expectedErrors -join "
   }
 }
 if ($null -ne $resolvedSkills) {
-  $siblings = @($resolvedSkills | Where-Object Origin -eq 'package-sibling').Count
-  $installed = @($resolvedSkills | Where-Object Origin -eq 'installed-home').Count
+  $siblings = @($resolvedSkills | Where-Object Origin -eq 'package-bundled').Count
   $declaredCount = try { @((Read-PackageJson 'routing/skill-catalog.json').skills).Count } catch { '?' }
-  Write-Host "skills: $($resolvedSkills.Count)/$declaredCount resolved ($siblings package-sibling, $installed installed-home)"
+  Write-Host "skills: $($resolvedSkills.Count)/$declaredCount resolved ($siblings package-bundled)"
 }
 Write-Host "SUMMARY PASS=$passed FAIL=$failed"
 if ($failed -gt 0) { exit 1 }

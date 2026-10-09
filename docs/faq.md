@@ -102,8 +102,8 @@ result, and retry the gate. Unreviewed changes are never repaired directly
 in the delivery branch.
 
 **`verify-package.ps1` prints FAIL lines on my fresh clone.**
-Read the first FAIL line: a missing sibling Skill points at
-`metadata/skill-paths`; encoding failures identify invalid UTF-8, a BOM, or CR
+Read the first FAIL line: a missing bundled Skill points at
+`metadata/skill-paths` or `metadata/bundled-skill-integrity`; encoding failures identify invalid UTF-8, a BOM, or CR
 bytes; content failures identify a disallowed reference. A FAIL can reflect
 a missing dependency, environment problem, or package defect, and does not
 by itself prove the checkout was modified — see

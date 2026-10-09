@@ -14,7 +14,7 @@ $ErrorActionPreference = "Stop"
 
 $root = (Resolve-Path $ProjectRoot).Path
 $skillRoot = Split-Path -Parent $PSScriptRoot
-$skillsRoot = Split-Path -Parent $skillRoot
+$skillsRoot = Join-Path $skillRoot 'skills'
 $task = Get-Content $TaskDefinitionPath -Raw | ConvertFrom-Json
 if ($task.skillDeliveryMode -cnotin @('explicit-path', 'inline-extract')) {
   throw "skillDeliveryMode must be explicit-path or inline-extract."

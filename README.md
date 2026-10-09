@@ -77,28 +77,28 @@ and user decisions.
 | Capability | Detail | Source |
 | --- | --- | --- |
 | Roles | 12 (research, product, architecture, engineering, quality) | `roles/catalog.json` |
-| Professional Skills | 16 sibling Skills under `~/.agents/skills` | `routing/skill-catalog.json` |
+| Professional Skills | 16 bundled under package `skills/` | `routing/skill-catalog.json` |
 | Workflows | 4: feature-development, bug-fix, refactor, audit | `workflows/` |
 | Adaptive depth | light / standard / high-risk stage chains | `routing/workflow-selection.json` |
 | Model routing | per-role chains over haiku / sonnet / opus / fable with effort levels, defaults, floors | `routing/model-routing.json` |
 | Required invariants | 12 binding rules for isolation, review, evidence, and integration | `SKILL.md` |
 | Helper scripts | 9 PowerShell scripts (bootstrap, run creation, task assembly, probes, validation, release) | `scripts/` |
-| Offline acceptance | 55-check self-verification suite, exit 0 on success | `scripts/verify-package.ps1` |
+| Offline acceptance | 59-check self-verification suite, exit 0 on success | `scripts/verify-package.ps1` |
 | Git evidence | 6 validation phases: sourceRegistered, review, preMerge, postMerge, final, audit | `scripts/validate-git-evidence.ps1` |
 
 ## Quick start
 
 Requirements: Windows, PowerShell 7+, Git, Claude Code, the Orca Runtime, and
-the [16 professional Skills](docs/professional-skills.md) from
-[orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills).
+this package (professional Skills are included under `skills/`). Upstream
+provenance: [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills).
 Full details and troubleshooting:
 [docs/installation.md](docs/installation.md).
 
 ```powershell
-# 1. Place the package next to its sibling skills (default convention)
+# 1. Clone the package into your skills root
 git clone https://github.com/guanwenpeng2001-bot/orca-project-delivery.git "$env:USERPROFILE\.agents\skills\orca-project-delivery"
 
-# 2. Verify the package offline (expects: SUMMARY PASS=55 FAIL=0, exit 0)
+# 2. Verify the package offline (expects: SUMMARY PASS=59 FAIL=0, exit 0)
 pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scripts\verify-package.ps1"
 ```
 
@@ -124,6 +124,7 @@ orca-project-delivery/
 ├── references/               # 11 deep-dive references (runtime, branch model, evidence, ...)
 ├── roles/                    # 12 role contracts + catalog.json
 ├── routing/                  # Model, role, skill, and workflow routing tables
+├── skills/                   # 16 vendored professional Skills + LICENSE + README
 ├── workflows/                # 4 workflow definitions
 ├── schemas/                  # 8 JSON schemas for .dev-work state and evidence
 ├── scripts/                  # 9 PowerShell scripts

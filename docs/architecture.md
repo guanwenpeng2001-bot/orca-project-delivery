@@ -86,7 +86,7 @@ implementation.
 
 ## The 16 professional Skills
 
-Skills live as sibling packages under `~/.agents/skills` and are delivered to
+Skills are vendored under the package `skills/` directory and are delivered to
 workers by `explicit-path` (the absolute `SKILL.md` path named in the Task)
 or, as a fallback, by `inline-extract` with the source path and hash
 recorded. A Skill name alone is never loading evidence, and a Skill supplies
