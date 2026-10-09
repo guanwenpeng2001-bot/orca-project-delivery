@@ -2,35 +2,40 @@
 
 These 16 professional Skills ship inside `orca-project-delivery` so workers resolve them from the package only (no global sibling fallback).
 
-## Upstream provenance
+## Provenance
+
+The content originated in the upstream library below and was imported as a baseline. The `SKILL.md` bodies in this directory are package-maintained adaptations of that baseline: the package owns and edits them in place, and they are no longer byte-identical copies of the upstream files. `LICENSE` in this directory is unchanged from upstream and remains the MIT notice covering the original baseline.
 
 | Field | Value |
 | --- | --- |
-| Repository | https://github.com/guanwenpeng2001-bot/orca-professional-skills |
-| Source commit | `d9a174c7143bfb4c76ed042f457fb7785c35cea3` |
-| Import date | 2026-10-09 |
+| Upstream repository | https://github.com/guanwenpeng2001-bot/orca-professional-skills |
+| Upstream baseline commit | `d9a174c7143bfb4c76ed042f457fb7785c35cea3` |
+| Baseline import date | 2026-10-09 |
 | License | MIT — see `LICENSE` in this directory |
+| Current content | Adapted and maintained in this package; not a byte-identical import |
 
-Do not edit vendored `SKILL.md` bodies in place. To refresh content, re-import from the pinned upstream commit and update the SHA256 table below.
+To refresh the baseline, re-import from the pinned upstream commit. Editing the adapted bodies here is expected; recompute the SHA256 table below when you do.
 
-## SHA256 integrity (import verification)
+## SHA256 integrity (current adapted content)
+
+The hashes below cover the current contents of each file. They are recomputed whenever the content changes, so this table tracks the adapted content rather than the original import.
 
 | Path | SHA256 |
 | --- | --- |
-| `api-design/SKILL.md` | EAB3F38026E4C6BB389E2DD6D43BBE9329EE3B6A43FB38D889969A9E59535D41 |
-| `code-review/SKILL.md` | 9CA588B19F9D16A7EF97C3AC42B4ECDF298C945938122FA5A6D9FC145E7B8F69 |
-| `codebase-reconnaissance/SKILL.md` | 313758CD398FF414035629889ABD678F8E516895BC3286EAFF061CCF7D4B53C1 |
-| `database-design/SKILL.md` | 29E14B2B28CEDA26702B829E630EACB7EBA6BEE1B67AF1A09508E6D84E8A382E |
-| `implementation-planning/SKILL.md` | DDD5A1E96A16E451323C63569980CEC4F459E4C2F93D6A21DABAB8C31AE5128F |
-| `integration-verification/SKILL.md` | 71228F592E1B5FA278AC852195555FEF40261B46EDA0ACC7290AB89F3F92FBEB |
-| `merge-conflict-resolution/SKILL.md` | C4554D4D605CBDA77AB823F631F9EAA8EDAC2B37FA2C95245DEB38240E99573D |
-| `performance-review/SKILL.md` | 61AA6D041C030F1B6D851ABE9B148F0DFD099A6CE2FED922BD54640B685A1C3A |
-| `product-design/SKILL.md` | C32A927E1EA0CB5E80447AAEA022000DEBE2A9CC7713DABD4E40D0A7DCBF20F8 |
-| `product-discovery/SKILL.md` | BCE86DCC84ED51D7B575AEC190291F024AF9891AD55AF07C43AAAB10B9C50598 |
-| `requirements-analysis/SKILL.md` | F2CC5BC6ACE3A997D338C09DC9DDBBE91066F81FAC6EB52316784790D6241A05 |
-| `security-review/SKILL.md` | 8CBFD78427667C33A6E298843826718A426F4F0A4F2DE7033C6088C0215D2EB2 |
-| `solution-architecture/SKILL.md` | BD659B15695280F66B80FDF244E7C076A1FC5130BC44F8DA7467C460514259EB |
-| `systematic-debugging/SKILL.md` | E72311183F3E085D692CA0C86172442F0568C16D6D3DD0C80B56027BD2661FE7 |
-| `technical-research/SKILL.md` | DA006BABDF0DD23EBCEC6E2F60CA0CE885C993BF6F71D5D9397E1F13CFEB1068 |
-| `test-driven-development/SKILL.md` | 2FF378C1862BF9E7B541BDDBBDA2F5B4364134B2338B65C6DC70E8EF9379945F |
+| `api-design/SKILL.md` | CC121A2C0164E8F3FA267ACB726E5709F2EA05C510C20F48DA7F2513F3FE9FF0 |
+| `code-review/SKILL.md` | 411AD3ADB1419E3F7FA585123DEECFCB77738310D99A5F1B7464E2301BB461B2 |
+| `codebase-reconnaissance/SKILL.md` | 75BDA935A69B4A12726A380E007B1E4540E3B54A49AA4E01B72B9027699EC49D |
+| `database-design/SKILL.md` | 8CD6D8EDF675EC39F43B09C2AD2D8444BE5B0FD6EC6B59293061D6F044D639A8 |
+| `implementation-planning/SKILL.md` | 1CAADB38ED965DC48A419466AF5B41DE94FC698E6662E4602B50701D22F87EC5 |
+| `integration-verification/SKILL.md` | 27020DA2BFA07A9D9EEB5199A1DB7C3999C49DC7F82DC78961CA992A5EF5E986 |
+| `merge-conflict-resolution/SKILL.md` | 077CC1E2E46378DB83C0B649375E982DB68DE757D903FE124DB2A5182B7CC514 |
+| `performance-review/SKILL.md` | B870ABC4C5EE0951B63544EF0AEC0AF19EF00ADA3B9E2164CA6BA61A4B9C2309 |
+| `product-design/SKILL.md` | 7D12D6D7488CB4392C40336706BE4D601552370E0199954EE2BC58A6DB55743C |
+| `product-discovery/SKILL.md` | DA109B54CA1A9B1A176A229228BE04FA8D19AC2607753C254DB4566C712301C2 |
+| `requirements-analysis/SKILL.md` | D3A48C51A5A2836A9A891400CC39F3EB64056AAAFC22ECEDA074C49B154456A1 |
+| `security-review/SKILL.md` | E65D3C830C6E3080666E67822421D4905940BA82A34C0E805ADB27E998F47232 |
+| `solution-architecture/SKILL.md` | 8D92271780A73975ABCA70DFEF51EDADB3758E7316079A8061BB2FD384FFCF5D |
+| `systematic-debugging/SKILL.md` | 0F2D0FA14977C62592E7C1BB04BBD6EF59E5B2400BBD3E2CFA427E79AB1494FF |
+| `technical-research/SKILL.md` | C787DB619895BBE89C188829C008445668C080A005676B27274BE7E40FFEFC4F |
+| `test-driven-development/SKILL.md` | 1DD7FFB87EB72302788C9700D552FCC2C3C1664F070F5A06092656D01161539D |
 | `LICENSE` | 7129B74272330BD7F3E542F64FB9047ABFE78F8204A444267137379CCC8158D0 |
