@@ -200,7 +200,7 @@ $metadataExit = $LASTEXITCODE
 $packageExit = $LASTEXITCODE
 ```
 
-Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs, manifest counts/version and current hashes; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. A mismatched count, missing route, invalid path or stale hash must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
+Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs, manifest counts/version and current hashes; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. Documentation tests run the official 2.5.0 count assertions and the capability tutorial's release guard against a fixed release fixture; acceptance of the edited package compares its actual catalogs, files, manifest and hashes without requiring 16 / 46. A mismatched count, missing route, invalid path or stale hash must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
 
 ## Select and deliver methods
 

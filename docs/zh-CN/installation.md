@@ -45,7 +45,7 @@
 两条规则：
 
 1. 不要覆盖 Orca 提供的 Skill（`orchestration`、`orca-cli`、`orca-per-workspace-env`）。本包是加在它们之上的，从不替换它们。
-2. 专业 Skill 只从本包的 `skills/` 目录解析。校验套件**不会**回退到 `~/.agents/skills` 下的同级目录。
+2. 随包专业 Skill 从本包的 `skills/` 目录解析。外部 Skill 必须在版本 2 项目配置中显式注册，见[外部 Skill](external-skills.md)。随包条目缺失时**不会**静默回退到 `~/.agents/skills` 下的同级安装。
 
 运行时创建的项目本地状态（`AGENTS.md`、`.dev-work/`）位于你交付的每个*项目*里，不在本包目录中。
 

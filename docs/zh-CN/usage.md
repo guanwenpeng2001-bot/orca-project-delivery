@@ -68,7 +68,7 @@ intake -> reconnaissance -> plan -> task graph -> dispatch
 
 为每个任务写任务定义，并用 `scripts/assemble-task.ps1` 组装其输入。每个任务携带：一个主角色、必需（以及可选的条件）Skill、允许与禁止范围、分支与工作树合同、一条 `.dev-work` 报告路径、验收条件，以及 Orca Worker Contract。即使已有 Markdown 简报，也要把机器可读的指派记在 `runs/<run>/assignments/<task>.json` 下 — 包括请求的和生效的运行时值。只编码真实依赖；使用并行波次，避免深于 3–4 步的链。
 
-专业 Skill 随本包位于 `skills/<skill-id>/SKILL.md`。组装只解析这些路径（`explicit-path`），或内联同一正文（`inline-extract`）；随包文件缺失时组装失败，不回退到 `~/.agents/skills`。出处与 SHA256 检查写在 `skills/README.md`，并由 `scripts/verify-package.ps1` 中的 `metadata/bundled-skill-integrity` 离线强制。见 [professional-skills.md](professional-skills.md)、[professional-capabilities.md](professional-capabilities.md) 和 [installation.md](installation.md)。检查安装、运行本地工具和依赖辅助脚本而不调用提供方的走读在 [professional-capability-tutorial.md](professional-capability-tutorial.md)。
+随包专业 Skill 从本包的 `skills/<skill-id>/SKILL.md` 解析。外部 Skill 必须在版本 2 项目配置中显式注册，见[外部 Skill](external-skills.md)。组装交付解析后的路径（`explicit-path`），或内联同一正文（`inline-extract`）。随包文件缺失时组装失败，不会静默回退到 `~/.agents/skills` 下的同级安装。随包 Skill 的出处与 SHA256 检查写在 `skills/README.md`，并由 `scripts/verify-package.ps1` 中的 `metadata/bundled-skill-integrity` 离线强制。见 [professional-skills.md](professional-skills.md)、[professional-capabilities.md](professional-capabilities.md) 和 [installation.md](installation.md)。检查安装、运行本地工具和依赖辅助脚本而不调用提供方的走读在 [professional-capability-tutorial.md](professional-capability-tutorial.md)。
 
 组装把目录 `requires` 的名称/用途放在 Inputs and Dependencies 内，区分 Role 加必需 Skill 的依赖与条件 Skill。条件依赖仅在 Task 要求时激活。在执行主机上，以显式 `-ProjectRoot`、`-Role` 和会话内 `-Skills @(...)` 所选 ID 数组运行 `check-requirements.ps1`。辅助脚本不会代选 Role 默认 Skill。文件配置不代表当前 shell 已有这些值；授权子进程可以通过 `invoke-with-requirements.ps1` 接收所选文件变量，父进程环境保持不变。精确接口及离线走读见[扩展与配置](extending.md)。十段 Task 顺序及适用 `AGENTS.md` 最后保持不变。
 

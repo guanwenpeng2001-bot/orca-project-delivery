@@ -59,9 +59,10 @@ Two rules:
 1. Do not overwrite the Orca-provided Skills (`orchestration`,
    `orca-cli`, `orca-per-workspace-env`). This package adds to them; it never
    replaces them.
-2. Professional Skills resolve only from this package's `skills/` directory.
-   The verification suite does **not** fall back to sibling directories under
-   `~/.agents/skills`.
+2. Bundled professional Skills resolve from this package's `skills/` directory.
+   External Skills require explicit registration in version 2 project config; see
+   [External Skills](external-skills.md). Missing bundled entries **do not** silently
+   fall back to sibling installations under `~/.agents/skills`.
 
 Project-local state created at runtime (`AGENTS.md`, `.dev-work/`) lives in
 each *project* you deliver, not in this package directory.

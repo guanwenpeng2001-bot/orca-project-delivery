@@ -115,10 +115,12 @@ the Orca Worker Contract. Record the machine-readable assignment under
 runtime values — even when a Markdown brief exists. Encode only true
 dependencies; use parallel waves and avoid chains deeper than 3–4 steps.
 
-Professional Skills are bundled under `skills/<skill-id>/SKILL.md` in this package.
-Assembly resolves only those paths (`explicit-path`) or inlines the same bodies
-(`inline-extract`); a missing bundled file fails at assembly with no fallback to
-`~/.agents/skills`. Provenance and SHA256 checks are documented in
+Bundled professional Skills resolve from this package's `skills/<skill-id>/SKILL.md`.
+External Skills require explicit registration in version 2 project config; see
+[External Skills](external-skills.md). Assembly delivers resolved paths (`explicit-path`)
+or inlines the same bodies (`inline-extract`). A missing bundled file fails at assembly
+without silently falling back to sibling installations under `~/.agents/skills`.
+Bundled provenance and SHA256 checks are documented in
 `skills/README.md` and enforced offline by `metadata/bundled-skill-integrity` in
 `scripts/verify-package.ps1`. See [professional-skills.md](professional-skills.md),
 [professional-capabilities.md](professional-capabilities.md), and
