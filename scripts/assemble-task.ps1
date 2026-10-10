@@ -25,6 +25,13 @@ if ($task.PSObject.Properties.Name -contains 'skillz') {
   throw "Task property 'skillz' is not supported; use skills with required and conditional arrays."
 }
 Assert-RequirementsSchema $task 'task-definition' 'Task definition (including skills)'
+$agentSectionSelectors = @($task.agentsSections | Where-Object { $_ })
+$usesBriefOptions = ($task.taskKind -eq 'read-only') -or ($task.briefProfile -eq 'review') -or ($agentSectionSelectors.Count -gt 0)
+$briefNewLine = if ($usesBriefOptions) { "`n" } else { [Environment]::NewLine }
+$isReview = $task.briefProfile -eq 'review'
+$includeRole = -not $isReview -or $task.reviewIncludes -contains 'role'
+$includeSkills = -not $isReview -or $task.reviewIncludes -contains 'skills'
+$includeRequirements = -not $isReview -or $task.reviewIncludes -contains 'requirements'
 $context = Get-ProjectRequirementsContext $skillRoot $root $ConfigPath
 $catalog = $context.Catalog
 $role = (Get-SelectedRequirements $catalog $task.role @()).Role
@@ -73,6 +80,7 @@ if ($binding) {
   $roleSkills = @{ defaultSkills = @($effectiveSkills.required); optionalSkills = @($effectiveSkills.conditional) }
   foreach ($field in @('defaultSkills', 'optionalSkills')) {
     $replacement = if ($roleSkills[$field].Count) { $field + ":`n" + (($roleSkills[$field] | ForEach-Object { "  - $_" }) -join "`n") + "`n" } else { $field + ": []`n" }
+    if ($usesBriefOptions) { $replacement = '' }
     $roleText = [regex]::Replace($roleText, "(?m)^${field}:[^\r\n]*\r?\n(?:[ \t]+[^\r\n]*\r?\n)*", [Text.RegularExpressions.MatchEvaluator]{ param($match) $replacement })
   }
   $defaultSkillsText = if ($roleSkills.defaultSkills.Count) { $roleSkills.defaultSkills -join ', ' } else { 'None' }
@@ -85,7 +93,7 @@ $roleBody = ConvertTo-EmbeddedMarkdown $roleText
 function To-Bullets {
   param($Items)
   if (-not $Items -or @($Items).Count -eq 0) { return "- None" }
-  return (@($Items) | ForEach-Object { "- $_" }) -join [Environment]::NewLine
+  return (@($Items) | ForEach-Object { "- $_" }) -join $briefNewLine
 }
 
 function Format-OrNull {
@@ -156,10 +164,58 @@ Escalate missing dependencies by name; never print values. These helpers make no
 # "## Orca Worker Contract" heading. Remaining headings nest two levels deeper.
 $workerContract = (Get-Content (Join-Path $skillRoot "references\worker-contract.md") -Raw)
 $workerContract = $workerContract -replace '(?m)^# Orca Worker Contract\r?\n+', ''
+if ($task.taskKind -eq 'read-only') {
+  $workerContract = $workerContract -replace '(?m)^- Source/deliverable Tasks:[^\r\n]*\r?\n(?:[ \t]+[^\r\n]*\r?\n)*', ''
+}
 $workerContract = ConvertTo-EmbeddedMarkdown $workerContract
 
 # Resolve AGENTS files. Explicit Task list wins; otherwise include the coordinator/project
 # root and the task worktree root when present. Deduplicate by canonical path.
+function Select-AgentsSections {
+  param([string]$Text, [string[]]$Selectors, [hashtable]$Matched)
+
+  $headings = @()
+  $fence = ''
+  foreach ($line in [regex]::Matches($Text, '[^\r\n]*(?:\r?\n|\z)')) {
+    $value = $line.Value.TrimEnd("`r", "`n")
+    if ($fence) {
+      if ($value -match ('^ {0,3}' + [regex]::Escape($fence.Substring(0, 1)) + '{' + $fence.Length + ',}[ \t]*$')) { $fence = '' }
+      continue
+    }
+    if ($value -match '^ {0,3}(`{3,}|~{3,})') { $fence = $Matches[1]; continue }
+    if ($value -match '^ {0,3}(#{1,6})(?:[ \t]+(.*?)|[ \t]*)$') {
+      $level = $Matches[1].Length
+      $title = ($Matches[2] -replace '[ \t]+#+[ \t]*$', '').Trim()
+      $headings += [pscustomobject]@{ Start = $line.Index; Level = $level; Title = $title }
+    }
+  }
+  $ranges = @()
+  for ($index = 0; $index -lt $headings.Count; $index++) {
+    $heading = $headings[$index]
+    $aliases = @($heading.Title)
+    if ($heading.Title -match '^(\d+(?:\.\d+)*)(?:[.)、]|\s)\s*(.*)$') { $aliases += $Matches[1]; $aliases += $Matches[2] }
+    $selected = $false
+    foreach ($selector in $Selectors) {
+      if ($aliases -ccontains $selector) { $Matched[$selector] = $true; $selected = $true }
+    }
+    if (-not $selected) { continue }
+    $end = $Text.Length
+    for ($next = $index + 1; $next -lt $headings.Count; $next++) {
+      if ($headings[$next].Level -le $heading.Level) { $end = $headings[$next].Start; break }
+    }
+    $ranges += [pscustomobject]@{ Start = $heading.Start; End = $end }
+  }
+  $selectedText = ''
+  $previousEnd = 0
+  foreach ($range in $ranges) {
+    if ($range.Start -lt $previousEnd) { continue }
+    $selectedText += $Text.Substring($range.Start, $range.End - $range.Start)
+    $previousEnd = $range.End
+  }
+  return $selectedText
+}
+
+$matchedAgentsSections = @{}
 $agentsCandidates = @()
 if ($task.PSObject.Properties.Name -contains "applicableAgentsFiles" -and @($task.applicableAgentsFiles).Count -gt 0) {
   $agentsCandidates += @($task.applicableAgentsFiles)
@@ -182,11 +238,19 @@ foreach ($candidate in $agentsCandidates) {
   if ($seen.ContainsKey($key)) { continue }
   $seen[$key] = $true
   $agentsFiles += (Get-Item -LiteralPath $resolved).FullName
+  $agentsText = Get-Content $resolved -Raw
+  if ($task.agentsSections -and @($task.agentsSections).Count -gt 0) {
+    $agentsText = Select-AgentsSections $agentsText $task.agentsSections $matchedAgentsSections
+    if (-not $agentsText) { continue }
+  }
   $agentsSections += @"
 ## AGENTS source: ``$resolved``
 
-$(Get-Content $resolved -Raw)
+$agentsText
 "@
+}
+foreach ($selector in @($task.agentsSections | Where-Object { $_ })) {
+  if (-not $matchedAgentsSections.ContainsKey($selector)) { throw "AGENTS.md section '$selector' was not found in applicable AGENTS files." }
 }
 if ($agentsSections.Count -eq 0) {
   throw "No applicable AGENTS.md was found. Run bootstrap-project.ps1 or provide applicableAgentsFiles."
@@ -197,13 +261,7 @@ $branch = $task.branch
 $artifacts = $task.artifacts
 $orca = $task.orca
 
-$content = @"
-# Assignment: $($task.title)
-
-## Task Objective
-
-$($task.objective)
-
+$roleSection = @"
 ## Primary Role
 
 - Role: ``$($task.role)``
@@ -211,20 +269,48 @@ $($task.objective)
 
 $roleBody
 
+"@
+$skillsSection = @"
 ## Required and Conditional Skills
 
 Skill delivery mode: ``$($task.skillDeliveryMode)``
 
-$($skillLines -join [Environment]::NewLine)
+$($skillLines -join $briefNewLine)
 
-$($inlineSkills -join [Environment]::NewLine)
+$($inlineSkills -join $briefNewLine)
 
+"@
+$inputSection = @"
 ## Inputs and Dependencies
 
 $(To-Bullets $task.inputs)
 
 $requirementBody
 
+"@
+$roleSection += "`n"
+$skillsSection += "`n"
+if (-not $includeRole) { $roleSection = '' }
+if (-not $includeSkills) { $skillsSection = '' }
+if ($isReview) {
+  $inputSection = @"
+## Review input
+
+- Base SHA: ``$($task.reviewInput.baseSha)``
+- Branch: ``$($task.reviewInput.branch)``
+- Diff command: ``$($task.reviewInput.diffCommand)``
+
+"@
+  if ($includeRequirements -and $requirementBody) { $inputSection += "`n$requirementBody`n" }
+}
+$content = @"
+# Assignment: $($task.title)
+
+## Task Objective
+
+$($task.objective)
+
+$roleSection$skillsSection$inputSection
 ## Allowed Scope
 
 $(To-Bullets $task.allowedScope)

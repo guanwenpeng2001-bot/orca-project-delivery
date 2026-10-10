@@ -3,6 +3,9 @@
   "taskKey": "replace-me",
   "title": "Replace me",
   "objective": "State one observable outcome.",
+  "taskKind": "source",
+  "briefProfile": "standard",
+  "agentsSections": [],
   "role": "codebase-scout",
   "skills": {
     "required": [
