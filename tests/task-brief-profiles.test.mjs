@@ -172,6 +172,7 @@ test('verification clauses scale with the brief profile and print review deltas'
   assert.match(standard.brief, /### Minimum relevant suites/);
   assert.doesNotMatch(standard.brief, /### Re-verification scaled by the delta/);
   assert.match(standard.brief, /scripts\/verify-package\.ps1 -Suites/);
+  assert.match(standard.brief, /-Suites 'package contracts,git evidence'/);
   for (const suite of ['package structure', 'package runtime', 'package contracts', 'project lifecycle', 'git evidence', 'evidence source mutations']) {
     assert.ok(standard.brief.includes(suite), `standard brief must name suite: ${suite}`);
   }
