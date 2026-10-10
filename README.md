@@ -4,14 +4,14 @@
 
 A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
-![Version](https://img.shields.io/badge/version-2.7.0-blue)
+![Version](https://img.shields.io/badge/version-2.8.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-These guides describe the **2.7.0 package: 46 Skills, 16 Roles, and 4 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
+These guides describe the **2.8.0 package: 46 Skills, 16 Roles, and 4 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
 
-New in 2.7.0: fix and re-review dispatches resume the original worker terminal session and worktree; `scripts/query-routing.ps1` projects one Role's model/effort slice; and task briefs use `taskKind`, `briefProfile` and `agentsSections` to narrow review and read-only inputs. This run measured 47.85% smaller implementer briefs and review briefs of about 3 KB. The `SKILL.md` Unicode character budget counts whitespace, warns at 19,800 characters and fails above 22,000; the current 21,371-character entry produces the expected warning with 81 package checks passing. Bundled counts remain 46 Skills, 16 Roles, and 4 workflows; [installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
+New in 2.8.0: `scripts/dispatch-task.ps1` records each dispatch as the run assignment from the `worker-start` receipt, refusing a control-worktree placement, a worktree that contradicts the task definition, and a duplicate live dispatch for the same Task. Task assembly checks acceptance and tests commands against the real package scripts and their parameters, review briefs take `reviewInput.deltaPaths` for delta-scaled re-verification, and `validate-git-evidence.ps1` fails a formal assignment whose status is outside the lifecycle enum instead of silently skipping its coverage obligation. The brief-profile fixture measures 46.27% smaller implementer briefs. The `SKILL.md` Unicode character budget counts whitespace, warns at 19,800 characters and fails above 22,000; the current 21,390-character entry lies inside the limit, with 82 package checks passing. Bundled counts remain 46 Skills, 16 Roles, and 4 workflows; [installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
 
 Orca Project Delivery is a coordinator-only Skill that runs a complete software
 delivery pipeline with Claude Code worker agents. It solves the problem of
@@ -124,7 +124,7 @@ integrate, and close. The walkthrough lives in
 orca-project-delivery/
 ├── SKILL.md                  # Coordinator entry point (17 sections, <= 250 lines)
 ├── LICENSE                   # MIT
-├── VERSION                   # 2.7.0
+├── VERSION                   # 2.8.0
 ├── PACKAGE-MANIFEST.json     # Package metadata and deliverable counts
 ├── CHANGELOG.md
 ├── README.md                 # English (default)

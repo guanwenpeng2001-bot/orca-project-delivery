@@ -1,0 +1,284 @@
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+const root = fileURLToPath(new URL('../', import.meta.url));
+const script = path.join(root, 'scripts/dispatch-task.ps1');
+const orcaRunId = 'run_fixture1234567890';
+const normalized = (value) => value.replace(/\\/g, '/').replace(/\/+$/, '');
+
+function writeJson(file, value) {
+  writeFileSync(file, JSON.stringify(value, null, 2));
+}
+
+function readJson(file) {
+  return JSON.parse(readFileSync(file, 'utf8'));
+}
+
+// PowerShell renders thrown messages with ANSI colors and hard line wraps; flatten both before
+// matching so an assertion does not depend on the console width of the day.
+function clean(text) {
+  return text
+    .replace(/\x1b\[[0-9;]*m/g, '')
+    .replace(/\r?\n\s*\|\s*/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function parseOutput(result) {
+  return JSON.parse(result.stdout.trim());
+}
+
+function createProject(t) {
+  // Canonicalize so the recorded worktree (short vs long temp name) matches git's own spelling.
+  const project = realpathSync.native(mkdtempSync(path.join(tmpdir(), 'dispatch-task-')));
+  t.after(() => rmSync(project, { recursive: true, force: true }));
+  const git = (args) => {
+    const result = spawnSync('git', args, { cwd: project, encoding: 'utf8', timeout: 15000 });
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+  };
+  git(['init', '--template=', '-b', 'main', '-q']);
+  git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.com', '-c', 'commit.gpgsign=false', 'commit', '--allow-empty', '-q', '-m', 'init']);
+
+  const devWork = path.join(project, '.dev-work');
+  const runDir = path.join(devWork, 'runs', 'fixture-run');
+  mkdirSync(path.join(runDir, 'assignments'), { recursive: true });
+  mkdirSync(path.join(runDir, 'evidence', 'git'), { recursive: true });
+  writeJson(path.join(devWork, 'manifest.json'), {
+    schemaVersion: 1, managedBy: 'orca-project-delivery', createdAt: '2026-01-01T00:00:00Z', projectRoot: project,
+  });
+  writeJson(path.join(devWork, 'coordinator-lock.json'), {
+    schemaVersion: 1, status: 'active', coordinatorControlBranch: 'control', coordinatorWorktree: project,
+    startedAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z', activeRun: 'fixture-run',
+  });
+  writeJson(path.join(devWork, 'active-run.json'), {
+    schemaVersion: 1, run: 'fixture-run', runDirectory: 'runs/fixture-run', orcaRunId, updatedAt: '2026-01-01T00:00:00Z',
+  });
+  writeJson(path.join(runDir, 'run-state.json'), {
+    schemaVersion: 1, runSlug: 'fixture-run', objective: 'dispatch fixture', workflow: 'feature-development',
+    status: 'active', stage: 'task-graph', deliveryBranch: 'main', deliveryBranchSource: 'user',
+    coordinatorControlBranch: 'control', coordinatorWorktree: project, orcaRunId,
+    completedStages: ['intake'], pendingUserDecisions: [],
+    createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+  });
+  writeJson(path.join(runDir, 'task-map.json'), { schemaVersion: 1, tasks: {} });
+  writeJson(path.join(runDir, 'branch-map.json'), { schemaVersion: 1, branches: {} });
+  return { project, runDir, devWork };
+}
+
+function writeInputs(t, project, mutate = {}) {
+  const worktree = mutate.worktree ?? path.join(path.dirname(project), 'fixture-worktree');
+  const definition = {
+    schemaVersion: 1,
+    taskKey: 'fixture-task',
+    title: 'Fixture task',
+    objective: 'Exercise dispatch accounting',
+    role: 'software-implementer',
+    skills: { required: ['test-driven-development'], conditional: [] },
+    skillDeliveryMode: 'explicit-path',
+    branch: { delivery: 'main', base: 'main', work: 'fixture/task', mergeTarget: 'main', worktree },
+    artifacts: { reportPath: path.join(project, 'worker-report.md'), evidencePath: '' },
+    ...mutate.definition,
+  };
+  const receipt = {
+    id: '11111111-2222-3333-4444-555555555555',
+    ok: true,
+    result: {
+      runId: orcaRunId,
+      taskId: mutate.taskId ?? 'task_abcdef123456',
+      dispatchId: mutate.dispatchId ?? 'ctx_abcdef123456',
+      state: 'ready',
+      stage: 'input_accepted',
+      turnStart: 'observed',
+      launch: {
+        requested: { agent: 'claude', model: 'sonnet', effort: 'high' },
+        effective: mutate.effective ?? { agent: 'claude', model: 'sonnet', effort: 'high' },
+      },
+      mode: { mode: 'terminal', preferred: 'terminal', reason: 'user_default', detail: 'Started a terminal agent worker.' },
+      timeoutMs: 60000,
+      effects: mutate.effects ?? [
+        { kind: 'worktree', action: 'created_top_level', id: `topology-id::${normalized(worktree)}` },
+        { kind: 'terminal', role: 'agent', action: 'created', id: 'term_fixture', surface: 'visible' },
+      ],
+      residualResources: [],
+      mutation: { requestId: '22222222-3333-4444-5555-666666666666', replayed: false },
+    },
+    _meta: { runtimeId: '33333333-4444-5555-6666-777777777777' },
+  };
+  const inputs = path.join(project, 'inputs');
+  mkdirSync(inputs, { recursive: true });
+  const definitionPath = path.join(inputs, `${mutate.taskKeyName ?? 'fixture-task'}.json`);
+  const briefPath = path.join(inputs, 'fixture-task.md');
+  const receiptPath = path.join(inputs, 'receipt.json');
+  writeJson(definitionPath, definition);
+  writeJson(receiptPath, receipt);
+  writeFileSync(briefPath, '# Worker brief\n');
+  t.after(() => rmSync(inputs, { recursive: true, force: true }));
+  return { definitionPath, briefPath, receiptPath, worktree };
+}
+
+function runDispatch(project, paths, args = ['-SkipPostValidation']) {
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', script,
+    '-ProjectRoot', project, '-TaskDefinitionPath', paths.definitionPath,
+    '-BriefPath', paths.briefPath, '-ReceiptPath', paths.receiptPath, ...args], {
+    encoding: 'utf8', timeout: 60000,
+  });
+  assert.ifError(result.error);
+  return result;
+}
+
+test('records a successful dispatch receipt as the run ledger', (t) => {
+  const { project, runDir } = createProject(t);
+  const paths = writeInputs(t, project);
+  const result = runDispatch(project, paths, []);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const output = parseOutput(result);
+  assert.equal(output.ok, true);
+  assert.equal(output.runtimeVerification, 'verified');
+  assert.equal(output.stage, 'task-graph');
+  assert.deepEqual(output.postValidation, { executed: true, ok: true, exitCode: 0 }, result.stdout);
+  assert.deepEqual(output.warnings, []);
+
+  const assignmentPath = path.join(runDir, 'assignments', 'fixture-task.json');
+  const bytes = readFileSync(assignmentPath);
+  assert.notEqual(bytes[0], 0xef, 'assignment must not start with a UTF-8 BOM');
+  const assignment = JSON.parse(bytes.toString('utf8'));
+  assert.equal(assignment.taskKey, 'fixture-task');
+  assert.equal(assignment.role, 'software-implementer');
+  assert.deepEqual(assignment.skills, { required: ['test-driven-development'], conditional: [] });
+  assert.deepEqual(assignment.orca, { runId: orcaRunId, taskId: 'task_abcdef123456', dispatchId: 'ctx_abcdef123456' });
+  assert.equal(assignment.status, 'active');
+  assert.equal(assignment.runtime.verification.status, 'verified');
+  assert.equal(assignment.runtime.mode.mode, 'terminal');
+  assert.equal(assignment.runtime.surface, 'visible');
+  assert.equal(assignment.runtime.terminalHandle, 'term_fixture');
+  assert.equal(assignment.branch.worktree, normalized(paths.worktree));
+  assert.equal(assignment.evidence.gitEvidencePath, 'runs/fixture-run/evidence/git/fixture-task.json');
+  assert.equal(assignment.fallbackReason, null);
+  assert.equal(assignment.runtime.previousDispatches, undefined);
+
+  const taskMap = readJson(path.join(runDir, 'task-map.json'));
+  assert.deepEqual(Object.keys(taskMap.tasks), ['fixture-task']);
+  assert.deepEqual(taskMap.tasks['fixture-task'], { taskId: 'task_abcdef123456', assignment: 'assignments/fixture-task.json' });
+
+  const branchMap = readJson(path.join(runDir, 'branch-map.json'));
+  assert.deepEqual(branchMap.branches['fixture-task'], {
+    branch: 'fixture/task', base: 'main', mergeTarget: 'main', worktree: normalized(paths.worktree),
+  });
+
+  const state = readJson(path.join(runDir, 'run-state.json'));
+  assert.equal(state.stage, 'task-graph');
+  assert.notEqual(state.updatedAt, '2026-01-01T00:00:00Z');
+  const lock = readJson(path.join(project, '.dev-work', 'coordinator-lock.json'));
+  assert.notEqual(lock.updatedAt, '2026-01-01T00:00:00Z');
+});
+
+test('refuses placements the run contract does not allow', (t) => {
+  const { project, runDir } = createProject(t);
+  const assignmentPath = path.join(runDir, 'assignments', 'refused-task.json');
+  const cases = [
+    {
+      name: 'control worktree',
+      mutate: { taskKeyName: 'refused-task', effects: [
+        { kind: 'worktree', action: 'reused', id: `topology-id::${normalized(project)}` },
+        { kind: 'terminal', role: 'agent', action: 'created', id: 'term_fixture', surface: 'visible' },
+      ] },
+      pattern: /coordinator control worktree/,
+    },
+    {
+      name: 'worktree contradicting the definition',
+      mutate: { taskKeyName: 'refused-task', worktree: path.join(path.dirname(project), 'expected-worktree'), effects: [
+        { kind: 'worktree', action: 'created_top_level', id: `topology-id::${normalized(path.join(path.dirname(project), 'other-worktree'))}` },
+        { kind: 'terminal', role: 'agent', action: 'created', id: 'term_fixture', surface: 'visible' },
+      ] },
+      pattern: /does not match the task definition worktree/,
+    },
+    {
+      name: 'no worktree effect',
+      mutate: { taskKeyName: 'refused-task', effects: [
+        { kind: 'terminal', role: 'agent', action: 'created', id: 'term_fixture', surface: 'visible' },
+      ] },
+      pattern: /no worktree effect/,
+    },
+  ];
+  for (const item of cases) {
+    const paths = writeInputs(t, project, { ...item.mutate, definition: { taskKey: 'refused-task' } });
+    const result = runDispatch(project, paths);
+    assert.equal(result.status, 1, `${item.name}: ${result.stdout}${result.stderr}`);
+    assert.match(clean(result.stdout + result.stderr), item.pattern, item.name);
+    assert.equal(existsSync(assignmentPath), false, `${item.name}: nothing may be written`);
+  }
+});
+
+test('refuses a second live dispatch until it is forced, then keeps the history', (t) => {
+  const { project, runDir } = createProject(t);
+  const first = writeInputs(t, project);
+  assert.equal(runDispatch(project, first).status, 0);
+
+  const second = writeInputs(t, project, {
+    dispatchId: 'ctx_second123456',
+    effective: { agent: 'claude', model: 'haiku', effort: null },
+  });
+  const refused = runDispatch(project, second);
+  assert.equal(refused.status, 1, refused.stdout + refused.stderr);
+  assert.match(clean(refused.stdout + refused.stderr), /already has a live dispatch/);
+
+  const forced = runDispatch(project, second, ['-ForceReDispatch', '-SkipPostValidation']);
+  assert.equal(forced.status, 0, forced.stdout + forced.stderr);
+  const output = parseOutput(forced);
+  assert.equal(output.runtimeVerification, 'mismatch');
+  assert.ok(output.warnings.some((warning) => /differs from the request/.test(warning)), forced.stdout);
+
+  const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
+  assert.equal(assignment.orca.dispatchId, 'ctx_second123456');
+  assert.equal(assignment.runtime.verification.status, 'mismatch');
+  assert.match(assignment.fallbackReason, /launch\.effective differs from launch\.requested/);
+  assert.equal(assignment.runtime.previousDispatches.length, 1);
+  assert.equal(assignment.runtime.previousDispatches[0].dispatchId, 'ctx_abcdef123456');
+  assert.equal(assignment.runtime.previousDispatches[0].status, 'active');
+});
+
+test('rejects an unknown status and incomplete inputs without writing anything', (t) => {
+  const { project, runDir } = createProject(t);
+  const assignmentPath = path.join(runDir, 'assignments', 'fixture-task.json');
+
+  const badStatus = writeInputs(t, project);
+  const statusResult = runDispatch(project, badStatus, ['-SkipPostValidation', '-Status', 'dispatched']);
+  assert.equal(statusResult.status, 1, statusResult.stdout + statusResult.stderr);
+  assert.match(clean(statusResult.stderr), /ValidateSet|dispatched/);
+
+  const incomplete = writeInputs(t, project, { definition: { artifacts: undefined } });
+  const definition = readJson(incomplete.definitionPath);
+  delete definition.artifacts;
+  writeJson(incomplete.definitionPath, definition);
+  const incompleteResult = runDispatch(project, incomplete);
+  assert.equal(incompleteResult.status, 1, incompleteResult.stdout + incompleteResult.stderr);
+  assert.match(clean(incompleteResult.stderr), /artifacts/);
+
+  const missingBrief = writeInputs(t, project);
+  rmSync(missingBrief.briefPath);
+  const briefResult = runDispatch(project, missingBrief);
+  assert.equal(briefResult.status, 1, briefResult.stdout + briefResult.stderr);
+  assert.match(clean(briefResult.stderr), /assemble-task\.ps1/);
+
+  assert.equal(existsSync(assignmentPath), false);
+});
+
+test('warns about task-map drift and keeps unfamiliar top-level keys intact', (t) => {
+  const { project, runDir } = createProject(t);
+  writeJson(path.join(runDir, 'task-map.json'), {
+    schemaVersion: 1, tasks: {}, 'release-metadata': { taskId: 'task_stray000000', status: 'dispatched' },
+  });
+  const paths = writeInputs(t, project);
+  const result = runDispatch(project, paths);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const output = parseOutput(result);
+  assert.ok(output.warnings.some((warning) => /outside 'tasks'/.test(warning)), result.stdout);
+  const taskMap = readJson(path.join(runDir, 'task-map.json'));
+  assert.equal(taskMap['release-metadata'].taskId, 'task_stray000000');
+  assert.equal(taskMap.tasks['fixture-task'].taskId, 'task_abcdef123456');
+});

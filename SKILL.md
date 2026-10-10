@@ -136,7 +136,7 @@ Use `taskKind` (`source` or `read-only`, default `source`), `briefProfile` (`sta
 2. Reconnaissance: dispatch independent information domains as needed; stop when unknowns cease to affect the solution.
 3. Plan: use solution-planner, multiple plans plus plan-adjudicator when needed; resolve real product ambiguity with requirements-analyst first.
 4. Task graph: write task-definition and assemble input; record machine-readable assignments, true dependencies and parallel waves.
-5. Dispatch all independent ready Tasks before waiting, and keep ready work parallel; ready means its real dependencies settled successfully through their existing gates — a source dependency counts only after its own review and integration, never on `worker_done` alone — write scope disjoint from in-flight Tasks, and a usable baseline and route. Verify the first `launch.effective` receipt and fill assignment runtime evidence.
+5. Dispatch all independent ready Tasks before waiting, and keep ready work parallel; ready means its real dependencies settled successfully through their existing gates — a source dependency counts only after its own review and integration, never on `worker_done` alone — write scope disjoint from in-flight Tasks, and a usable baseline and route. Verify the first `launch.effective` receipt and fill assignment runtime evidence, recording `mode`/`surface`; name background (`structured`) workers as such in user-facing reports, and treat a control-worktree placement as invalid — re-dispatch with an explicit `--worktree`.
 6. Wait using `check --wait`; process every question/escalation, confirm worker_done belongs to the active Dispatch, decide the terminal's next owner, then acknowledge. After each confirmed settle, immediately re-evaluate readiness and dispatch newly ready Tasks (rolling dispatch) without waiting for unrelated in-flight Tasks.
 7. After three consecutive empty waits, enumerate using `worker-list` and act on `projection.nextAction`; use bounded `worker-read` inspection where needed.
 8. After matching `worker_done` to the active Task/Dispatch, register source evidence and pass `sourceRegistered`; for a source Task, immediately dispatch review under **Independent review** and **Current verification**, alongside other implementation.
@@ -150,7 +150,7 @@ A nonzero start receipt alone does not prove a failed attempt: inspect `failedSt
 `outcome_unknown`, `turn_start_unobserved`, timeouts and unverifiable liveness do not authorize stop, abandon, retry or release.
 User decisions use decision gates suspending only dependent Tasks; independent work proceeds. Resolve gates after the user decides.
 Release is post-settlement cleanup. Record `retained` or `user_owned` decisions; explicitly resolve terminal ownership before removing its worktree.
-Rolling dispatch changes no stage or gate: stages and gates are neither added nor removed, applicable `AGENTS.md` sections stay verbatim and always last, model routing and failure/unverifiable semantics are unchanged; only artificial batch waits between independent Tasks are removed.
+Rolling dispatch changes no stage or gate; only artificial batch waits between independent Tasks are removed.
 
 ## Review and integration
 

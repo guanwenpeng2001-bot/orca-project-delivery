@@ -1,12 +1,22 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const packageRoot = fileURLToPath(new URL('../', import.meta.url));
+
+// PowerShell renders thrown messages with ANSI colors and hard line wraps; flatten both before
+// matching so an assertion does not depend on the console width of the day.
+function clean(text) {
+  return text
+    .replace(/\x1b\[[0-9;]*m/g, '')
+    .replace(/\r?\n\s*\|\s*/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
 function fixture(context) {
   const root = mkdtempSync(path.join(tmpdir(), 'task-brief-profiles-'));
   context.after(() => rmSync(root, { recursive: true, force: true }));
@@ -93,7 +103,8 @@ test('new fields deduplicate bound role skill lists while legacy bindings remain
 
 test('schema rejects malformed new fields and review briefs without concrete diff input', (context) => {
   const data = fixture(context);
-  for (const extra of [{ taskKind: 'readonly' }, { briefProfile: 'compact' }, { agentsSections: '5' }, { agentsSections: [null] }, { agentsSections: [''] }, { briefProfile: 'review' }, { briefProfile: 'review', reviewInput: { baseSha: 'main', branch: 'topic', diffCommand: 'git diff' } }, { reviewIncludes: ['unknown'] }]) {
+  const validReviewInput = { baseSha: 'a'.repeat(40), branch: 'topic', diffCommand: 'git diff' };
+  for (const extra of [{ taskKind: 'readonly' }, { briefProfile: 'compact' }, { agentsSections: '5' }, { agentsSections: [null] }, { agentsSections: [''] }, { briefProfile: 'review' }, { briefProfile: 'review', reviewInput: { baseSha: 'main', branch: 'topic', diffCommand: 'git diff' } }, { reviewIncludes: ['unknown'] }, { briefProfile: 'review', reviewInput: { ...validReviewInput, deltaPaths: 'scripts/x.ps1' } }, { briefProfile: 'review', reviewInput: { ...validReviewInput, deltaPaths: [1] } }, { briefProfile: 'review', reviewInput: { ...validReviewInput, deltaPaths: [''] } }]) {
     const result = assemble(data, extra);
     assert.equal(result.code, 1, `must reject ${JSON.stringify(extra)}`);
     assert.match(result.diagnostics, /schema|reviewInput/);
@@ -127,4 +138,51 @@ test('read-only briefs remove the entire source commit clause and retain reporti
   assert.match(result.brief, /Read-only Tasks: produce no commits/);
   assert.match(result.brief, /## Branch and Worktree Contract/);
   assert.match(result.brief, /Send authoritative completion exactly once/);
+});
+
+test('acceptance and tests commands are checked against the real package scripts and parameters', (context) => {
+  const data = fixture(context);
+  data.task.acceptance = ['Full gate: pwsh -NoProfile -File scripts/verify-package.ps1 -MetadataOnly', 'State check: pwsh scripts/validate-run.ps1 -projectroot . -SkipPackageChecks'];
+  data.task.tests = ['node --test tests/task-brief-profiles.test.mjs', 'git merge --no-edit topic', 'pwsh -NoProfile -File scripts/verify-package.ps1'];
+  const valid = assemble(data);
+  assert.equal(valid.code, 0, valid.diagnostics);
+  for (const command of [...data.task.acceptance, ...data.task.tests]) assert.ok(valid.brief.includes(command), command);
+
+  const rejected = [
+    ['scripts/nonexistent-runner.ps1 -X', /does not exist/],
+    ['pwsh -NoProfile -File scripts/validate-run.ps1 -Run nightly', /no parameter '-Run'/],
+    ['validate-run.ps1 -Force', /no parameter '-Force'/],
+  ];
+  for (const [command, pattern] of rejected) {
+    const negative = assemble(data, { tests: [command] });
+    assert.equal(negative.code, 1, `must reject ${command}`);
+    assert.match(clean(negative.diagnostics), pattern);
+  }
+  assert.equal(existsSync(path.join(data.root, 'brief.md')), true, 'the earlier valid brief stays; failed runs must not overwrite it');
+  const fresh = fixture(context);
+  const refused = assemble(fresh, { acceptance: ['pwsh -NoProfile -File scripts/validate-run.ps1 -Run nightly'] });
+  assert.equal(refused.code, 1, refused.diagnostics);
+  assert.equal(existsSync(path.join(fresh.root, 'brief.md')), false, 'a failed assembly writes no brief');
+});
+
+test('verification clauses scale with the brief profile and print review deltas', (context) => {
+  const data = fixture(context);
+  const standard = assemble(data);
+  assert.equal(standard.code, 0, standard.diagnostics);
+  assert.match(standard.brief, /### Minimum relevant suites/);
+  assert.doesNotMatch(standard.brief, /### Re-verification scaled by the delta/);
+
+  const reviewInput = { baseSha: 'b'.repeat(40), branch: 'implementation/topic', diffCommand: 'git diff ' + 'b'.repeat(40) + '...implementation/topic' };
+  const review = assemble(data, { briefProfile: 'review', reviewInput });
+  assert.equal(review.code, 0, review.diagnostics);
+  assert.match(review.brief, /### Re-verification scaled by the delta/);
+  assert.doesNotMatch(review.brief, /### Minimum relevant suites/);
+  assert.doesNotMatch(review.brief, /Delta paths recorded/);
+
+  const withDelta = assemble(data, { briefProfile: 'review', reviewInput: { ...reviewInput, deltaPaths: ['scripts/assemble-task.ps1', 'tests/task-brief-profiles.test.mjs'] } });
+  assert.equal(withDelta.code, 0, withDelta.diagnostics);
+  assert.match(withDelta.brief, /Delta paths recorded against the reviewed revision:/);
+  assert.ok(withDelta.brief.includes('- `scripts/assemble-task.ps1`'), withDelta.brief.slice(0, 400));
+  const headings = [...withDelta.brief.split('# Applicable Project Rules')[0].matchAll(/^## (.+)$/gm)].map((match) => match[1]);
+  assert.deepEqual(headings, ['Task Objective', 'Review input', 'Allowed Scope', 'Forbidden Scope', 'Branch and Worktree Contract', 'Process Artifact Contract', 'Acceptance Criteria', 'Verification', 'Orca Worker Contract', 'Orca Assignment Identity']);
 });

@@ -23,7 +23,10 @@ On every dispatch, write `runs/<run>/assignments/<task>.json`, even when an asse
 - `runtime.requested`: literal agent/model/effort sent to Orca;
 - `runtime.effective`: only values from the first `launch.effective` receipt; unknown fields are null;
 - `runtime.verification.status`: `verified`, `mismatch`, or `unverified`, with evidence;
+- `runtime.mode` (`mode`, `preferred`, `reason`) and the terminal `surface`, so a background session is recorded as background;
 - permission mode, Skill delivery, Task/Dispatch, branch/worktree/report paths and top-level `fallbackReason`.
+
+`scripts/dispatch-task.ps1` writes this record from the coordinator-captured `worker-start` receipt and refuses a receipt whose worktree effect is the coordinator control worktree or contradicts the task definition.
 
 Parameter acceptance does not prove effectiveness; reconcile mismatches before treating the requested route as verified.
 
@@ -107,6 +110,8 @@ For integration checks, record these exact successful observation strings with m
 | `git status --short` in delivery tree after merge | Empty string | headAfter SHA |
 
 Every check must exit 0. At least one `kind: verification` entry must have nonblank observed output and commitSha equal to headAfter, and every verification entry must bind that same SHA. Choose and actually run the applicable tests/gates; the validator does not judge their adequacy. Merge process evidence cannot substitute for checks. Run-final uses the two delivery rev-parse/clean-status observations at target.commitSha and actual verification entries at that same SHA, under identical successful-check rules.
+
+Archive the **full** post-merge and final verification output in the evidence log; the coordinator reads only the `SUMMARY`/JSON result lines from it. A log that keeps the summary line alone (observed regression: 300 KB of output collapsed to 252 B) cannot be audited later and does not carry the force of the run it recorded.
 
 ## Final coverage and exit semantics
 

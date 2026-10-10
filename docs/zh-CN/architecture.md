@@ -136,6 +136,8 @@ Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json
 
 每任务证据位于 `runs/<run>/evidence/git/<task-key>.json`；一次运行恰好有一份终态记录，位于 `runs/<run>/evidence/git/run-final-verification.json`。任务证据状态是 `source-registered` → `reviewed` → `integrated`；合并前是 `reviewed` 之内的一个检查点，终态属于运行记录，从不属于每任务文件。
 
+协调者用 `scripts/dispatch-task.ps1` 依据捕获的 `worker-start` 回执写每次指派；脚本拒绝控制树落点和同一任务的重复在途派发，写盘前先按 `schemas/assignment.schema.json` 校验指派。状态在 11 值生命周期枚举之外的指派会校验失败，而不是静默跳过其证据义务。
+
 六个校验阶段：
 
 | 阶段 | 门 | 检查什么 |

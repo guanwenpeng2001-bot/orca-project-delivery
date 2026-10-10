@@ -28,10 +28,13 @@ Use when `briefProfile` is `review`:
 - Base SHA: `<40-char commit or merge-base>`
 - Branch: `<review target branch>`
 - Diff command: `<exact git diff command for the reviewer>`
+- Delta paths (optional `deltaPaths`, for a re-review): `<paths changed since the reviewed revision>`
 
 Review briefs include: Task Objective, Review input, Allowed Scope, Forbidden Scope, Branch and Worktree Contract, Process Artifact Contract, Acceptance Criteria, Verification, Orca Worker Contract, Orca Assignment Identity, and applicable `AGENTS.md` sections (last). Review input replaces Inputs and Dependencies; `reviewIncludes` may opt into `role`, `skills`, or `requirements` to include Primary Role, Required/Conditional Skills, or Declared Requirements respectively.
 
-The task definition defaults to `taskKind: "source"`, `briefProfile: "standard"`, and `agentsSections: []`; omitting these fields preserves the same output. Set `taskKind` to `read-only` to omit the source commit clause. Set `agentsSections` to heading numbers or titles (for example `["5", "交付纪律"]`) to embed those sections and their descendants verbatim, in source order, at the end; unmatched selectors are errors. A review profile requires `reviewInput` with `baseSha`, `branch`, and `diffCommand`. Bound role Skill lists are deduplicated when read-only, review, or a nonempty section selection is active; legacy/default briefs retain their existing bytes.
+The task definition defaults to `taskKind: "source"`, `briefProfile: "standard"`, and `agentsSections: []`; omitting these fields preserves the same output. Set `taskKind` to `read-only` to omit the source commit clause. Set `agentsSections` to heading numbers or titles (for example `["5", "交付纪律"]`) to embed those sections and their descendants verbatim, in source order, at the end; unmatched selectors are errors. A review profile requires `reviewInput` with `baseSha`, `branch`, and `diffCommand`; an optional `deltaPaths` array names the paths changed since the reviewed revision and is printed into the brief. Bound role Skill lists are deduplicated when read-only, review, or a nonempty section selection is active; legacy/default briefs retain their existing bytes.
+
+Assembling also checks every `scripts/<name>.ps1` command named in `acceptance` and `tests`: the script must exist in the package and each `-Parameter` after it must be declared by that script (common parameters count only for `[CmdletBinding()]` scripts). An unknown script or parameter fails assembly and writes no brief, so a hallucinated command can never reach a worker.
 
 ## Primary Role
 
@@ -92,7 +95,7 @@ Run:
 <commands or manual checks>
 ```
 
-Record exact commands, relevant output, environment, skipped checks, and anomalies.
+Record exact commands, relevant output, environment, skipped checks, and anomalies. Standard and read-only briefs add a `Minimum relevant suites` clause (task-named suites plus tests the change touches; full gates stay at post-merge and final). Review briefs add `Re-verification scaled by the delta` and, when `reviewInput.deltaPaths` is present, list those paths above the clause.
 
 ## Orca Worker Contract
 

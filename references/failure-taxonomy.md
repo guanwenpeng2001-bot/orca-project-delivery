@@ -30,6 +30,7 @@ surface that carries the evidence or the action — current global `orchestratio
 | `readiness_failed` | Worker observation or terminal wait timed out before injection; inspect readiness, do not infer process exit |
 | `turn_start_unobserved` | `worker-start` receipt `state: outcome_unknown` / `stage: turn_start_unobserved`; `worker-show` reports `worker.state: start_unknown` and `projection.liveness.verdict: unverifiable`; the terminal preview still holds `[Pasted Content N chars]` with no turn output. Inspect first; when the task was accepted but never submitted, submit it in the **same** terminal (send a bare Enter). This is unobserved, not failed: never re-dispatch, stop, or abandon from it |
 | `process_exited` | `worker-show`/`worker-list` liveness `exited`, or the worker observed its own exit |
+| `wait_channel_lost` | `check --wait` returned `runtime_unavailable` ("the Orca runtime closed the connection before responding") before its timeout, often mid-wait with a 0-byte receipt file and `disposition: outcome_unknown`. This classifies the **wait**, never the worker: run the receipt's `request-show` → `--retry-request` recovery block in the same terminal, reconcile on-disk reports, and do not downgrade, re-dispatch or abandon from it |
 
 ## Capacity
 

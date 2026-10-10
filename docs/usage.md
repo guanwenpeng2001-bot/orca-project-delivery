@@ -9,7 +9,7 @@ summarizes the workflow defined in `SKILL.md` and its references; the Skill
 itself is the authority at runtime, and the installed global `orchestration`
 Skill plus current `--help` output are the authority for every Orca command.
 
-This guide targets 2.7.0: **46 Skills, 16 Roles, 4 workflows**. Select
+This guide targets 2.8.0: **46 Skills, 16 Roles, 4 workflows**. Select
 only the methods needed by the Task: shared tokens use `design-system`, domain
 invariants use `domain-modeling`, upgrades use `migration-upgrade`, and tool
 protocols use `mcp-server-development`. Diagrams, localization, Skill evaluation
@@ -115,6 +115,12 @@ the Orca Worker Contract. Record the machine-readable assignment under
 runtime values — even when a Markdown brief exists. Encode only true
 dependencies; use parallel waves and avoid chains deeper than 3–4 steps.
 
+Assembly checks every acceptance/tests command against the real package
+scripts and their declared parameters and fails without writing a brief when
+a command cannot run. Review briefs take optional `reviewInput.deltaPaths`
+and scale re-verification by the delta; standard briefs name the minimum
+relevant suites, with full gates at post-merge and final.
+
 Bundled professional Skills resolve from this package's `skills/<skill-id>/SKILL.md`.
 External Skills require explicit registration in version 2 project config; see
 [External Skills](external-skills.md). Assembly delivers resolved paths (`explicit-path`)
@@ -144,6 +150,18 @@ agent and the route selected from `routing/model-routing.json`. There is no
 permission flag on dispatch: permissions come from the actual Claude
 configuration and the user's Orca settings, and are recorded rather than
 invented.
+
+Record the dispatch with `scripts/dispatch-task.ps1` from the
+coordinator-captured `worker-start --json` receipt (`-ReceiptPath`): it
+derives the requested/effective verification, refuses a receipt whose
+worktree effect lands on the coordinator control worktree or contradicts the
+task definition, validates the assignment against
+`schemas/assignment.schema.json` before writing anything, and refuses a
+duplicate live dispatch of the same Task unless `-ForceReDispatch` records
+the earlier dispatch under `runtime.previousDispatches`. Record
+`runtime.mode` and the terminal `surface`; a background (`structured`)
+worker is a background session, and the next milestone report names it as
+such.
 
 ### 6. Wait and process
 

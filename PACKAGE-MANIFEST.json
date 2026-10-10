@@ -1,10 +1,10 @@
 {
   "name": "orca-project-delivery",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-11",
   "releasedAt": "2026-10-11",
-  "revisionNote": "Reuse original worker sessions and worktrees for fix and re-review dispatches, project per-Role model routing, narrow task briefs with taskKind, briefProfile and agentsSections, and enforce the entry Skill Unicode character budget with synthetic fixtures. Preserve 46 bundled Skills, 16 Roles and 4 workflows; synchronize English and Chinese release guidance.",
+  "revisionNote": "Record every dispatch through a receipt-driven ledger that refuses control-worktree placement and duplicate live dispatch, check brief commands against the real package scripts and their parameters, scale review re-verification by the delta, fail assignments whose status is outside the lifecycle enum, and bind wait recovery, wakeup and full-output evidence archival to observed runtime behavior. Preserve 46 bundled Skills, 16 Roles and 4 workflows; synchronize English and Chinese release guidance.",
   "deliverables": {
     "roles": 16,
     "professionalSkills": 46,

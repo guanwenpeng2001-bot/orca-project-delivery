@@ -4,9 +4,9 @@
 
 版本 2 项目注册、混合绑定、解析后的依赖选择及原位置同级资源，见[已安装外部 Skill 演练](external-skills.md)。包内 Skill 不需要单独安装。
 
-本教程面向完整的 **2.7.0 包：46 个 Skill、16 个角色、4 个工作流**。它在临时项目中使用合成值演练本地工具、离线提供方夹具及限定范围的依赖注入。没有发起实际提供方或付费调用；离线模拟不验证生成质量。
+本教程面向完整的 **2.8.0 包：46 个 Skill、16 个角色、4 个工作流**。它在临时项目中使用合成值演练本地工具、离线提供方夹具及限定范围的依赖注入。没有发起实际提供方或付费调用；离线模拟不验证生成质量。
 
-从包根目录在 PowerShell 7 会话中依次运行代码块，使用 Node.js 22.15+（随包 Skill 文档规定的基线）和 Python 3.10+ 的示例需要相应运行时。先安装完整且匹配的 2.7.0 版本。版本不匹配就缺少这些命令所用的脚本。
+从包根目录在 PowerShell 7 会话中依次运行代码块，使用 Node.js 22.15+（随包 Skill 文档规定的基线）和 Python 3.10+ 的示例需要相应运行时。先安装完整且匹配的 2.8.0 版本。版本不匹配就缺少这些命令所用的脚本。
 
 ## 1. 确认你安装的是什么
 
@@ -21,9 +21,9 @@ Get-Content -Raw .\PACKAGE-MANIFEST.json
 
 | 字段 | 它告诉你什么 |
 | --- | --- |
-| `VERSION` | 包的修订。2.7.0 是当前能力版本。 |
-| `deliverables.professionalSkills` | 包声称的 Skill 数。2.7.0 版本声称 46。 |
-| `deliverables.roles` | 包声称的角色数。2.7.0 版本声称 16。 |
+| `VERSION` | 包的修订。2.8.0 是当前能力版本。 |
+| `deliverables.professionalSkills` | 包声称的 Skill 数。2.8.0 版本声称 46。 |
+| `deliverables.roles` | 包声称的角色数。2.8.0 版本声称 16。 |
 | `workflows/` | 工作流定义数，两个版本均为 4。 |
 
 然后对照目录确认，而不是对照本教程：
@@ -42,12 +42,12 @@ $manifest = Get-Content -Raw ./PACKAGE-MANIFEST.json | ConvertFrom-Json
 $version = (Get-Content -Raw ./VERSION).Trim()
 $workflows = (Get-ChildItem ./workflows -Filter *.md).Count
 "catalog workflows: $workflows"
-if ($version -ne '2.7.0' -or $manifest.version -ne $version -or
+if ($version -ne '2.8.0' -or $manifest.version -ne $version -or
     $skills -ne 46 -or $roles -ne 16 -or $workflows -ne 4 -or
     $manifest.deliverables.professionalSkills -ne $skills -or
     $manifest.deliverables.roles -ne $roles -or
     $manifest.deliverables.workflows -ne $workflows) {
-  throw 'Install the complete matching 2.7.0 package before continuing.'
+  throw 'Install the complete matching 2.8.0 package before continuing.'
 }
 "GUARD_PASSED skills=$skills roles=$roles version=$version"
 ```

@@ -85,7 +85,7 @@ function Assert-ClaudeText([string]$Content, [string]$Extension, [string]$Source
 function Test-PackageStructure {
   # Presence is a fixed package contract; discovery below also covers added scripts.
   $requiredScripts = @(
-    'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1',
+    'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'dispatch-task.ps1',
     'probe-claude-capabilities.ps1', 'query-routing.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
     'validate-run.ps1', 'validate-git-evidence.ps1', 'verify-package.ps1',
     'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',

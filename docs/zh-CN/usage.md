@@ -6,7 +6,7 @@
 
 本走读从协调者的位置演示一次完整交付。它概括 `SKILL.md` 及其参考所定义的工作流；运行时以该 Skill 本身为权威，每一条 Orca 命令则以已安装的全局 `orchestration` Skill 加上当前 `--help` 输出为权威。
 
-本指南面向2.7.0：**46 个 Skill、16 个角色、4 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。新增 Skill 不新增角色，也不扩大权限。
+本指南面向2.8.0：**46 个 Skill、16 个角色、4 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。新增 Skill 不新增角色，也不扩大权限。
 
 ## 开始一次交付（协调者入口）
 
@@ -68,6 +68,8 @@ intake -> reconnaissance -> plan -> task graph -> dispatch
 
 为每个任务写任务定义，并用 `scripts/assemble-task.ps1` 组装其输入。每个任务携带：一个主角色、必需（以及可选的条件）Skill、允许与禁止范围、分支与工作树合同、一条 `.dev-work` 报告路径、验收条件，以及 Orca Worker Contract。即使已有 Markdown 简报，也要把机器可读的指派记在 `runs/<run>/assignments/<task>.json` 下 — 包括请求的和生效的运行时值。只编码真实依赖；使用并行波次，避免深于 3–4 步的链。
 
+组装会对照包内真实脚本及其声明参数逐条校验验收与测试命令，命令不可执行时组装失败、不写简报。审查简报可带 `reviewInput.deltaPaths` 并按 delta 缩放重验范围；标准简报点名最小相关套件，全量门禁留在合并后与终态验证。
+
 随包专业 Skill 从本包的 `skills/<skill-id>/SKILL.md` 解析。外部 Skill 必须在版本 2 项目配置中显式注册，见[外部 Skill](external-skills.md)。组装交付解析后的路径（`explicit-path`），或内联同一正文（`inline-extract`）。随包文件缺失时组装失败，不会静默回退到 `~/.agents/skills` 下的同级安装。随包 Skill 的出处与 SHA256 检查写在 `skills/README.md`，并由 `scripts/verify-package.ps1` 中的 `metadata/bundled-skill-integrity` 离线强制。见 [professional-skills.md](professional-skills.md)、[professional-capabilities.md](professional-capabilities.md) 和 [installation.md](installation.md)。检查安装、运行本地工具和依赖辅助脚本而不调用提供方的走读在 [professional-capability-tutorial.md](professional-capability-tutorial.md)。
 
 组装把目录 `requires` 的名称/用途放在 Inputs and Dependencies 内，区分 Role 加必需 Skill 的依赖与条件 Skill。条件依赖仅在 Task 要求时激活。在执行主机上，以显式 `-ProjectRoot`、`-Role` 和会话内 `-Skills @(...)` 所选 ID 数组运行 `check-requirements.ps1`。辅助脚本不会代选 Role 默认 Skill。文件配置不代表当前 shell 已有这些值；授权子进程可以通过 `invoke-with-requirements.ps1` 接收所选文件变量，父进程环境保持不变。精确接口及离线走读见[扩展与配置](extending.md)。十段 Task 顺序及适用 `AGENTS.md` 最后保持不变。
@@ -77,6 +79,8 @@ intake -> reconnaissance -> plan -> task graph -> dispatch
 任务**就绪**的条件是：真实依赖已通过各自的门成功结算 — 源码依赖只在它自己的审查*和*集成之后才算数，绝不只凭 `worker_done` — 写入范围与在途任务不相交，并且基线与路由可用。立即派发就绪任务（滚动派发）；不要为无关的在途工作设置批次屏障。
 
 每次派发都走运行时的 worker-start 动词，使用 Claude 智能体，以及从 `routing/model-routing.json` 选出的路由。派发没有权限旗标：权限来自实际的 Claude 配置和用户的 Orca 设置，只记录，不臆造。
+
+用 `scripts/dispatch-task.ps1` 从协调者捕获的 `worker-start --json` 回执（`-ReceiptPath`）记录本次派发：脚本推导请求值 / 生效值的核对结论，拒绝落点在协调者控制树或与任务定义矛盾的回执，写盘前先用 `schemas/assignment.schema.json` 校验指派，并且同一任务的重复在途派发默认被拒 — 除非 `-ForceReDispatch` 把先前派发记入 `runtime.previousDispatches`。记录 `runtime.mode` 与终端 `surface`；`structured` 工作者属于后台会话，下一次里程碑汇报必须明说。
 
 ### 6. 等待与处理
 

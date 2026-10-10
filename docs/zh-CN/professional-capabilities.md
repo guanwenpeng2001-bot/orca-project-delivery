@@ -4,7 +4,7 @@
 
 2.4.0 深化 2.3.0 的能力，新增工程方法、设计系统与字幕等八个 Skill，并扩展有界文档块。加上原有十六个及 2.3.0 的二十二个，本包共有 **46 个专业 Skill**、**16 个角色**和 **4 个工作流**。本指南说明新增或增强的能力做什么、不做什么，以及实际验证到哪一步。
 
-本指南描述2.7.0 包：46 个 Skill、16 个角色、4 个工作流。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `2.7.0`、`routing/skill-catalog.json` 有 46 个 Skill、`roles/catalog.json` 有 16 个角色、`workflows/` 有 4 份定义，且 `PACKAGE-MANIFEST.json` 与之相符。教程会拒绝版本不匹配的安装。
+本指南描述2.8.0 包：46 个 Skill、16 个角色、4 个工作流。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `2.8.0`、`routing/skill-catalog.json` 有 46 个 Skill、`roles/catalog.json` 有 16 个角色、`workflows/` 有 4 份定义，且 `PACKAGE-MANIFEST.json` 与之相符。教程会拒绝版本不匹配的安装。
 
 ## 如何阅读一项能力
 

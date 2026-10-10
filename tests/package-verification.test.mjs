@@ -77,7 +77,7 @@ test('MetadataOnly rejects every missing required script and parses discovered e
   t.after(() => rmSync(copy, { recursive: true, force: true }));
   cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work'].includes(path.basename(item)) });
   const required = [
-    'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1',
+    'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'dispatch-task.ps1',
     'probe-claude-capabilities.ps1', 'query-routing.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
     'validate-run.ps1', 'validate-git-evidence.ps1', 'verify-package.ps1',
     'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',

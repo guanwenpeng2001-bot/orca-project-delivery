@@ -25,6 +25,111 @@ if ($task.PSObject.Properties.Name -contains 'skillz') {
   throw "Task property 'skillz' is not supported; use skills with required and conditional arrays."
 }
 Assert-RequirementsSchema $task 'task-definition' 'Task definition (including skills)'
+
+# ------------------------------------------------------- package command checks
+# A brief that names a package script with a parameter the script does not declare sends the
+# worker into a guaranteed failure (observed: "scripts/validate-run.ps1 -Run nightly"). Check
+# every scripts/<name>.ps1 mention in acceptance and tests against the real param blocks;
+# mentions of paths outside the package and of variables are left alone. A mention that cannot
+# be parsed as a command is checked with a per-line fallback instead of being trusted.
+$scriptInfoCache = @{}
+function Get-PackageScriptInfo {
+  param([string]$Name)
+  if ($scriptInfoCache.ContainsKey($Name)) { return $scriptInfoCache[$Name] }
+  $path = Join-Path $PSScriptRoot $Name
+  $info = [pscustomobject]@{
+    Path = $path
+    Exists = (Test-Path -LiteralPath $path -PathType Leaf)
+    Parameters = @()
+    CmdletBinding = $false
+  }
+  if ($info.Exists) {
+    $tokens = $null
+    $parseErrors = $null
+    $ast = [Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$parseErrors)
+    if ($parseErrors.Count -eq 0 -and $ast.ParamBlock) {
+      $info.Parameters = @($ast.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
+      foreach ($attribute in @($ast.ParamBlock.Attributes)) {
+        if ($attribute.TypeName.Name -eq 'CmdletBinding') { $info.CmdletBinding = $true }
+      }
+    }
+  }
+  $scriptInfoCache[$Name] = $info
+  return $info
+}
+
+$commandProblems = [Collections.Generic.List[string]]::new()
+# Common parameters only. WhatIf/Confirm additionally require SupportsShouldProcess, so accepting
+# them unconditionally would let a brief name a flag that still fails at run time.
+$commonParameters = @([Management.Automation.PSCmdlet]::CommonParameters)
+
+function Test-BriefCommand {
+  param([string]$Text, [string]$Label)
+  if (-not $Text) { return }
+  $vet = $Text
+  $verbatim = $vet.IndexOf('--%')
+  if ($verbatim -ge 0) { $vet = $vet.Substring(0, $verbatim) }
+  $tokens = $null
+  $parseErrors = $null
+  $ast = [Management.Automation.Language.Parser]::ParseInput($vet, [ref]$tokens, [ref]$parseErrors)
+  $mentions = @()
+  if ($parseErrors.Count -eq 0) {
+    foreach ($command in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.CommandAst] }, $true)) {
+      $elements = @($command.CommandElements)
+      for ($index = 0; $index -lt $elements.Count; $index++) {
+        $text = $elements[$index].Extent.Text.Trim("'", '"')
+        $name = $null
+        $match = [regex]::Match($text, '^scripts[\\/]([A-Za-z0-9._-]+\.ps1)$')
+        if ($match.Success) {
+          $name = $match.Groups[1].Value
+        } elseif (($text -match '^[A-Za-z0-9._-]+\.ps1$') -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot $text) -PathType Leaf)) {
+          $name = $text
+        }
+        if (-not $name) { continue }
+        $flags = @()
+        for ($next = $index + 1; $next -lt $elements.Count; $next++) {
+          if ($elements[$next] -is [Management.Automation.Language.CommandParameterAst]) {
+            $flags += $elements[$next].ParameterName
+          }
+        }
+        $mentions += [pscustomobject]@{ Name = $name; Flags = $flags }
+      }
+    }
+  } else {
+    foreach ($line in ($vet -split '\r?\n')) {
+      foreach ($lineMatch in [regex]::Matches($line, '(?:^|[\s''"(])scripts[\\/]([A-Za-z0-9._-]+\.ps1)')) {
+        $tail = $line.Substring($lineMatch.Index + $lineMatch.Length)
+        $flags = @([regex]::Matches($tail, '(?<![\w-])-([A-Za-z][A-Za-z0-9]*)') | ForEach-Object { $_.Groups[1].Value })
+        $mentions += [pscustomobject]@{ Name = $lineMatch.Groups[1].Value; Flags = $flags }
+      }
+    }
+  }
+  foreach ($mention in $mentions) {
+    $info = Get-PackageScriptInfo $mention.Name
+    if (-not $info.Exists) {
+      $commandProblems.Add("$Label`: scripts/$($mention.Name) does not exist in the package scripts directory.")
+      continue
+    }
+    foreach ($flag in $mention.Flags) {
+      if ($info.Parameters -contains $flag) { continue }
+      if ($info.CmdletBinding -and ($commonParameters -contains $flag)) { continue }
+      $declared = if ($info.Parameters.Count) { $info.Parameters -join ', ' } else { '(none)' }
+      $commandProblems.Add("$Label`: scripts/$($mention.Name) has no parameter '-$flag' (declared: $declared).")
+    }
+  }
+}
+
+foreach ($group in @(
+  @{ Label = 'acceptance'; Items = @($task.acceptance) },
+  @{ Label = 'tests'; Items = @($task.tests) }
+)) {
+  foreach ($item in $group.Items) {
+    if ($item -is [string]) { Test-BriefCommand -Text $item -Label $group.Label }
+  }
+}
+if ($commandProblems.Count) {
+  throw ("Task definition names package commands that cannot run:`n" + ($commandProblems -join "`n"))
+}
 $agentSectionSelectors = @($task.agentsSections | Where-Object { $_ })
 $usesBriefOptions = ($task.taskKind -eq 'read-only') -or ($task.briefProfile -eq 'review') -or ($agentSectionSelectors.Count -gt 0)
 $briefNewLine = if ($usesBriefOptions) { "`n" } else { [Environment]::NewLine }
@@ -303,6 +408,35 @@ if ($isReview) {
 "@
   if ($includeRequirements -and $requirementBody) { $inputSection += "`n$requirementBody`n" }
 }
+# Verification obligations: worker-side rules that keep review effort proportional to the delta
+# (review profile) and stop "verification pending" reports on ordinary tasks (standard profile).
+$verificationLines = @(To-Bullets $task.tests)
+if ($isReview) {
+  if ($task.reviewInput -and $task.reviewInput.PSObject.Properties['deltaPaths'] -and @($task.reviewInput.deltaPaths).Count) {
+    $verificationLines += ''
+    $verificationLines += 'Delta paths recorded against the reviewed revision:'
+    $verificationLines += @($task.reviewInput.deltaPaths | ForEach-Object { "- ``$_``" })
+  }
+  $verificationLines += @(
+    ''
+    '### Re-verification scaled by the delta'
+    ''
+    '- Re-run the acceptance items the delta touches; smoke only the untouched ones.'
+    '- Run the full suite only when the delta touches a shared or core file, or when a bullet above names it.'
+    '- Record the delta-to-acceptance mapping (path -> item -> command -> result) in the report.'
+  )
+} else {
+  $verificationLines += @(
+    ''
+    '### Minimum relevant suites'
+    ''
+    '- Suites this Task names, plus the tests your change touches, are this Task''s verification duty; run them before reporting.'
+    '- Full package gates run at post-merge and final verification, not here.'
+    '- Use -MetadataOnly for metadata or boundary probes; in full mode run at most one representative point.'
+  )
+}
+$verificationBody = $verificationLines -join $briefNewLine
+
 $content = @"
 # Assignment: $($task.title)
 
@@ -341,7 +475,7 @@ $(To-Bullets $task.acceptance)
 
 ## Verification
 
-$(To-Bullets $task.tests)
+$verificationBody
 
 ## Orca Worker Contract
 

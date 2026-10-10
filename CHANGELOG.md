@@ -4,6 +4,16 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 2.8.0 — 2026-10-11
+
+- Coordination and evidence-hardening release; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together; historical release entries remain unchanged.
+- Added `scripts/dispatch-task.ps1`: it turns the coordinator's `worker-start --json` receipt into the run assignment in one recorded step, refuses a placement in the coordinator control worktree or a worktree that contradicts the task definition, validates the assignment against `schemas/assignment.schema.json` before writing, and refuses a duplicate live dispatch for one Task unless `-ForceReDispatch` records the previous dispatch under `runtime.previousDispatches`.
+- Task assembly now checks acceptance and tests commands against the real package scripts and their declared parameters; an unknown script or parameter fails assembly and writes no brief. Review briefs carry optional `reviewInput.deltaPaths` and a delta-scaled re-verification clause; standard briefs carry a minimum-relevant-suites clause. The brief-profile fixture measures 46.27% smaller implementer briefs (full=20,563, selected=11,048 characters in the package gate's staged copy).
+- `validate-git-evidence.ps1` now fails a formal assignment whose status is outside the 11-value lifecycle enum instead of silently skipping its coverage obligation; a regression fixture pins the former `dispatched` status to FAIL in the final phase.
+- Runtime and process references record dispatch visibility (`mode`/`surface`), background-session reporting, control-worktree placement as a defect, wait-channel recovery (`runtime_unavailable` is an unknown outcome, not a worker failure), wake-point reconciliation, and full-output evidence archival for post-merge and final verification.
+- The worker contract no longer accepts an unfinished check presented as verified; the reviewer role and handoff reference scale re-verification by the review delta.
+- Current `SKILL.md` entry is 21,390 Unicode characters including whitespace, inside the 22,000-character limit; the full package gate passes 82 checks.
+
 ## 2.7.0 — 2026-10-11
 
 - Coordination efficiency release; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together.

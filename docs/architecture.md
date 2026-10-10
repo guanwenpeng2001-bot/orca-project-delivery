@@ -181,6 +181,13 @@ Task evidence states are `source-registered` → `reviewed` → `integrated`;
 pre-merge is a checkpoint within `reviewed`, and final belongs to the run
 record, never to per-Task files.
 
+The coordinator writes each assignment with `scripts/dispatch-task.ps1` from
+the captured `worker-start` receipt; the script refuses a control-worktree
+placement and a duplicate live dispatch for one Task, and validates the
+assignment against `schemas/assignment.schema.json` before writing. An
+assignment whose status is outside the 11-value lifecycle enum fails
+validation instead of silently skipping its evidence obligation.
+
 Six validation phases:
 
 | Phase | Gate | What is checked |

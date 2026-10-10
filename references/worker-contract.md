@@ -10,6 +10,9 @@
 - Ask the coordinator only for genuinely external, directional, or missing decisions.
 - Escalate when blocked and include what you tried, current Git state, and what is needed.
 - Write only the assigned `.dev-work` report/evidence path. Never modify run-global state.
+- Run the verification this Task names before reporting, and never present an unfinished check as
+  verified. Full package gates at post-merge and final belong to the coordinator; do not park them
+  as "verification pending".
 - Source/deliverable Tasks: commit your work within the authorized scope on your task branch before
   reporting; the coordinator reviews and merges the committed deliverable.
 - Read-only Tasks: produce no commits and write only the assigned report path.

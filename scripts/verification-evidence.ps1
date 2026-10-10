@@ -349,6 +349,14 @@ function Test-GitEvidence {
     Remove-Item -LiteralPath $runFinalPath
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'integrated tasks without run-final evidence' 'UNVERIFIABLE'
     [IO.File]::WriteAllText($runFinalPath, $runFinalJson, $utf8)
+    $assignmentPath = Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/assignments/$($fixture.TaskBranch).json"
+    $assignmentJson = [IO.File]::ReadAllText($assignmentPath, $utf8)
+    $nonLifecycle = $assignmentJson | ConvertFrom-Json -AsHashtable
+    $nonLifecycle.status = 'dispatched'
+    Write-EvidenceJson $assignmentPath $nonLifecycle
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'assignment status outside the lifecycle enum' 'outside the assignment lifecycle'
+    [IO.File]::WriteAllText($assignmentPath, $assignmentJson, $utf8)
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'restored lifecycle status'
     $null = New-FixtureCommit $fixture.DeliveryWorktree 'advance.txt' "final advance`n" 'Final main advance'
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $runFinalPath, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'final target not current main' 'target does not equal'
   }

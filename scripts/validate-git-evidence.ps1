@@ -307,8 +307,12 @@ function Test-Assignments($Entries, [string]$CoverageTaskKey) {
   Initialize-Assignments
   $assignments = $script:assignments
   $enteredStatuses = @('review', 'completed', 'integrating', 'integrated')
+  $legalStatuses = @('planned', 'starting', 'active', 'review', 'completed', 'integrating', 'integrated', 'superseded', 'failed', 'abandoned', 'unverifiable')
   foreach ($assignment in $assignments) {
     $formal = -not [string]::IsNullOrWhiteSpace($assignment.branch.mergeTarget)
+    if ($formal -and $null -ne $assignment.status -and -not ($assignment.status -is [string] -and $assignment.status -cin $legalStatuses)) {
+      Assert-Evidence $false "Assignment $($assignment.taskKey) status '$($assignment.status)' is outside the assignment lifecycle; use one of: $($legalStatuses -join ', ')"
+    }
     if ($formal -and $assignment.status -ceq 'superseded') {
       Test-SupersededAssignment $assignment $assignments $enteredStatuses
       continue
