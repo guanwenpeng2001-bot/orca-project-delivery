@@ -21,25 +21,7 @@ if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
   Remove-Item Env:GIT_CONFIG_COUNT -ErrorAction SilentlyContinue
 }
 
-function Invoke-Git {
-  param(
-    [Parameter(Mandatory = $true)][string]$Root,
-    [Parameter(Mandatory = $true)][string[]]$Arguments
-  )
-  $output = & git -C $Root @Arguments 2>&1
-  $exitCode = $LASTEXITCODE
-  if ($exitCode -ne 0) {
-    throw ("git {0} failed (exit {1}) in {2}: {3}" -f ($Arguments -join " "), $exitCode, $Root, (($output | Out-String).Trim()))
-  }
-  return $output
-}
-# ---------------------------------------------------------------------------
-
-function Write-JsonFile {
-  param([string]$Path, [object]$Value)
-  $json = $Value | ConvertTo-Json -Depth 20
-  [System.IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
-}
+. (Join-Path $PSScriptRoot 'project-common.ps1')
 
 $root = (Resolve-Path $ProjectRoot).Path
 try {

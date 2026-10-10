@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const script = path.join(root, 'skills', 'frontend-visual-design', 'scripts', 'contrast-ratio.mjs');
@@ -113,6 +114,45 @@ test('the maintained runner names the success journey, the refusal, and the seed
   assert.match(runner, /seedDefect/);
   assert.match(driver, /keyboard|press_sequentially/);
   assert.equal(existsSync(path.join(root, 'skills', 'browser-e2e', 'scripts', 'sample.spec.mjs')), false);
+});
+
+test('bridge and driver journey names agree and navigation only separates journeys', { skip: pythonUnavailable() }, async () => {
+  const runnerPath = path.join(root, 'skills', 'browser-e2e', 'scripts', 'run-tide-journeys.mjs');
+  const { tideJourneys } = await import(pathToFileURL(runnerPath).href);
+  const driverPath = path.join(root, 'skills', 'browser-e2e', 'scripts', 'run_tide_journeys.py');
+  const probe = String.raw`
+import ast, json, sys
+from pathlib import Path
+from types import SimpleNamespace
+source = ast.parse(Path(sys.argv[1]).read_text(encoding="utf-8"))
+nodes = [node for node in source.body if isinstance(node, ast.FunctionDef) and node.name == "run" or isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "JOURNEYS" for target in node.targets)]
+namespace = {"Path": Path}
+exec(compile(ast.Module(body=nodes, type_ignores=[]), sys.argv[1], "exec"), namespace)
+names = namespace["JOURNEYS"]
+assert list(names) == json.loads(sys.argv[2]), names
+for selected in [list(names), [names[0]], [names[1]]]:
+    navigations = []
+    openings = []
+    page = SimpleNamespace(goto=navigations.append)
+    browser = SimpleNamespace(new_page=lambda: page, close=lambda: None)
+    class Playwright:
+        def __enter__(self): return SimpleNamespace(chromium=SimpleNamespace(launch=lambda **kwargs: browser))
+        def __exit__(self, *args): pass
+    def open_target(*args):
+        openings.append("opened")
+        assert len(openings) <= len(selected), "fixture reopened after the final journey"
+    namespace.update(sync_playwright=Playwright, open_target=open_target,
+        save_reading=lambda page: {"name": names[0], "ok": True},
+        refuse_blank=lambda page: {"name": names[1], "ok": True})
+    result = namespace["run"]("fixture", sys.executable, journeys=selected)
+    assert len(openings) == len(selected), openings
+    assert navigations == ["about:blank"] * (len(selected) - 1), navigations
+    assert len(result["journeys"]) == len(selected), result
+print("journey declarations and navigation verified")
+`;
+  const result = spawnSync('python', ['-I', '-c', probe, driverPath, JSON.stringify(tideJourneys.map((journey) => journey.name))], { encoding: 'utf8', timeout: 15000 });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
 });
 
 test('a pair just under 4.5 is not rounded up into a passing gate', () => {
@@ -232,16 +272,13 @@ test('a Python without Playwright is a named dependency failure, not a traceback
   );
 });
 
-test('the installed Chromium revision is chosen numerically, not by directory name', () => {
-  const rootDir = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-chromium-order');
+test('the installed Chromium revision is chosen numerically, not by directory name', (t) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), 'design-browser-chromium-order-'));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
   mkdirSync(path.join(rootDir, 'chromium-9', 'chrome-win64'), { recursive: true });
   mkdirSync(path.join(rootDir, 'chromium-1234', 'chrome-win64'), { recursive: true });
-  try {
-    const chosen = chromiumPath(rootDir);
-    assert.equal(chosen, path.join(rootDir, 'chromium-1234', 'chrome-win64', 'chrome.exe'));
-  } finally {
-    rmSync(rootDir, { recursive: true, force: true });
-  }
+  const chosen = chromiumPath(rootDir);
+  assert.equal(chosen, path.join(rootDir, 'chromium-1234', 'chrome-win64', 'chrome.exe'));
 });
 
 test('a missing Chromium executable is a named dependency failure, not a KeyError', async () => {
@@ -259,12 +296,12 @@ test('a missing Chromium executable is a named dependency failure, not a KeyErro
   );
 });
 
-test('a PATH-resolvable interpreter name other than python is accepted', { skip: pythonUnavailable() }, async () => {
+test('a PATH-resolvable interpreter name other than python is accepted', { skip: pythonUnavailable() }, async (t) => {
   const runnerPath = path.join(root, 'skills', 'browser-e2e', 'scripts', 'run-tide-journeys.mjs');
   const runner = await import(pathToFileURL(runnerPath).href);
   const fixture = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-page.html');
-  const directory = path.join(root, 'tests', 'fixtures', 'capability', 'design-browser-python-name');
-  mkdirSync(directory, { recursive: true });
+  const directory = mkdtempSync(path.join(tmpdir(), 'design-browser-python-name-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
   const located = spawnSync('python', ['-I', '-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', timeout: 15000 });
   assert.equal(located.status, 0, located.stderr);
   const executable = located.stdout.trim();
@@ -283,7 +320,6 @@ test('a PATH-resolvable interpreter name other than python is accepted', { skip:
     assert.match(report.failures.join('\n'), /missing dependency: Chromium executable was not found/);
   } finally {
     process.env.PATH = previous;
-    rmSync(directory, { recursive: true, force: true });
   }
 });
 

@@ -23,25 +23,7 @@ if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
   Remove-Item Env:GIT_CONFIG_COUNT -ErrorAction SilentlyContinue
 }
 
-function Invoke-Git {
-  param(
-    [Parameter(Mandatory = $true)][string]$Root,
-    [Parameter(Mandatory = $true)][string[]]$Arguments
-  )
-  $output = & git -C $Root @Arguments 2>&1
-  $exitCode = $LASTEXITCODE
-  if ($exitCode -ne 0) {
-    throw ("git {0} failed (exit {1}) in {2}: {3}" -f ($Arguments -join " "), $exitCode, $Root, (($output | Out-String).Trim()))
-  }
-  return $output
-}
-# ---------------------------------------------------------------------------
-
-function Write-JsonFile {
-  param([string]$Path, [object]$Value)
-  $json = $Value | ConvertTo-Json -Depth 20
-  [System.IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
-}
+. (Join-Path $PSScriptRoot 'project-common.ps1')
 
 $root = (Resolve-Path $ProjectRoot).Path
 $skillRoot = Split-Path -Parent $PSScriptRoot
@@ -62,43 +44,9 @@ if (-not $currentBranch) {
   throw "Coordinator control worktree is in detached HEAD: $gitRoot. Check out the coordinator control branch before bootstrapping."
 }
 
-# delivery_branch resolution order, identical to create-run.ps1: an explicit -DeliveryBranch, then
-# origin/HEAD, then init.defaultBranch (when that branch exists), then main, then master, then the
-# current branch. The source is recorded in the shared vocabulary:
-# user | origin-head | init-default | main | master | current.
-$deliveryBranchSource = $null
-if ($DeliveryBranch) {
-  $deliveryBranchSource = "user"
-} else {
-  # Every probe below is a raw call that captures stderr instead of a throwing Invoke-Git call: a
-  # missing ref exits 1 by design.
-  # Output is assigned without a pipeline: piping a native call into Select-Object can stop that
-  # process early and clobber $LASTEXITCODE, so the exit code is captured first.
-  $originHead = & git -C $gitRoot symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>&1
-  $originHeadExit = $LASTEXITCODE
-  if ($originHeadExit -eq 0 -and $originHead) {
-    $originHeadBranch = ("$originHead").Trim() -replace "^origin/", ""
-    if ($originHeadBranch) { $DeliveryBranch = $originHeadBranch; $deliveryBranchSource = "origin-head" }
-  }
-  if (-not $deliveryBranchSource) {
-    $initDefault = & git -C $gitRoot config --get init.defaultBranch 2>&1
-    $initDefaultExit = $LASTEXITCODE
-    if ($initDefaultExit -eq 0 -and $initDefault) {
-      $initDefault = ("$initDefault").Trim()
-      if ($initDefault) {
-        $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$initDefault" 2>&1
-        if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $initDefault; $deliveryBranchSource = "init-default" }
-      }
-    }
-  }
-  if (-not $deliveryBranchSource) {
-    foreach ($candidate in @("main", "master")) {
-      $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$candidate" 2>&1
-      if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $candidate; $deliveryBranchSource = $candidate; break }
-    }
-  }
-  if (-not $deliveryBranchSource) { $DeliveryBranch = $currentBranch; $deliveryBranchSource = "current" }
-}
+$deliveryResolution = Resolve-DeliveryBranch -Root $gitRoot -CurrentBranch $currentBranch -DeliveryBranch $DeliveryBranch
+$DeliveryBranch = $deliveryResolution.Branch
+$deliveryBranchSource = $deliveryResolution.Source
 
 # Invariant 3: the coordinator control branch must differ from the delivery branch, otherwise
 # the run bootstrapped from this control worktree is invalid as soon as it is created.
