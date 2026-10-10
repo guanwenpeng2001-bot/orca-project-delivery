@@ -4,14 +4,14 @@
 
 A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
-![Version](https://img.shields.io/badge/version-2.5.0-blue)
+![Version](https://img.shields.io/badge/version-2.6.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-These guides describe the **2.5.0 package: 46 Skills, 16 Roles, and 4 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
+These guides describe the **2.6.0 package: 46 Skills, 16 Roles, and 4 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
 
-New in 2.5.0: [use installed external Skills](docs/external-skills.md) through explicit project configuration, with mixed Role bindings and original resource paths. The guide includes an offline assembly, preflight and invocation walkthrough; bundled counts stay unchanged.
+New in 2.6.0: contract and validation fixes, an unblocked [package extension workflow](docs/extending.md), about 20% less entry and selected Skill body text through progressive disclosure, shared script helpers, and separated acceptance suites. Bundled counts remain 46 Skills, 16 Roles, and 4 workflows; [installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
 
 Orca Project Delivery is a coordinator-only Skill that runs a complete software
 delivery pipeline with Claude Code worker agents. It solves the problem of
@@ -124,7 +124,7 @@ integrate, and close. The walkthrough lives in
 orca-project-delivery/
 ├── SKILL.md                  # Coordinator entry point (17 sections, <= 250 lines)
 ├── LICENSE                   # MIT
-├── VERSION                   # 2.5.0
+├── VERSION                   # 2.6.0
 ├── PACKAGE-MANIFEST.json     # Package metadata and deliverable counts
 ├── CHANGELOG.md
 ├── README.md                 # English (default)

@@ -4,6 +4,16 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 2.6.0 — 2026-10-10
+
+- Quality and maintenance release; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together; historical release entries remain unchanged.
+- Replaced the handwritten run-schema validator with PowerShell `Test-Json`, retaining schema diagnostics and checking that accepted documents can also be parsed by state consumers. Documents containing case-variant keys such as `run` and `Run` now fail validation instead of being silently skipped by those consumers.
+- Aligned three Task contracts: authentication failures do not authorize automatic model degradation; read-only Tasks do not require source commits; only a Task explicitly authorizing a nested coordinator permits a worker to load the full coordinator Skill.
+- Separated fixed official-release snapshot assertions from extensible-package consistency acceptance. Both language versions of the native extension example exercise 17 Roles / 47 Skills, including hash-tampering and missing-file rejection. Synchronized bundled/external resolution guidance, document-specialist optional Skills, and named control/delivery branch rule references.
+- Moved detailed coordinator rules and six Skills' worked examples/evaluation notes into linked references, preserving entry headings and action gates. Compared with 2.5.0 (`6eca6a3`), Unicode character counts including whitespace changed from 24,097 to 19,231 for `SKILL.md` (20.2% less), and from 64,900 to 51,431 for that entry plus the six Skill bodies (20.8% less). The six bodies are `code-review`, `code-video-production`, `document-production`, `image-generation`, `integration-verification`, and `test-driven-development`. These are body-text reductions, not measured token, latency or whole-package savings.
+- Added `scripts/project-common.ps1` for shared lifecycle Git, JSON-writing and delivery-branch helpers, including Git helper reuse in run validation. The evidence validator retains its separate read-only Git policy and caches parsed JSON inputs and task assignments within one invocation; assignment lookup uses a task-key index.
+- Split package acceptance into structure, runtime, contract, lifecycle, evidence and mutation checks with suite timeout budgets. Runtime checks use a staged temporary package, source-mutation fixtures remain isolated, and required script files are still checked. Source-mutation tests run by default; `-SkipMutationTests` explicitly opts out and reports the skip. `-MetadataOnly` remains a structure-only check, not full runtime acceptance.
+
 ## 2.5.0 — 2026-10-10
 
 - Added explicit version 2 project configuration for already-installed external Skills: absolute or project-relative paths, unique registration aliases, declared requirements and mixed bundled/external Role bindings. Version 1 remains env-only; bundled counts remain 46 Skills, 16 Roles and 4 workflows.

@@ -4,7 +4,7 @@
 
 版本 2 项目注册、混合绑定、解析后的依赖选择及原位置同级资源，见[已安装外部 Skill 演练](external-skills.md)。包内 Skill 不需要单独安装。
 
-Orca Project Delivery 协调的工作者会加载**专业 Skill** — 提供专业方法的说明包（`SKILL.md`），覆盖侦察、产品工作、架构、实施、审查和验证，以及软件交付、本地资产、图像和音视频、文档的方法。2.5.0 版本中，全部四十六个 Skill **随本包**放在 `skills/<skill-id>/SKILL.md`。部分方法还附带本地脚本或提供方连接器；执行证据与加载说明分开。安装完整且匹配的版本，并按[教程](professional-capability-tutorial.md)核对版本和目录。版本不匹配就不是本版本。
+Orca Project Delivery 协调的工作者会加载**专业 Skill** — 提供专业方法的说明包（`SKILL.md`），覆盖侦察、产品工作、架构、实施、审查和验证，以及软件交付、本地资产、图像和音视频、文档的方法。2.6.0 版本中，全部四十六个 Skill **随本包**放在 `skills/<skill-id>/SKILL.md`。部分方法还附带本地脚本或提供方连接器；执行证据与加载说明分开。安装完整且匹配的版本，并按[教程](professional-capability-tutorial.md)核对版本和目录。版本不匹配就不是本版本。
 
 ## 上游来源
 
