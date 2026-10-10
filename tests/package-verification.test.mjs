@@ -10,6 +10,26 @@ const verifier = fileURLToPath(new URL('../scripts/verification-runtime.ps1', im
 const helpers = fileURLToPath(new URL('../scripts/verification-common.ps1', import.meta.url));
 const requiredSuites = ['document-production.test.py', 'document-depth-office.test.py'];
 
+for (const metadataOnly of [false, true]) {
+  test(`setup failure emits one JSON result before closing summary (MetadataOnly=${metadataOnly})`, (t) => {
+    const root = mkdtempSync(path.join(tmpdir(), 'package-setup-failure-'));
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+    const entrypoint = fileURLToPath(new URL('../scripts/verify-package.ps1', import.meta.url));
+    const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint,
+      '-PackageRoot', path.join(root, 'missing'), ...(metadataOnly ? ['-MetadataOnly'] : [])], {
+      encoding: 'utf8', timeout: 20000,
+    });
+    assert.ifError(result.error);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    const lines = result.stdout.trim().split(/\r?\n/);
+    const jsonLines = lines.filter((line) => line.startsWith('{'));
+    assert.equal(jsonLines.length, 1, result.stdout);
+    assert.equal(JSON.parse(jsonLines[0]).failed, 1);
+    assert.match(lines.at(-1), /SUMMARY PASS=0 FAIL=1$/);
+    assert.ok(lines.indexOf(jsonLines[0]) < lines.length - 1);
+  });
+}
+
 for (const characters of [19799, 19800, 22000, 22001]) {
   test(`entry character budget at ${characters} Unicode characters`, (t) => {
     const source = fileURLToPath(new URL('../', import.meta.url));
@@ -31,8 +51,12 @@ for (const characters of [19799, 19800, 22000, 22001]) {
     assert.equal(result.status, oversized ? 1 : 0, output);
     if (oversized) assert.match(output, /FAIL metadata\/entry-character-budget: SKILL\.md has 22001 Unicode characters including whitespace; limit is 22000/);
     else assert.match(output, /PASS metadata\/entry-character-budget/);
-    const summaryLine = output.split(/\r?\n/).find((line) => line.startsWith('{'));
-    assert.ok(summaryLine, output);
+    const outputLines = result.stdout.trim().split(/\r?\n/);
+    const summaryLines = outputLines.filter((line) => line.startsWith('{'));
+    assert.equal(summaryLines.length, 1, output);
+    assert.match(outputLines.at(-1), /^METADATA SUMMARY PASS=\d+ FAIL=\d+$/);
+    const summaryLine = summaryLines[0];
+    assert.ok(outputLines.indexOf(summaryLine) < outputLines.length - 1);
     const summary = JSON.parse(summaryLine);
     assert.equal(summary.failed, oversized ? 1 : 0, output);
     assert.equal(summary.ok, !oversized);

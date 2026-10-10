@@ -35,7 +35,6 @@ try {
   $files = @(Get-PackageFiles $root)
   Invoke-Suite 'package structure' { Test-PackageStructure }
   if ($MetadataOnly) {
-    Write-Host "METADATA SUMMARY PASS=$passed FAIL=$failed"
     if ($failed) { exit 1 }
     exit 0
   }
@@ -76,16 +75,14 @@ try {
       Write-Host "CLEANED $resolvedTemporary"
     }
   }
-  if ($MetadataOnly) {
-    [ordered]@{ ok = ($failed -eq 0); passed = $passed; failed = $failed; warnings = @($warnings.ToArray()) } | ConvertTo-Json -Compress
+  if (-not $MetadataOnly -and $null -ne $resolvedSkills) {
+    $siblings = @($resolvedSkills | Where-Object Origin -eq 'package-bundled').Count
+    $declaredCount = try { @((Read-PackageJson 'routing/skill-catalog.json').skills).Count } catch { '?' }
+    Write-Host "skills: $($resolvedSkills.Count)/$declaredCount resolved ($siblings package-bundled)"
   }
+  [ordered]@{ ok = ($failed -eq 0); passed = $passed; failed = $failed; warnings = @($warnings.ToArray()) } | ConvertTo-Json -Compress
+  $summaryPrefix = if ($MetadataOnly) { 'METADATA SUMMARY' } else { 'SUMMARY' }
+  Write-Host "$summaryPrefix PASS=$passed FAIL=$failed"
 }
-if ($null -ne $resolvedSkills) {
-  $siblings = @($resolvedSkills | Where-Object Origin -eq 'package-bundled').Count
-  $declaredCount = try { @((Read-PackageJson 'routing/skill-catalog.json').skills).Count } catch { '?' }
-  Write-Host "skills: $($resolvedSkills.Count)/$declaredCount resolved ($siblings package-bundled)"
-}
-Write-Host "SUMMARY PASS=$passed FAIL=$failed"
-[ordered]@{ ok = ($failed -eq 0); passed = $passed; failed = $failed; warnings = @($warnings.ToArray()) } | ConvertTo-Json -Compress
 if ($failed -gt 0) { exit 1 }
 exit 0
