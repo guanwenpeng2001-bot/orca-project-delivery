@@ -1,4 +1,4 @@
-# Optional source-text mutations, separate from the daily behavior suite.
+# Source-text mutations run by default, separately from behavior checks.
 function Test-EvidenceMutations {
   Invoke-Check 'mutation/superseded' {
     Assert-Condition ($script:mutationFixtures.ContainsKey('superseded')) 'Mutation fixture unavailable: superseded'

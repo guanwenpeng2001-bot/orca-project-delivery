@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -9,6 +9,48 @@ import { fileURLToPath } from 'node:url';
 const verifier = fileURLToPath(new URL('../scripts/verification-runtime.ps1', import.meta.url));
 const helpers = fileURLToPath(new URL('../scripts/verification-common.ps1', import.meta.url));
 const requiredSuites = ['document-production.test.py', 'document-depth-office.test.py'];
+
+// Keep the baseline entrypoints plus the extracted runtime dependencies mandatory.
+test('MetadataOnly rejects every missing required script and parses discovered extensions', (t) => {
+  const source = fileURLToPath(new URL('../', import.meta.url));
+  const entrypoint = path.join(source, 'scripts', 'verify-package.ps1');
+  const copy = mkdtempSync(path.join(tmpdir(), 'package-required-scripts-'));
+  t.after(() => rmSync(copy, { recursive: true, force: true }));
+  cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work'].includes(path.basename(item)) });
+  const required = [
+    'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1',
+    'probe-claude-capabilities.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
+    'validate-run.ps1', 'validate-git-evidence.ps1', 'verify-package.ps1',
+    'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',
+    'verify-requirements.ps1', 'project-common.ps1', 'verification-common.ps1',
+    'verification-structure.ps1', 'verification-runtime.ps1', 'verification-lifecycle.ps1',
+    'verification-evidence-fixtures.ps1', 'verification-evidence.ps1', 'verification-mutations.ps1',
+  ];
+  const verify = () => {
+    const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-PackageRoot', copy, '-MetadataOnly'], {
+      encoding: 'utf8', timeout: 20000,
+    });
+    assert.ifError(result.error);
+    return { status: result.status, output: result.stdout + result.stderr };
+  };
+  const baseline = verify();
+  assert.equal(baseline.status, 0, baseline.output);
+  for (const name of required) {
+    const target = path.join(copy, 'scripts', name);
+    const original = readFileSync(target);
+    try {
+      rmSync(target);
+      const result = verify();
+      assert.equal(result.status, 1, name + ': ' + result.output);
+      assert.match(result.output, /FAIL package\/required-scripts: Missing required script:/);
+      assert.ok(result.output.includes(name), result.output);
+    } finally { writeFileSync(target, original); }
+  }
+  writeFileSync(path.join(copy, 'scripts', 'discovered-extension.ps1'), 'function Broken {');
+  const extension = verify();
+  assert.equal(extension.status, 1, extension.output);
+  assert.match(extension.output, /FAIL parse\/discovered-extension.ps1/);
+});
 const pythonProbe = spawnSync('python', ['-I', '-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', timeout: 10000 });
 const python = pythonProbe.status === 0 ? pythonProbe.stdout.trim() : '';
 const pythonOptions = { skip: python ? false : 'missing dependency: Python interpreter was not found on PATH' };

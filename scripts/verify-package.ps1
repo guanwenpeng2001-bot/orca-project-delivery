@@ -5,7 +5,7 @@ Skills bundled under skills/ in this package. The package under
 test is read-only; all runtime fixtures and copies use temporary directories.
 ##>
 [CmdletBinding()]
-param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly, [string]$DocumentPython = '', [switch]$IncludeMutationTests, [ValidateRange(1, 86400)][int]$SuiteTimeoutSeconds = 600)
+param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly, [string]$DocumentPython = '', [switch]$SkipMutationTests, [ValidateRange(1, 86400)][int]$SuiteTimeoutSeconds = 600)
 
 $ErrorActionPreference = 'Stop'
 $passed = 0
@@ -55,7 +55,9 @@ try {
   Invoke-Suite 'package contracts' { Test-PackageContracts }
   Invoke-Suite 'project lifecycle' { Test-ProjectLifecycle }
   Invoke-Suite 'git evidence' { Test-GitEvidence }
-  if ($IncludeMutationTests) { Invoke-Suite 'evidence source mutations' { Test-EvidenceMutations } }
+  if ($SkipMutationTests) {
+    Write-Host 'SKIP evidence source mutations: -SkipMutationTests was explicitly requested'
+  } else { Invoke-Suite 'evidence source mutations' { Test-EvidenceMutations } }
 } catch {
   $failed++
   Write-Host "FAIL harness/setup: $($_.Exception.Message)"
