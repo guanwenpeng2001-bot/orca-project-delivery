@@ -262,6 +262,50 @@ test('subset run prints SUITES lines and keeps the summary contract', (t) => {
   assert.match(lines.at(-1), /^SUMMARY PASS=\d+ FAIL=0$/);
 });
 
+function spawnSubsetRun(t, tempPrefix, ...selectionArguments) {
+  const source = fileURLToPath(new URL('../', import.meta.url));
+  const copy = mkdtempSync(path.join(tmpdir(), tempPrefix));
+  t.after(() => rmSync(copy, { recursive: true, force: true }));
+  cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work', '.claude'].includes(path.basename(item)) });
+  const entrypoint = path.join(copy, 'scripts', 'verify-package.ps1');
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-PackageRoot', copy, ...selectionArguments], {
+    encoding: 'utf8', timeout: 120000,
+  });
+  assert.ifError(result.error);
+  return result;
+}
+
+test('comma-joined multi-suite selection runs both suites', (t) => {
+  const result = spawnSubsetRun(t, 'package-suite-comma-', '-Suites', 'package structure,package contracts');
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.ok(result.stdout.includes('SUITES requested: package structure, package contracts'), result.stdout);
+  assert.ok(result.stdout.includes('SUITES running: package structure, package contracts'), result.stdout);
+  assert.ok(result.stdout.includes('SUITE package structure'), result.stdout);
+  assert.ok(result.stdout.includes('SUITE package contracts'), result.stdout);
+  const lines = result.stdout.trim().split(/\r?\n/);
+  const jsonLines = lines.filter((line) => line.startsWith('{'));
+  assert.equal(jsonLines.length, 1, result.stdout);
+  assert.equal(JSON.parse(jsonLines[0]).ok, true);
+  assert.match(lines.at(-1), /^SUMMARY PASS=\d+ FAIL=0$/);
+});
+
+test('a straggler token fails loudly instead of narrowing silently', (t) => {
+  const result = spawnSubsetRun(t, 'package-suite-straggler-', '-Suites', 'package contracts', 'git evidence');
+  assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  assert.ok(!result.stdout.includes('SUMMARY PASS='), result.stdout);
+  assert.ok(!result.stdout.includes('SUITES requested:'), result.stdout);
+});
+
+test('the comma form normalizes case, surrounding whitespace and duplicates', (t) => {
+  const result = spawnSubsetRun(t, 'package-suite-normalize-', '-Suites', '  PACKAGE STRUCTURE , package structure  ');
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.ok(result.stdout.includes('SUITES requested: package structure'), result.stdout);
+  assert.ok(result.stdout.includes('SUITES running: package structure'), result.stdout);
+  assert.ok(!result.stdout.includes('SUITE package contracts'), result.stdout);
+  assert.ok(!result.stdout.includes('PASS fixtures/stage-package-and-skills'), result.stdout);
+  assert.ok(!result.stdout.includes('TEMP package copy'), result.stdout);
+});
+
 const pythonProbe = spawnSync('python', ['-I', '-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', timeout: 10000 });
 const python = pythonProbe.status === 0 ? pythonProbe.stdout.trim() : '';
 const pythonOptions = { skip: python ? false : 'missing dependency: Python interpreter was not found on PATH' };

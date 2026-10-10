@@ -147,11 +147,13 @@ function Resolve-SuiteSelection {
   $selected = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
   $normalizedRequested = @()
   foreach ($element in @($Requested)) {
-    $trimmed = $element.Trim()
-    $match = $canonicalSuites | Where-Object { $_ -ieq $trimmed } | Select-Object -First 1
-    if (-not $match) { throw "Unknown suite '$element' (declared: $($canonicalSuites -join ', '))" }
-    if ($normalizedRequested -cnotcontains $match) { $normalizedRequested += $match }
-    [void]$selected.Add($match)
+    foreach ($part in @($element -split ',')) {
+      $trimmed = $part.Trim()
+      $match = $canonicalSuites | Where-Object { $_ -ieq $trimmed } | Select-Object -First 1
+      if (-not $match) { throw "Unknown suite '$part' (declared: $($canonicalSuites -join ', '))" }
+      if ($normalizedRequested -cnotcontains $match) { $normalizedRequested += $match }
+      [void]$selected.Add($match)
+    }
   }
   $explicit = $normalizedRequested.Count -gt 0
   if ($explicit -and (@($normalizedRequested | Where-Object { $_ -ne 'package structure' }).Count -gt 0)) {

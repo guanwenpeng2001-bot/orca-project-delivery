@@ -4,7 +4,7 @@ Offline package acceptance. Requires PowerShell 7, Git and the professional
 Skills bundled under skills/ in this package. The package under
 test is read-only; all runtime fixtures and copies use temporary directories.
 ##>
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding = $false)]
 param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly, [string]$DocumentPython = '', [switch]$SkipMutationTests, [ValidateRange(1, 86400)][int]$SuiteTimeoutSeconds = 600, [string[]]$Suites = @())
 
 # Unicode code points include whitespace. Hard limit 22000; warning at 19800 (90%).
