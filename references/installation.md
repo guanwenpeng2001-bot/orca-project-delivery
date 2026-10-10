@@ -8,7 +8,7 @@ Do not overwrite existing Orca-provided Skills such as:
 - `orca-cli`
 - `orca-per-workspace-env`
 
-This package adds `orca-project-delivery` only. The 2.6.0 package contains 46 professional Skills, 16 Roles and 4 workflows. All 46 bundled professional Skills ship **inside** the package under `skills/<skill-id>/SKILL.md`; there is no separate sibling install or copy step. Bundled provenance is recorded in `skills/README.md`. Already-installed third-party Skills may additionally be registered through explicit version 2 project configuration; see the [external Skill walkthrough](../docs/external-skills.md). No automatic installation or scanning occurs, and originals remain untouched.
+This package adds `orca-project-delivery` only. The 2.7.0 package contains 46 professional Skills, 16 Roles and 4 workflows. All 46 bundled professional Skills ship **inside** the package under `skills/<skill-id>/SKILL.md`; there is no separate sibling install or copy step. Bundled provenance is recorded in `skills/README.md`. Already-installed third-party Skills may additionally be registered through explicit version 2 project configuration; see the [external Skill walkthrough](../docs/external-skills.md). No automatic installation or scanning occurs, and originals remain untouched.
 
 Use the global `orca-project-delivery` Skill from the coordinator control worktree. The Skill initializes or reuses project-local `AGENTS.md` and `.dev-work/`.
 

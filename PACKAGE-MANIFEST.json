@@ -1,10 +1,10 @@
 {
   "name": "orca-project-delivery",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "generatedAt": "2026-10-02",
-  "revisedAt": "2026-10-10",
-  "releasedAt": "2026-10-10",
-  "revisionNote": "Align contracts and schema validation, unblock native package extensions, disclose entry and selected Skill details progressively, share project helpers, cache evidence inputs, and isolate acceptance suites with source mutations enabled by default. Preserve 46 bundled Skills, 16 Roles and 4 workflows; synchronize English and Chinese release guidance.",
+  "revisedAt": "2026-10-11",
+  "releasedAt": "2026-10-11",
+  "revisionNote": "Reuse original worker sessions and worktrees for fix and re-review dispatches, project per-Role model routing, narrow task briefs with taskKind, briefProfile and agentsSections, and enforce the entry Skill Unicode character budget with synthetic fixtures. Preserve 46 bundled Skills, 16 Roles and 4 workflows; synchronize English and Chinese release guidance.",
   "deliverables": {
     "roles": 16,
     "professionalSkills": 46,

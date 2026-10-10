@@ -6,7 +6,7 @@
 
 本指南安装 `orca-project-delivery` 协调者 Skill，使 Claude Code 协调者会话能从控制工作树加载它。本包是一个普通文件目录 — 没有安装程序、没有包注册表，也没有构建步骤。
 
-本指南描述2.6.0 包（46 个 Skill / 16 个角色 / 4 个工作流）。安装完整且匹配的版本。运行示例前先做[教程中的版本及目录检查](professional-capability-tutorial.md#1-确认你安装的是什么)。版本不匹配就不是本版本。
+本指南描述2.7.0 包（46 个 Skill / 16 个角色 / 4 个工作流）。安装完整且匹配的版本。运行示例前先做[教程中的版本及目录检查](professional-capability-tutorial.md#1-确认你安装的是什么)。版本不匹配就不是本版本。
 
 ## 前置条件
 
@@ -78,7 +78,7 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 健康安装的输出大致是：
 
 - 许多 `PASS <check>` 行（解析、编码、路由、元数据、运行时夹具、证据夹具等）；
-- 一行 `skills: N/N resolved (... package-bundled)` 汇总，其中 N 是你安装的修订的 Skill 数（2.6.0 能力版本为 46）；
+- 一行 `skills: N/N resolved (... package-bundled)` 汇总，其中 N 是你安装的修订的 Skill 数（2.7.0 能力版本为 46）；
 - 最后一行形如 `SUMMARY PASS=<n> FAIL=0`；
 - 进程退出码为 0。
 
@@ -94,7 +94,7 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 
 能力版本为软件、本地资产、图像和音视频、文档新增了方法。安装它并不会运行其中任何一个。[能力教程](professional-capability-tutorial.md)检查安装并运行有界本地工具和依赖辅助脚本；它不调用提供方，包套件通过也不是关于生成产出的证据。
 
-引导仅在缺失时创建 `.env.example` 与 `project-config.example.json`，已有文件保持不变。它把 `/.env` 加入本地 Git `info/exclude`，同一克隆的工作树共享此文件。实际执行主机上填有值的 `.env` 保持不跟踪。工作者必须显式提供自己的 `ProjectRoot`；辅助脚本不复制协调者配置，也不创建工作者 `.dev-work/` 状态。原有十六个不声明凭据依赖。一个 2.6.0 的 Skill 只在它点名时才声明凭据，文档中提到的在线连接器是示例，不是你已经选定的提供方。真实密钥不属于仓库。
+引导仅在缺失时创建 `.env.example` 与 `project-config.example.json`，已有文件保持不变。它把 `/.env` 加入本地 Git `info/exclude`，同一克隆的工作树共享此文件。实际执行主机上填有值的 `.env` 保持不跟踪。工作者必须显式提供自己的 `ProjectRoot`；辅助脚本不复制协调者配置，也不创建工作者 `.dev-work/` 状态。原有十六个不声明凭据依赖。一个 2.7.0 的 Skill 只在它点名时才声明凭据，文档中提到的在线连接器是示例，不是你已经选定的提供方。真实密钥不属于仓库。
 
 ## 升级
 

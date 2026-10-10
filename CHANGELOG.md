@@ -4,6 +4,14 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 2.7.0 — 2026-10-11
+
+- Coordination efficiency release; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together.
+- Documented coordinator rework loops in `SKILL.md` and its references: fix and re-review dispatches resume the original worker terminal session and worktree, preserving the implementation or review context across rounds.
+- Added `scripts/query-routing.ps1` to project one Role's model/effort slice from `routing/model-routing.json`, so the coordinator can read the selected routing result without loading the whole routing file into context.
+- Added `taskKind`, `briefProfile` and `agentsSections` to task brief assembly, narrowing review and read-only inputs. This run measured 47.85% smaller implementer briefs and review briefs of about 3 KB; these are brief-size measurements, not measured token or latency savings.
+- Added a `SKILL.md` Unicode character budget to `scripts/verify-package.ps1`, counting whitespace: warning at 19,800 characters or more, failure above 22,000. Synthetic fixtures cover the thresholds independently of shipped content size. The current entry contains 21,371 characters; the warning remains visible while the full package gate passes all 81 checks.
+
 ## 2.6.0 — 2026-10-10
 
 - Quality and maintenance release; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together; historical release entries remain unchanged.
