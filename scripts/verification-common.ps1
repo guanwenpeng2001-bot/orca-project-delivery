@@ -138,3 +138,29 @@ function Invoke-Suite([string]$Name, [scriptblock]$Suite) {
   try { & $Suite }
   finally { Write-Host ("SUITE {0} duration={1:N2}s" -f $Name, $timer.Elapsed.TotalSeconds) }
 }
+
+function Resolve-SuiteSelection {
+  param([string[]]$Requested = @(), [switch]$MetadataOnly, [switch]$SkipMutationTests)
+  $canonicalSuites = @('package structure', 'package runtime', 'package contracts', 'project lifecycle', 'git evidence', 'evidence source mutations')
+  if ($null -eq $Requested) { $Requested = @() }
+  if ($MetadataOnly -and (@($Requested).Count -gt 0)) { throw '-MetadataOnly cannot be combined with -Suites' }
+  $selected = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+  $normalizedRequested = @()
+  foreach ($element in @($Requested)) {
+    $trimmed = $element.Trim()
+    $match = $canonicalSuites | Where-Object { $_ -ieq $trimmed } | Select-Object -First 1
+    if (-not $match) { throw "Unknown suite '$element' (declared: $($canonicalSuites -join ', '))" }
+    if ($normalizedRequested -cnotcontains $match) { $normalizedRequested += $match }
+    [void]$selected.Add($match)
+  }
+  $explicit = $normalizedRequested.Count -gt 0
+  if ($explicit -and (@($normalizedRequested | Where-Object { $_ -ne 'package structure' }).Count -gt 0)) {
+    [void]$selected.Add('package structure')
+  }
+  if ($selected.Contains('evidence source mutations')) { [void]$selected.Add('git evidence') }
+  $running = if ($explicit) { @($canonicalSuites | Where-Object { $selected.Contains($_) }) } else { @($canonicalSuites) }
+  if ($SkipMutationTests) {
+    $running = @($running | Where-Object { $_ -ne 'evidence source mutations' })
+  }
+  [pscustomobject]@{ Requested = @($normalizedRequested); Running = $running; Explicit = $explicit }
+}

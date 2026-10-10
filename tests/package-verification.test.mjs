@@ -135,6 +135,133 @@ test('MetadataOnly rejects every missing required script and parses discovered e
   assert.equal(extension.status, 1, extension.output);
   assert.match(extension.output, /FAIL parse\/discovered-extension.ps1/);
 });
+// Execute the suite selection resolver verbatim without rerunning unrelated package gates.
+const resolverHarness = String.raw`
+$ErrorActionPreference = 'Stop'
+$tokens = $null
+$errors = $null
+$ast = [Management.Automation.Language.Parser]::ParseFile($env:PACKAGE_TEST_RESOLVER_SOURCE, [ref]$tokens, [ref]$errors)
+if ($errors.Count) { throw ($errors | Out-String) }
+$definitions = @($ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Resolve-SuiteSelection' }, $true))
+if ($definitions.Count -ne 1) { throw 'Expected exactly one Resolve-SuiteSelection definition' }
+. ([scriptblock]::Create($definitions[0].Extent.Text))
+$requested = @($env:PACKAGE_TEST_REQUESTED -split '\n' | Where-Object { $_ -ne '' })
+$result = Resolve-SuiteSelection -Requested $requested -MetadataOnly:($env:PACKAGE_TEST_METADATA_ONLY -eq '1') -SkipMutationTests:($env:PACKAGE_TEST_SKIP -eq '1')
+[ordered]@{ requested = @($result.Requested); running = @($result.Running); explicit = [bool]$result.Explicit } | ConvertTo-Json -Compress
+`;
+
+function runResolver(requested, { metadataOnly = false, skipMutationTests = false } = {}) {
+  const environment = { ...process.env,
+    PACKAGE_TEST_RESOLVER_SOURCE: helpers,
+    PACKAGE_TEST_REQUESTED: requested.join('\n'),
+    PACKAGE_TEST_METADATA_ONLY: metadataOnly ? '1' : '0',
+    PACKAGE_TEST_SKIP: skipMutationTests ? '1' : '0',
+  };
+  delete environment.NODE_TEST_CONTEXT;
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', resolverHarness], {
+    encoding: 'utf8', timeout: 20000, env: environment,
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  return JSON.parse(result.stdout.trim());
+}
+
+test('suite selection rejects an unknown suite name', (t) => {
+  const entrypoint = fileURLToPath(new URL('../scripts/verify-package.ps1', import.meta.url));
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-Suites', 'no-such-suite'], {
+    encoding: 'utf8', timeout: 20000,
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const lines = result.stdout.trim().split(/\r?\n/);
+  const jsonLines = lines.filter((line) => line.startsWith('{'));
+  assert.equal(jsonLines.length, 1, result.stdout);
+  assert.equal(JSON.parse(jsonLines[0]).failed, 1);
+  assert.match(lines.at(-1), /SUMMARY PASS=0 FAIL=1$/);
+  assert.match(result.stdout, /FAIL harness\/setup: Unknown suite 'no-such-suite'/);
+  assert.ok(result.stdout.includes('git evidence'), result.stdout);
+});
+
+test('suite selection rejects an empty suite name', (t) => {
+  const entrypoint = fileURLToPath(new URL('../scripts/verify-package.ps1', import.meta.url));
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-Suites', '   '], {
+    encoding: 'utf8', timeout: 20000,
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const lines = result.stdout.trim().split(/\r?\n/);
+  const jsonLines = lines.filter((line) => line.startsWith('{'));
+  assert.equal(jsonLines.length, 1, result.stdout);
+  assert.equal(JSON.parse(jsonLines[0]).failed, 1);
+  assert.match(lines.at(-1), /SUMMARY PASS=0 FAIL=1$/);
+  assert.match(result.stdout, /FAIL harness\/setup: Unknown suite '   '\s*\(declared: /);
+});
+
+test('suite selection refuses -MetadataOnly combined with -Suites', (t) => {
+  const entrypoint = fileURLToPath(new URL('../scripts/verify-package.ps1', import.meta.url));
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-MetadataOnly', '-Suites', 'package contracts'], {
+    encoding: 'utf8', timeout: 20000,
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const lines = result.stdout.trim().split(/\r?\n/);
+  const jsonLines = lines.filter((line) => line.startsWith('{'));
+  assert.equal(jsonLines.length, 1, result.stdout);
+  assert.equal(JSON.parse(jsonLines[0]).failed, 1);
+  assert.match(result.stdout, /-MetadataOnly cannot be combined with -Suites/);
+  assert.ok(!result.stdout.includes('SUITE package runtime'), result.stdout);
+});
+
+test('Resolve-SuiteSelection normalizes case and whitespace and deduplicates', () => {
+  const result = runResolver([' Package Contracts ', 'package contracts']);
+  assert.deepEqual(result.requested, ['package contracts']);
+  assert.deepEqual(result.running, ['package structure', 'package contracts']);
+  assert.equal(result.explicit, true);
+});
+
+test('Resolve-SuiteSelection expands evidence source mutations with git evidence', () => {
+  const result = runResolver(['evidence source mutations']);
+  assert.deepEqual(result.requested, ['evidence source mutations']);
+  assert.deepEqual(result.running, ['package structure', 'git evidence', 'evidence source mutations']);
+  assert.equal(result.explicit, true);
+});
+
+test('Resolve-SuiteSelection treats an empty selection as the full gate', () => {
+  const result = runResolver([]);
+  assert.deepEqual(result.requested, []);
+  assert.deepEqual(result.running, ['package structure', 'package runtime', 'package contracts', 'project lifecycle', 'git evidence', 'evidence source mutations']);
+  assert.equal(result.explicit, false);
+});
+
+test('Resolve-SuiteSelection applies SkipMutationTests after expansion', () => {
+  const result = runResolver(['evidence source mutations'], { skipMutationTests: true });
+  assert.deepEqual(result.running, ['package structure', 'git evidence']);
+  assert.equal(result.explicit, true);
+});
+
+test('subset run prints SUITES lines and keeps the summary contract', (t) => {
+  const source = fileURLToPath(new URL('../', import.meta.url));
+  const copy = mkdtempSync(path.join(tmpdir(), 'package-suite-selection-'));
+  t.after(() => rmSync(copy, { recursive: true, force: true }));
+  cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work', '.claude'].includes(path.basename(item)) });
+  const entrypoint = path.join(copy, 'scripts', 'verify-package.ps1');
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-PackageRoot', copy, '-Suites', 'package contracts'], {
+    encoding: 'utf8', timeout: 120000,
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.ok(result.stdout.includes('SUITES requested: package contracts'), result.stdout);
+  assert.ok(result.stdout.includes('SUITES running: package structure, package contracts'), result.stdout);
+  assert.ok(result.stdout.includes('SUITE package contracts'), result.stdout);
+  assert.ok(!result.stdout.includes('SUITE package runtime'), result.stdout);
+  assert.ok(result.stdout.includes('PASS fixtures/stage-package-and-skills'), result.stdout);
+  const lines = result.stdout.trim().split(/\r?\n/);
+  const jsonLines = lines.filter((line) => line.startsWith('{'));
+  assert.equal(jsonLines.length, 1, result.stdout);
+  assert.equal(JSON.parse(jsonLines[0]).ok, true);
+  assert.match(lines.at(-1), /^SUMMARY PASS=\d+ FAIL=0$/);
+});
+
 const pythonProbe = spawnSync('python', ['-I', '-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', timeout: 10000 });
 const python = pythonProbe.status === 0 ? pythonProbe.stdout.trim() : '';
 const pythonOptions = { skip: python ? false : 'missing dependency: Python interpreter was not found on PATH' };
