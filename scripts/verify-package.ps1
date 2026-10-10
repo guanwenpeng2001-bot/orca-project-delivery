@@ -76,7 +76,9 @@ try {
       Write-Host "CLEANED $resolvedTemporary"
     }
   }
-  [ordered]@{ ok = ($failed -eq 0); passed = $passed; failed = $failed; warnings = @($warnings.ToArray()) } | ConvertTo-Json -Compress
+  if ($MetadataOnly) {
+    [ordered]@{ ok = ($failed -eq 0); passed = $passed; failed = $failed; warnings = @($warnings.ToArray()) } | ConvertTo-Json -Compress
+  }
 }
 if ($null -ne $resolvedSkills) {
   $siblings = @($resolvedSkills | Where-Object Origin -eq 'package-bundled').Count
@@ -84,5 +86,6 @@ if ($null -ne $resolvedSkills) {
   Write-Host "skills: $($resolvedSkills.Count)/$declaredCount resolved ($siblings package-bundled)"
 }
 Write-Host "SUMMARY PASS=$passed FAIL=$failed"
+[ordered]@{ ok = ($failed -eq 0); passed = $passed; failed = $failed; warnings = @($warnings.ToArray()) } | ConvertTo-Json -Compress
 if ($failed -gt 0) { exit 1 }
 exit 0

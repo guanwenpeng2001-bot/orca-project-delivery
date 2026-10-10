@@ -18,10 +18,10 @@ for (const characters of [19799, 19800, 22000, 22001]) {
     t.after(() => rmSync(copy, { recursive: true, force: true }));
     cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work'].includes(path.basename(item)) });
     const entryPath = path.join(copy, 'SKILL.md');
-    const original = readFileSync(entryPath, 'utf8');
-    const padding = characters - [...original].length;
+    const outline = readFileSync(entryPath, 'utf8').split('\n').filter((line) => line.startsWith('## ')).join('\n') + '\n';
+    const padding = characters - [...outline].length;
     assert.ok(padding > 0);
-    writeFileSync(entryPath, original + '\u{10400}'.repeat(padding - 1) + ' ');
+    writeFileSync(entryPath, outline + '\u{10400}'.repeat(padding - 1) + ' ');
     const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-PackageRoot', copy, '-MetadataOnly'], {
       encoding: 'utf8', timeout: 20000,
     });
