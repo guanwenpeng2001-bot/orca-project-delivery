@@ -91,6 +91,10 @@ function Test-Document {
         [void]$Errors.Add("$Label`: $(Format-SchemaDiagnostic $validationError)")
       }
       if ($validationErrors.Count -eq 0) { [void]$Errors.Add("$Label`: schema validation failed in $DocumentPath") }
+    } else {
+      # State consumers use PSCustomObject parsing. Reject schema-valid JSON that
+      # they cannot read (including case-variant keys), so skipped state is never success.
+      $null = ConvertFrom-Json -InputObject $document -ErrorAction Stop
     }
   } catch {
     [void]$Errors.Add("$Label`: validation failed in $DocumentPath (schema $SchemaPath): $($_.Exception.Message)")

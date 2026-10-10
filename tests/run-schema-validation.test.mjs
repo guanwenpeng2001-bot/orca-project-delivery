@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -83,12 +83,13 @@ test('multiple errors preserve both field paths', (t) => {
   assert.match(result.errors.join('\n'), /skills(?:\.|\/)conditional(?:\[0\]|\/0|\.0)/);
 });
 
-test('raw JSON preserves distinct property casing', (t) => {
+test('schema-valid case-variant keys are rejected when state consumers cannot parse them', (t) => {
   const result = validate(t, { required: [], Required: [] }, {
     schema: { type: 'object', required: ['required', 'Required'], properties: { required: { type: 'array' }, Required: { type: 'array' } }, additionalProperties: false },
   });
   assert.equal(result.standard, true);
-  assert.equal(result.valid, true, JSON.stringify(result));
+  assert.equal(result.valid, false, JSON.stringify(result));
+  assert.match(result.errors.join('\n'), /assignments\/schema-regression\.json: validation failed/);
 });
 
 test('malformed JSON returns a labeled validation error', (t) => {
@@ -97,3 +98,31 @@ test('malformed JSON returns a labeled validation error', (t) => {
   assert.equal(result.valid, false);
   assert.match(result.errors.join('\n'), /assignments\/schema-regression\.json:/);
 });
+
+for (const duplicateRunKey of [false, true]) {
+  test(`CLI rejects missing run state with case-variant run key=${duplicateRunKey}`, (t) => {
+    const project = mkdtempSync(path.join(tmpdir(), 'run-schema-entry-'));
+    t.after(() => rmSync(project, { recursive: true, force: true }));
+    const initialized = spawnSync('git', ['init', '--template=', project], { encoding: 'utf8', timeout: 15000 });
+    assert.ifError(initialized.error);
+    assert.equal(initialized.status, 0, initialized.stdout + initialized.stderr);
+    const devWork = path.join(project, '.dev-work');
+    mkdirSync(devWork);
+    writeFileSync(path.join(devWork, 'manifest.json'), readFileSync(path.join(root, 'templates/dev-work/manifest.json')));
+    writeFileSync(path.join(devWork, 'coordinator-lock.json'), JSON.stringify({
+      schemaVersion: 1, status: 'active', coordinatorControlBranch: 'control', coordinatorWorktree: project, startedAt: '2026-01-01',
+    }));
+    const activeRun = { schemaVersion: 1, run: 'missing-run', runDirectory: 'runs/missing-run', orcaRunId: null, updatedAt: '2026-01-01' };
+    if (duplicateRunKey) activeRun.Run = 'other-run';
+    writeFileSync(path.join(devWork, 'active-run.json'), JSON.stringify(activeRun));
+    const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', path.join(root, 'scripts/validate-run.ps1'), '-ProjectRoot', project, '-SkipPackageChecks'], {
+      encoding: 'utf8', timeout: 15000,
+    });
+    assert.ifError(result.error);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.ok, false);
+    assert.ok(report.errors.length > 0);
+    assert.match(report.errors.join('\n'), duplicateRunKey ? /active-run:/ : /run-state: missing/);
+  });
+}
