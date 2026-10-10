@@ -6,7 +6,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const verifier = fileURLToPath(new URL('../scripts/verify-package.ps1', import.meta.url));
+const verifier = fileURLToPath(new URL('../scripts/verification-runtime.ps1', import.meta.url));
+const helpers = fileURLToPath(new URL('../scripts/verification-common.ps1', import.meta.url));
 const requiredSuites = ['document-production.test.py', 'document-depth-office.test.py'];
 const pythonProbe = spawnSync('python', ['-I', '-c', 'import sys; print(sys.executable)'], { encoding: 'utf8', timeout: 10000 });
 const python = pythonProbe.status === 0 ? pythonProbe.stdout.trim() : '';
@@ -19,13 +20,7 @@ $tokens = $null
 $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($env:PACKAGE_TEST_VERIFIER, [ref]$tokens, [ref]$errors)
 if ($errors.Count) { throw ($errors | Out-String) }
-foreach ($name in @('Assert-Condition', 'Invoke-Check', 'Invoke-Child')) {
-  $definitions = @($ast.FindAll({ param($node)
-    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $name
-  }, $true))
-  if ($definitions.Count -ne 1) { throw "Expected one helper: $name" }
-  . ([scriptblock]::Create($definitions[0].Extent.Text))
-}
+. $env:PACKAGE_TEST_HELPERS
 $checks = @($ast.FindAll({ param($node)
   $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Invoke-Check' -and
     $node.CommandElements[1].Value -eq $env:PACKAGE_TEST_CHECK
@@ -33,6 +28,10 @@ $checks = @($ast.FindAll({ param($node)
 if ($checks.Count -ne 1) { throw 'Expected one runtime check' }
 $root = $env:PACKAGE_TEST_ROOT
 $temporaryRoot = $root
+$stagedPackage = $root
+# A runtime check must use the staged package even when the source has no tests.
+$root = Join-Path $root 'source-package-not-used'
+$SuiteTimeoutSeconds = 30
 $DocumentPython = $env:PACKAGE_TEST_PYTHON
 $passed = 0
 $failed = 0
@@ -51,7 +50,7 @@ function runCheck(t, check, files) {
     mkdirSync(path.dirname(destination), { recursive: true });
     writeFileSync(destination, content);
   }
-  const environment = { ...process.env, PACKAGE_TEST_VERIFIER: verifier, PACKAGE_TEST_ROOT: root,
+  const environment = { ...process.env, PACKAGE_TEST_VERIFIER: verifier, PACKAGE_TEST_HELPERS: helpers, PACKAGE_TEST_ROOT: root,
     PACKAGE_TEST_CHECK: check, PACKAGE_TEST_PYTHON: python };
   // Nested Node runners otherwise suppress execution when inheriting the parent test context.
   delete environment.NODE_TEST_CONTEXT;

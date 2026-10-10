@@ -34,18 +34,19 @@ def run(fixture, executable, html=None, journeys=None, seed_defect=False):
             if target is not None:
                 browser.close()
                 return target
-            for name in selected:
+            for journey_index, name in enumerate(selected):
                 if name == "saves a tide reading":
                     results.append(save_reading(page))
                 elif name == "refuses a blank tide time":
                     results.append(refuse_blank(page))
                 else:
                     results.append({"name": name, "ok": False, "detail": "unknown journey"})
-                page.goto("about:blank")
-                reopened = open_target(page, fixture, html)
-                if reopened is not None:
-                    results.append({"name": name, "ok": False, "detail": "fixture unavailable"})
-                    break
+                if journey_index + 1 < len(selected):
+                    page.goto("about:blank")
+                    reopened = open_target(page, fixture, html)
+                    if reopened is not None:
+                        results.append({"name": name, "ok": False, "detail": "fixture unavailable"})
+                        break
         finally:
             browser.close()
     missing = [name for name in JOURNEYS if name not in selected]

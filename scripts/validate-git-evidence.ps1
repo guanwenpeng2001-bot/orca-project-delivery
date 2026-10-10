@@ -11,6 +11,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $problems = [Collections.Generic.List[string]]::new()
 $documents = @{}
+$jsonInputs = @{}
+$assignmentsLoaded = $false
+$assignments = @()
+$assignmentsByTaskKey = [Collections.Generic.Dictionary[string, Collections.Generic.List[object]]]::new([StringComparer]::Ordinal)
 $knownCommits = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $knownAncestorPairs = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 
@@ -19,9 +23,33 @@ function Assert-Evidence([bool]$Condition, [string]$Message) {
 }
 
 function Read-Json([string]$Path) {
+  $cacheKey = [IO.Path]::GetFullPath($Path)
+  if ($script:jsonInputs.ContainsKey($cacheKey)) { return $script:jsonInputs[$cacheKey].Document }
   if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "Missing evidence file $Path; rebuild evidence or mark UNVERIFIABLE." }
-  try { return [IO.File]::ReadAllText($Path) | ConvertFrom-Json -AsHashtable }
-  catch { throw "Invalid JSON in ${Path}: $($_.Exception.Message)" }
+  try {
+    $raw = [IO.File]::ReadAllText($Path)
+    $document = $raw | ConvertFrom-Json -AsHashtable
+    $script:jsonInputs[$cacheKey] = @{ Raw = $raw; Document = $document }
+    return $document
+  } catch { throw "Invalid JSON in ${Path}: $($_.Exception.Message)" }
+}
+
+function Initialize-Assignments {
+  if ($script:assignmentsLoaded) { return }
+  $directory = Join-Path $script:runDirectory 'assignments'
+  if (Test-Path -LiteralPath $directory -PathType Container) {
+    $script:assignments = @(Get-ChildItem -LiteralPath $directory -Filter '*.json' -File | ForEach-Object { Read-Json $_.FullName })
+    foreach ($assignment in $script:assignments) {
+      # Invalid/missing task keys still flow through the original assignment checks.
+      if ($null -eq $assignment.taskKey) { continue }
+      $key = [string]$assignment.taskKey
+      if (-not $script:assignmentsByTaskKey.ContainsKey($key)) {
+        $script:assignmentsByTaskKey[$key] = [Collections.Generic.List[object]]::new()
+      }
+      $script:assignmentsByTaskKey[$key].Add($assignment)
+    }
+  }
+  $script:assignmentsLoaded = $true
 }
 
 function Resolve-EvidencePath([string]$Path, [string]$Base) {
@@ -89,7 +117,7 @@ function Get-Evidence([string]$Path) {
   if ($script:documents.ContainsKey($Path)) { return $script:documents[$Path] }
   $document = Read-Json $Path
   $validationErrors = @()
-  $valid = Test-Json -Json ([IO.File]::ReadAllText($Path)) -Schema $script:schema -ErrorAction SilentlyContinue -ErrorVariable validationErrors
+  $valid = Test-Json -Json $script:jsonInputs[$Path].Raw -Schema $script:schema -ErrorAction SilentlyContinue -ErrorVariable validationErrors
   if (-not $valid) { throw "schema validation failed in ${Path}: $($validationErrors -join '; ')" }
   Assert-Evidence ($document.run -ceq $script:runName) "Evidence run '$($document.run)' does not match '$script:runName': $Path"
   Test-RecordedCommits $document $Path
@@ -152,11 +180,10 @@ function Test-Checks($Checks, [string]$Commit, [string]$Branch, [string]$Label) 
 function Test-TaskEvidence($Document, [string]$TaskPhase) {
   $taskKey = $Document.subject.taskKey
   $readOnlyTask = $false
-  $assignmentDirectory = Join-Path $script:runDirectory 'assignments'
-  if (Test-Path -LiteralPath $assignmentDirectory -PathType Container) {
-    foreach ($file in Get-ChildItem -LiteralPath $assignmentDirectory -Filter '*.json' -File) {
-      $assignment = Read-Json $file.FullName
-      if ($assignment.taskKey -ceq $taskKey -and $assignment.branch -and $assignment.branch.Contains('mergeTarget') -and $null -eq $assignment.branch.mergeTarget) { $readOnlyTask = $true }
+  Initialize-Assignments
+  if ($script:assignmentsByTaskKey.ContainsKey($taskKey)) {
+    foreach ($assignment in $script:assignmentsByTaskKey[$taskKey]) {
+      if ($assignment.branch -and $assignment.branch.Contains('mergeTarget') -and $null -eq $assignment.branch.mergeTarget) { $readOnlyTask = $true }
     }
   }
   if ($TaskPhase -ceq 'sourceRegistered') { return }
@@ -254,7 +281,7 @@ function Test-SupersededAssignment($Assignment, $Assignments, $EnteredStatuses) 
     Assert-Evidence $false "$label must name a different logical task in this run"
     return
   }
-  $matches = @($Assignments | Where-Object { $_.taskKey -ceq $key })
+  $matches = @(if ($script:assignmentsByTaskKey.ContainsKey($key)) { $script:assignmentsByTaskKey[$key].ToArray() })
   if ($matches.Count -ne 1) {
     Assert-Evidence $false "$label must identify exactly one existing assignment in this run"
     return
@@ -277,9 +304,8 @@ function Test-SupersededAssignment($Assignment, $Assignments, $EnteredStatuses) 
 }
 
 function Test-Assignments($Entries, [string]$CoverageTaskKey) {
-  $directory = Join-Path $script:runDirectory 'assignments'
-  if (-not (Test-Path -LiteralPath $directory -PathType Container)) { return }
-  $assignments = @(Get-ChildItem -LiteralPath $directory -Filter '*.json' -File | ForEach-Object { Read-Json $_.FullName })
+  Initialize-Assignments
+  $assignments = $script:assignments
   $enteredStatuses = @('review', 'completed', 'integrating', 'integrated')
   foreach ($assignment in $assignments) {
     $formal = -not [string]::IsNullOrWhiteSpace($assignment.branch.mergeTarget)

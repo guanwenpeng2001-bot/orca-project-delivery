@@ -33,25 +33,7 @@ if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
   Remove-Item Env:GIT_CONFIG_COUNT -ErrorAction SilentlyContinue
 }
 
-function Invoke-Git {
-  param(
-    [Parameter(Mandatory = $true)][string]$Root,
-    [Parameter(Mandatory = $true)][string[]]$Arguments
-  )
-  $output = & git -C $Root @Arguments 2>&1
-  $exitCode = $LASTEXITCODE
-  if ($exitCode -ne 0) {
-    throw ("git {0} failed (exit {1}) in {2}: {3}" -f ($Arguments -join " "), $exitCode, $Root, (($output | Out-String).Trim()))
-  }
-  return $output
-}
-# ---------------------------------------------------------------------------
-
-function Write-JsonFile {
-  param([string]$Path, [object]$Value)
-  $json = $Value | ConvertTo-Json -Depth 30
-  [System.IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
-}
+. (Join-Path $PSScriptRoot 'project-common.ps1')
 
 $root = (Resolve-Path $ProjectRoot).Path
 try {
@@ -69,43 +51,9 @@ if (-not $currentBranch) {
   throw "Cannot create a run from a detached HEAD: $gitRoot. Check out the coordinator control branch first."
 }
 
-# delivery_branch resolution order, identical to bootstrap-project.ps1: an explicit -DeliveryBranch,
-# then origin/HEAD, then init.defaultBranch (when that branch exists), then main, then master, then
-# the current branch. The source is recorded in run-state in the shared vocabulary:
-# user | origin-head | init-default | main | master | current.
-$deliveryBranchSource = $null
-if ($DeliveryBranch) {
-  $deliveryBranchSource = "user"
-} else {
-  # Every probe below is a raw call that captures stderr instead of a throwing Invoke-Git call: a
-  # missing ref exits 1 by design.
-  # Output is assigned without a pipeline: piping a native call into Select-Object can stop that
-  # process early and clobber $LASTEXITCODE, so the exit code is captured first.
-  $originHead = & git -C $gitRoot symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>&1
-  $originHeadExit = $LASTEXITCODE
-  if ($originHeadExit -eq 0 -and $originHead) {
-    $originHeadBranch = ("$originHead").Trim() -replace "^origin/", ""
-    if ($originHeadBranch) { $DeliveryBranch = $originHeadBranch; $deliveryBranchSource = "origin-head" }
-  }
-  if (-not $deliveryBranchSource) {
-    $initDefault = & git -C $gitRoot config --get init.defaultBranch 2>&1
-    $initDefaultExit = $LASTEXITCODE
-    if ($initDefaultExit -eq 0 -and $initDefault) {
-      $initDefault = ("$initDefault").Trim()
-      if ($initDefault) {
-        $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$initDefault" 2>&1
-        if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $initDefault; $deliveryBranchSource = "init-default" }
-      }
-    }
-  }
-  if (-not $deliveryBranchSource) {
-    foreach ($candidate in @("main", "master")) {
-      $probe = & git -C $gitRoot show-ref --verify --quiet "refs/heads/$candidate" 2>&1
-      if ($LASTEXITCODE -eq 0) { $DeliveryBranch = $candidate; $deliveryBranchSource = $candidate; break }
-    }
-  }
-  if (-not $deliveryBranchSource) { $DeliveryBranch = $currentBranch; $deliveryBranchSource = "current" }
-}
+$deliveryResolution = Resolve-DeliveryBranch -Root $gitRoot -CurrentBranch $currentBranch -DeliveryBranch $DeliveryBranch
+$DeliveryBranch = $deliveryResolution.Branch
+$deliveryBranchSource = $deliveryResolution.Source
 
 # Invariant 3: the control branch must differ from delivery_branch. bootstrap-project.ps1 refuses in
 # this case; create-run only warns, because refusing here would strand an already-bootstrapped
@@ -218,10 +166,10 @@ try {
     createdAt = $now
     updatedAt = $now
   }
-  Write-JsonFile (Join-Path $runDir "run-state.json") $state
-  Write-JsonFile (Join-Path $runDir "branch-map.json") ([ordered]@{ schemaVersion = 1; branches = @{} })
-  Write-JsonFile (Join-Path $runDir "task-map.json") ([ordered]@{ schemaVersion = 1; tasks = @{} })
-  Write-JsonFile (Join-Path $runDir "degradation-events.json") ([ordered]@{ schemaVersion = 1; events = @() })
+  Write-JsonFile (Join-Path $runDir "run-state.json") $state -Depth 30
+  Write-JsonFile (Join-Path $runDir "branch-map.json") ([ordered]@{ schemaVersion = 1; branches = @{} }) -Depth 30
+  Write-JsonFile (Join-Path $runDir "task-map.json") ([ordered]@{ schemaVersion = 1; tasks = @{} }) -Depth 30
+  Write-JsonFile (Join-Path $runDir "degradation-events.json") ([ordered]@{ schemaVersion = 1; events = @() }) -Depth 30
 
   $active = [ordered]@{
     schemaVersion = 1
@@ -230,14 +178,14 @@ try {
     orcaRunId = $(if ($OrcaRunId) { $OrcaRunId } else { $null })
     updatedAt = $now
   }
-  Write-JsonFile $activePath $active
+  Write-JsonFile $activePath $active -Depth 30
 
   $lockPath = Join-Path $devWork "coordinator-lock.json"
   if (Test-Path $lockPath) {
     $lock = Get-Content $lockPath -Raw | ConvertFrom-Json
     $lock.activeRun = $RunSlug
     $lock | Add-Member -NotePropertyName updatedAt -NotePropertyValue $now -Force
-    Write-JsonFile $lockPath $lock
+    Write-JsonFile $lockPath $lock -Depth 30
   }
 } catch {
   # A failure must not leave a partial run directory that blocks a retry. Only a
