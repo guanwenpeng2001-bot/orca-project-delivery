@@ -36,7 +36,7 @@ function Resolve-SkillFile([string]$BundledPath) {
 
 function Get-PackageFiles([string]$Directory) {
   foreach ($entry in Get-ChildItem -LiteralPath $Directory -Force) {
-    if ($entry.Name -in @('.git', '.dev-work')) { continue }
+    if ($entry.Name -in @('.git', '.dev-work', '.claude')) { continue }
     Assert-Condition (-not ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint)) "Unsupported linked package entry: $($entry.FullName)"
     if ($entry.PSIsContainer) { Get-PackageFiles $entry.FullName } else { $entry }
   }
