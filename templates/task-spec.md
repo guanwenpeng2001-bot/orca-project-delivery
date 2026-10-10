@@ -95,7 +95,7 @@ Run:
 <commands or manual checks>
 ```
 
-Record exact commands, relevant output, environment, skipped checks, and anomalies. Standard and read-only briefs add a `Minimum relevant suites` clause (task-named suites plus tests the change touches; full gates stay at post-merge and final). Review briefs add `Re-verification scaled by the delta` and, when `reviewInput.deltaPaths` is present, list those paths above the clause.
+Record exact commands, relevant output, environment, skipped checks, and anomalies. Standard and read-only briefs add a `Minimum relevant suites` clause (task-named suites plus tests the change touches; runnable as `scripts/verify-package.ps1 -Suites '<name>'`; full gates stay at post-merge and final). Review briefs add `Re-verification scaled by the delta` and, when `reviewInput.deltaPaths` is present, list those paths above the clause.
 
 ## Orca Worker Contract
 
