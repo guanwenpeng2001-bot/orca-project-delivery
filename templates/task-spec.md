@@ -21,6 +21,18 @@
 
 <One observable outcome.>
 
+## Review input
+
+Use when `briefProfile` is `review`:
+
+- Base SHA: `<40-char commit or merge-base>`
+- Branch: `<review target branch>`
+- Diff command: `<exact git diff command for the reviewer>`
+
+Review briefs include: Task Objective, Review input, Allowed Scope, Forbidden Scope, Branch and Worktree Contract, Process Artifact Contract, Acceptance Criteria, Verification, Orca Worker Contract, Orca Assignment Identity, and applicable `AGENTS.md` sections (last). Review input replaces Inputs and Dependencies; `reviewIncludes` may opt into `role`, `skills`, or `requirements` to include Primary Role, Required/Conditional Skills, or Declared Requirements respectively.
+
+The task definition defaults to `taskKind: "source"`, `briefProfile: "standard"`, and `agentsSections: []`; omitting these fields preserves the same output. Set `taskKind` to `read-only` to omit the source commit clause. Set `agentsSections` to heading numbers or titles (for example `["5", "交付纪律"]`) to embed those sections and their descendants verbatim, in source order, at the end; unmatched selectors are errors. A review profile requires `reviewInput` with `baseSha`, `branch`, and `diffCommand`. Bound role Skill lists are deduplicated when read-only, review, or a nonempty section selection is active; legacy/default briefs retain their existing bytes.
+
 ## Primary Role
 
 - Role: `<role-id>`
