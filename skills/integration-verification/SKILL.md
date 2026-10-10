@@ -53,20 +53,7 @@ Separate pre-existing failures from ones the change introduced. A failing check 
 
 ## Worked example
 
-A task claims the export feature is complete.
-
-The matrix, run at commit `a31f0c` on the task branch:
-
-| Criterion | Command | Result |
-| --- | --- | --- |
-| Export contains only the caller's data | the export integration test | Pass, asserted row counts |
-| Anonymous export is rejected | the same test file | Pass |
-| Type checks clean | the project type-check command | Pass |
-| Upgrade path from the previous schema | not run | Skipped: no database fixture in this environment |
-
-Because the upgrade path is listed as required acceptance and could not be run, the verdict is UNVERIFIABLE, not READY. The report says exactly what is missing — a database fixture — so it can be resolved rather than rediscovered.
-
-The earlier local test run from before the review fixes is not reused; the tests were rerun at `a31f0c`.
+When building an acceptance matrix or reporting a required skipped check, load [Export acceptance example](examples/export-acceptance.md) for a commit-bound UNVERIFIABLE report.
 
 ## Failure signals
 
@@ -79,7 +66,7 @@ The earlier local test run from before the review fixes is not reused; the tests
 
 ## Evaluation scenario
 
-Given a completed task with four acceptance criteria where one cannot be run in the available environment, the result should show a matrix mapping each criterion to a command and an observed result, mark the one as skipped with the specific reason, record the commit, and return UNVERIFIABLE. It fails the method if the verdict is READY while that criterion is outstanding, or if the evidence cited comes from an earlier commit than the one being verified.
+When maintaining or evaluating this Skill, load [Integration verification evaluation](references/evaluation.md) for skipped-criterion and stale-evidence cases.
 
 ## Output
 

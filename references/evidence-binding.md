@@ -16,6 +16,17 @@ Read-only Tasks must explicitly declare `branch.mergeTarget: null` in their assi
 
 A repair-round assignment that was replaced without independent integration may use `status: superseded`. Optional schema fields `supersededBy` and `supersedes` are nonempty logical task keys, not Runtime IDs; omit them when unused. For a formal superseded assignment, `supersededBy` is mandatory at evidence validation: it must identify exactly one different formal assignment in this run, in `review`, `completed`, `integrating` or `integrated`, with the same delivery branch and valid integrated evidence. Missing, ambiguous, self-referencing, cyclic, cross-run, not-entered or unintegrated successors fail. The successor evidence is audited even under single-Task selection; an optional `supersedes` backlink is descriptive and never grants exemption. Point directly to the integrated logical task, not through a chain of superseded rounds. Retain the replaced assignment and any existing evidence; only its own evidence-file/integrated obligation is waived, and existing evidence remains subject to run-wide checks.
 
+## Dispatch assignment evidence
+
+On every dispatch, write `runs/<run>/assignments/<task>.json`, even when an assembled Markdown brief exists:
+
+- `runtime.requested`: literal agent/model/effort sent to Orca;
+- `runtime.effective`: only values from the first `launch.effective` receipt; unknown fields are null;
+- `runtime.verification.status`: `verified`, `mismatch`, or `unverified`, with evidence;
+- permission mode, Skill delivery, Task/Dispatch, branch/worktree/report paths and top-level `fallbackReason`.
+
+Parameter acceptance does not prove effectiveness; reconcile mismatches before treating the requested route as verified.
+
 ## Record fields
 
 The schema is version 1 and uses `additionalProperties: false` throughout the evidence objects; do not add lifecycle or arbitrary report fields. All SHAs are 40 lowercase hexadecimal characters and must resolve to existing local commits. Times use UTC `YYYY-MM-DDTHH:mm:ss[.fraction]Z`. Nonempty text fields, enum values and required members are schema-checked; `checks[].observed` may be empty for clean status.
@@ -53,7 +64,9 @@ A Task selected with `-Phase final` follows historical Task checks and the assig
 
 ## Phase obligations
 
-Always gather and write first, validate second, act only on PASS for the relevant scope. Read JSON `status`, not just process exit.
+Always gather and write first, validate second, act only on PASS for the relevant scope. Read JSON `status`, not just process exit. A validation failure is UNVERIFIABLE, never approval.
+
+At a rolling checkpoint, invoke `scripts/validate-git-evidence.ps1 -ProjectRoot <control-tree> -EvidencePath <evidence-json> -Phase sourceRegistered`, where `<evidence-json>` is `.dev-work/runs/<run>/evidence/git/<task-key>.json` relative to ProjectRoot, or its absolute path. Record the next phase's fields before invoking `review`, `preMerge`, or `postMerge`. After all intended integrations, use `-Run <run> -Phase final`; use `-Run <run> -Phase audit` for historical evidence. See the selector rules above before substituting a file selector.
 
 | `-Phase` | Coordinator writes before validation | Validator checks |
 | --- | --- | --- |

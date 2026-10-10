@@ -51,15 +51,9 @@ surface that carries the evidence or the action — current global `orchestratio
 
 Do not classify quota or rate limit from silence. Capture the exact terminal/runtime evidence.
 
-Do not classify a Worker as stopped from a timeout alone. Use the authoritative Orca
-projection (`worker-show`, `worker-list` with `projection.liveness` / `projection.attention`),
-a confirmed stop such as an observed process exit, fencing, isolation, or an explicit
-handoff. Stop, abandon, retry, and release must follow the installed Orca contract and
-authoritative state; `unverifiable` alone authorizes none of them. Before replacing a
-writer, follow `references/worker-handoff.md`.
-For the scenario-level recovery principles behind these rules — unknown mutation outcomes,
-duplicate or late completions, invisible workers, re-dispatch, cancellation, and unknown
-coordinator locks — read `references/recovery-and-idempotency.md`.
+Inspect authoritative Orca projections (`worker-show`, `worker-list` with `projection.liveness` / `projection.attention`). Route unknown mutations, duplicate/late completions, invisible workers, proven failures, cancellation and unknown locks to [Scenario principles](recovery-and-idempotency.md#scenario-principles). Stop, abandon, retry and release require the installed Orca contract and positive evidence; `unverifiable` alone authorizes none.
+
+Writer replacement or retry must pass the [writer-replacement gate](recovery-and-idempotency.md#writer-replacement-hardened-gate), then use [Writing Task handoff](worker-handoff.md#writing-task-handoff) for capture and takeover.
 
 ## Action
 

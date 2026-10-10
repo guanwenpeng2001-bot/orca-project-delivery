@@ -2,16 +2,7 @@
 
 ## Writing Task handoff
 
-A replacement writer may start only after the old worker is confirmed stopped, fenced,
-isolated, or has completed an explicit handoff, and its Dispatch (and Task if replaced
-rather than retried) has settled. Confirmed means evidence for each admission term in
-`references/recovery-and-idempotency.md`; isolation proves inability to write, not exit. `failed` alone
-does not prove the writer stopped: an accepted `failed` completion settles the attempt, but
-the writer's terminal and process can still be live, and a silent or timed-out writer proves
-nothing. Retrying one proven `failed` or `stopped` attempt is a runtime decision — follow
-the receipt's own next-action guidance; a retry of a writing task still makes its worker
-the branch's new writer, so the stricter package-local writer-replacement gate in
-`references/recovery-and-idempotency.md` applies.
+Before a writing retry or replacement, pass the [writer-replacement gate](recovery-and-idempotency.md#writer-replacement-hardened-gate); this file owns its required capture and takeover procedure.
 
 Capture:
 
@@ -26,12 +17,9 @@ Capture:
 - open questions;
 - report paths.
 
-Write a handoff report under `.dev-work/runs/<run>/handoffs/`.
+Write a handoff report under the control tree's `.dev-work/runs/<run>/handoffs/`; preserve uncommitted work as well as commits and do not skip capture for a clean-looking branch.
 
-Require the old Dispatch's settlement separately from writer admission before replacement;
-release is post-settlement cleanup and never substitutes for either gate.
-
-The replacement must read:
+After the gate passes, the replacement takes over sequentially and must read all of the following before writing:
 
 - original Task;
 - Role;
@@ -50,8 +38,4 @@ The coordinator validates and synthesizes a final report.
 
 ## Prohibited
 
-- Two live writers in one worktree.
-- Deriving a second writer from `failed`, silence, or timeout alone.
-- Assuming timeout means the process exited.
-- Starting a new writer with unverifiable admission evidence; unobserved exit alone does not invalidate proven isolation.
-- Losing uncommitted work during fallback.
+Do not bypass the [admission terms](recovery-and-idempotency.md#writer-replacement-hardened-gate) or lose uncommitted work during fallback.

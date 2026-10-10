@@ -36,7 +36,7 @@ Every Task gets an isolated branch/worktree, including read-only research and re
 - Final verification Task: base on latest delivery branch in a clean worktree; no source edits.
 - Fix Task: base on the source state named by the coordinator.
 
-One task branch has one writer at a time. Replacement requires evidence the writer is stopped, fenced, isolated, or has completed an explicit handoff, plus a settled Dispatch (and settled Task if replaced) and preserved Git state/handoff. `failed` alone never admits a writer; use the definitions and procedure in `references/worker-handoff.md` and `references/recovery-and-idempotency.md`.
+One task branch has one writer at a time; before replacement or retry, pass the [writer-replacement gate](recovery-and-idempotency.md#writer-replacement-hardened-gate) and follow [Writing Task handoff](worker-handoff.md#writing-task-handoff).
 
 ## Integration
 

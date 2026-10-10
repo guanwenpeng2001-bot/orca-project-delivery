@@ -33,13 +33,7 @@ The request contract follows the OpenAI OpenAPI reference retrieved 2026-10-09: 
 
 ## Worked example
 
-From the package root, the following saves synthetic PNG fixture bytes with `networkCalled: false` and needs no provider credential:
-
-```sh
-node skills/image-generation/scripts/openai-image-request.mjs --request tests/fixtures/capability/openai-image-request.json --output otter.png --fixture tests/fixtures/capability/openai-image-success.json
-```
-
-The failure fixture `openai-image-failure.json` exits 3 with HTTP 429 and writes no file. For a separately authorized generation, replace `--fixture PATH` with `--online` after configuring the gate and key; no transport replacement is needed. A custom `OPENAI_IMAGE_MODEL` is sent as the actual request model.
+Before exercising the fixture or adapting it to an authorized live request, load [Image fixture example](examples/fixture-generation.md) for commands and expected offline results.
 
 ## Failure signals
 
@@ -50,7 +44,7 @@ The failure fixture `openai-image-failure.json` exits 3 with HTTP 429 and writes
 
 ## Evaluation scenario
 
-Run `node --test tests/provider-transport.test.mjs tests/capability-repair.test.mjs`. Injected transport exercises the real executor, including exact auth/body, model override, saved bytes, disabled/missing auth, HTTP errors, malformed results, and body timeouts. No test uses a provider or real secret. `node skills/image-generation/scripts/image-info.mjs --input result.png` reports `{format, width, height, alpha, colorType}` from the header. Truncated PNG data, a JPEG without a start-of-frame marker, a JPEG frame shorter than 8 bytes, a VP8X chunk that is not exactly 10 bytes, a VP8L chunk without its `0x2f` signature, and a WebP whose chunk length runs past the file each exit 1. Signature validation and this header report are not a full image decoder; inspect a real authorized result before acceptance.
+When maintaining this Skill or its connector/header checker, load [Image generation evaluation](references/evaluation.md) for offline regression commands and malformed-image cases.
 
 ## Boundary
 

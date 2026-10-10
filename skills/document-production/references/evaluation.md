@@ -1,0 +1,5 @@
+# Document production evaluation
+
+For package maintainers changing the document method or scripts; run commands from the package root.
+
+`python -I tests/document-production.test.py` in the configured environment generates and reopens all four formats, compares exact text and numbers, tests literal spreadsheet formula-like input, checks slide pagination, and verifies failed generation preserves existing output. `node --test tests/document-depth.test.mjs` and `python -I tests/document-depth-office.test.py` cover the bounded blocks: a heading, paragraph, ordered list, and table reopened from DOCX, XLSX, and Markdown, literal formula-like table text, an explicit PPTX/PDF table rejection, and a malformed table that leaves existing output untouched. The package's optional `verify-package.ps1 -DocumentPython PATH` runs the original suite. Actual Office-application rendering, table overflow, font substitution, accessibility tagging, and visual PDF pagination still require target-viewer inspection.
