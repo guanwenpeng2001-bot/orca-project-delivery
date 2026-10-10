@@ -162,7 +162,7 @@ Worker 只能：
 - 一个 Task 只设一个主 Role；
 - 需要多个互相冲突的身份时拆成多个 Task；
 - Worker 不得自行更换主 Role；
-- Worker 不得加载或启动完整的 `orca-project-delivery` 协调 Skill；
+- Worker 不得加载或启动完整的 `orca-project-delivery` 协调 Skill，除非 Task 明确授权为嵌套协调者；
 - Worker 必须按 Task 指定方式加载专业 Skill；
 - 专业 Skill 只提供方法，不得扩大任务范围；
 - 任务完成前必须执行相应验证 Skill 或验证步骤。
@@ -191,7 +191,7 @@ haiku 档位的请求形态：首选完整 id `claude-haiku-4-5` 加 effort；�
 
 ### 自动降级
 
-- 升降档只在 Claude 内部沿角色的档位链进行：升档先同模型提 effort、到顶再升模型；降档仅在有明确 rate limit、quota、auth、model unavailable 证据时发生；
+- 升降档只在 Claude 内部沿角色的档位链进行：升档先同模型提 effort、到顶再升模型；降档仅在有明确 rate limit、quota、model unavailable 证据时发生；
 - 用户锁定 model/effort 时，不得自动升降档；锁定选择不可用时挂起相关 Task 并向用户提问；
 - 降级不得低于角色的最低档；最低档也不可用时挂起该 Task 并记录，不阻塞其他独立 Task；
 - 静默、空等待或 `unverifiable` 不等于额度耗尽，不触发降级；

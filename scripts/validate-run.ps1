@@ -1,3 +1,4 @@
+#requires -Version 7.0
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $false)]
@@ -47,192 +48,57 @@ function Read-JsonSafe {
   try { return (Get-Content $Path -Raw | ConvertFrom-Json) } catch { return $null }
 }
 
-# Per-invocation schema cache. This is a one-shot CLI and the package schemas are
-# read-only deliverables, so re-reading the same schema for every document is
-# wasted work. Only a successful, usable parse is cached: a missing or invalid
-# schema keeps taking the uncached Read-JsonSafe path, so every document still
-# reports its own error, in the same order and count, exactly as before. The
-# cache lives in this process only (no persistence, no cross-process sharing) and
-# holds at most the seven package schemas.
+# Cache raw schema text for this invocation; Test-Json owns JSON/schema semantics.
 $script:schemaCache = @{}
 function Get-CachedSchema {
   param([string]$SchemaPath)
-  if ($script:schemaCache.Contains($SchemaPath)) { return $script:schemaCache[$SchemaPath] }
-  $schema = Read-JsonSafe $SchemaPath
-  if ($null -ne $schema) { $script:schemaCache[$SchemaPath] = $schema }
-  return $schema
+  if (-not $script:schemaCache.Contains($SchemaPath)) {
+    $script:schemaCache[$SchemaPath] = [IO.File]::ReadAllText($SchemaPath)
+  }
+  return $script:schemaCache[$SchemaPath]
 }
 
-# Dependency-free, recursive validator for the schema keywords this package uses:
-# type (a name or an array of names, including "null"), required, properties, items, enum,
-# const, minLength, uniqueItems, additionalProperties. It descends through properties and
-# items, reports every problem it finds, and names the JSON path of the offending value.
-#
-# ConvertFrom-Json type notes:
-#  - objects arrive as PSCustomObject, arrays as Object[], JSON null as $null;
-#  - an ISO-8601 string is materialised as [datetime]/[datetimeoffset]; JSON has no such
-#    type, so those still count as strings (for `type`: a value that is really absent is
-#    caught by `required`, which tests property presence, not value);
-#  - an empty JSON array can collapse to $null on the pipeline ($null is what an empty
-#    array looks like once it has been through one). To stay consistent, $null therefore
-#    also satisfies `type: "array"` and is walked as an array of zero items.
-function Get-JsonTypeName {
-  param([object]$Value)
-  if ($null -eq $Value) { return "null" }
-  if ($Value -is [bool]) { return "boolean" }
-  if ($Value -is [string]) { return "string" }
-  if ($Value -is [datetime] -or $Value -is [datetimeoffset] -or $Value -is [guid] -or $Value -is [timespan]) { return "string" }
-  if ($Value -is [int] -or $Value -is [long]) { return "integer" }
-  if ($Value -is [double] -or $Value -is [single] -or $Value -is [decimal]) { return "number" }
-  if ($Value -is [System.Array]) { return "array" }
-  if ($Value -is [System.Management.Automation.PSCustomObject] -or $Value -is [System.Collections.IDictionary]) { return "object" }
-  return "unknown"
-}
-
-function Test-JsonTypeMatch {
-  param([object]$Value, [string]$ExpectedType)
-  $actual = Get-JsonTypeName $Value
-  if ($ExpectedType -eq $actual) { return $true }
-  # JSON has no integer/double spelling once converted: either satisfies the other.
-  if ($ExpectedType -eq "integer" -and $actual -eq "number") { return ([double]$Value -eq [math]::Truncate([double]$Value)) }
-  if ($ExpectedType -eq "number" -and $actual -eq "integer") { return $true }
-  # A collapsed empty array, see the notes above.
-  if ($ExpectedType -eq "array" -and $actual -eq "null") { return $true }
-  return $false
-}
-
-# Type-aware scalar comparison: 1 does not equal "1", "a" does not equal "A".
-function Test-JsonScalarEqual {
-  param([object]$Left, [object]$Right)
-  if ($null -eq $Left -or $null -eq $Right) { return ($null -eq $Left -and $null -eq $Right) }
-  $leftType = Get-JsonTypeName $Left
-  $rightType = Get-JsonTypeName $Right
-  if ($leftType -eq "integer" -or $leftType -eq "number") {
-    if ($rightType -ne "integer" -and $rightType -ne "number") { return $false }
-    return ([double]$Left -eq [double]$Right)
+function Format-SchemaDiagnostic {
+  param([System.Management.Automation.ErrorRecord]$ValidationError)
+  $message = $ValidationError.ToString()
+  # Keep the engine's complete diagnostic, including its JSON pointer. Add the
+  # legacy dotted path when a required-property error only identifies its parent.
+  # Match the engine detail and quoted pointer, not the localized wrapper text.
+  $missing = [regex]::Match($message, 'Required properties (\[[^\r\n]*?\]) are not present')
+  $quotes = [regex]::Escape(('"' + "'" + [char]0x2018 + [char]0x2019 + [char]0x201c + [char]0x201d))
+  $pointer = [regex]::Match($message, "[$quotes](?<path>/[^$quotes]*)[$quotes]")
+  if ($missing.Success -and $pointer.Success) {
+    $parent = ($pointer.Groups['path'].Value.TrimStart('/') -split '/' | ForEach-Object { $_.Replace('~1', '/').Replace('~0', '~') }) -join '.'
+    $paths = foreach ($name in (ConvertFrom-Json -InputObject $missing.Groups[1].Value)) {
+      if ($parent) { "$parent.$name" } else { $name }
+    }
+    $message += " (required: $($paths -join ', '))"
   }
-  if ($leftType -ne $rightType) { return $false }
-  if ($leftType -eq "string") { return ($Left.ToString() -ceq $Right.ToString()) }
-  return ($Left -eq $Right)
-}
-
-function Get-JsonValueToken {
-  param([object]$Value)
-  # Type tag plus compact JSON: stable for equal values, distinct across types.
-  return ((Get-JsonTypeName $Value) + ":" + ($Value | ConvertTo-Json -Depth 20 -Compress))
-}
-
-function Join-JsonPath {
-  param([string]$ParentPath, [string]$Name)
-  if ($ParentPath) { return "$ParentPath.$Name" }
-  return $Name
-}
-
-function Test-SchemaNode {
-  param(
-    [object]$Value,
-    [object]$Schema,
-    [string]$Path,
-    [string]$Label,
-    [System.Collections.ArrayList]$Errors
-  )
-  if ($null -eq $Schema) { return }
-  $where = if ($Path) { $Path } else { "(root)" }
-
-  if ($Schema.PSObject.Properties["type"]) {
-    $allowedTypes = @($Schema.type)
-    $matched = $false
-    foreach ($allowedType in $allowedTypes) {
-      if (Test-JsonTypeMatch -Value $Value -ExpectedType $allowedType) { $matched = $true; break }
-    }
-    if (-not $matched) {
-      [void]$Errors.Add("$Label`: $where has the wrong type (expected $($allowedTypes -join '|'), found $(Get-JsonTypeName $Value))")
-    }
-  }
-
-  if ($Schema.PSObject.Properties["const"] -and -not (Test-JsonScalarEqual -Left $Value -Right $Schema.const)) {
-    [void]$Errors.Add("$Label`: $where must equal $($Schema.const | ConvertTo-Json -Compress)")
-  }
-
-  if ($Schema.PSObject.Properties["enum"]) {
-    $enumValues = @($Schema.enum)
-    $matched = $false
-    foreach ($candidate in $enumValues) {
-      if (Test-JsonScalarEqual -Left $Value -Right $candidate) { $matched = $true; break }
-    }
-    if (-not $matched) { [void]$Errors.Add("$Label`: $where must be one of $($enumValues -join ', ')") }
-  }
-
-  if ($Schema.PSObject.Properties["minLength"] -and $Value -is [string] -and $Value.Length -lt [int]$Schema.minLength) {
-    [void]$Errors.Add("$Label`: $where is shorter than minLength $($Schema.minLength)")
-  }
-
-  if (Test-JsonTypeMatch -Value $Value -ExpectedType "object") {
-    $declaredNames = @()
-    $propertiesSchema = $Schema.PSObject.Properties["properties"]
-    if ($propertiesSchema) { $declaredNames = @($propertiesSchema.Value.PSObject.Properties.Name) }
-
-    foreach ($requiredKey in @($Schema.required)) {
-      if ($null -eq $requiredKey) { continue }
-      if (-not $Value.PSObject.Properties[$requiredKey]) {
-        [void]$Errors.Add("$Label`: $(Join-JsonPath $Path $requiredKey) is required")
-      }
-    }
-
-    foreach ($name in $declaredNames) {
-      $property = $Value.PSObject.Properties[$name]
-      if (-not $property) { continue }
-      $propertySchema = $propertiesSchema.Value.PSObject.Properties[$name].Value
-      Test-SchemaNode -Value $property.Value -Schema $propertySchema -Path (Join-JsonPath $Path $name) -Label $Label -Errors $Errors
-    }
-
-    if ($Schema.PSObject.Properties["additionalProperties"] -and $Schema.additionalProperties -eq $false) {
-      foreach ($name in @($Value.PSObject.Properties.Name)) {
-        if ($declaredNames -notcontains $name) {
-          [void]$Errors.Add("$Label`: $(Join-JsonPath $Path $name) is not allowed")
-        }
-      }
-    }
-  }
-
-  if (Test-JsonTypeMatch -Value $Value -ExpectedType "array") {
-    $items = if ($null -eq $Value) { @() } else { @($Value) }
-    if ($Schema.PSObject.Properties["uniqueItems"] -and $Schema.uniqueItems -eq $true) {
-      $seen = [System.Collections.Generic.List[string]]::new()
-      foreach ($item in $items) {
-        $token = Get-JsonValueToken $item
-        if ($seen.Contains($token)) {
-          [void]$Errors.Add("$Label`: $where has duplicate items ($token)")
-        } else {
-          [void]$seen.Add($token)
-        }
-      }
-    }
-    $itemsSchema = $Schema.PSObject.Properties["items"]
-    if ($itemsSchema) {
-      $index = 0
-      foreach ($item in $items) {
-        Test-SchemaNode -Value $item -Schema $itemsSchema.Value -Path ($Path + "[" + $index + "]") -Label $Label -Errors $Errors
-        $index++
-      }
-    }
-  }
-}
-
-function Test-AgainstSchema {
-  param([object]$Document, [object]$Schema, [string]$Label, [System.Collections.ArrayList]$Errors)
-  Test-SchemaNode -Value $Document -Schema $Schema -Path "" -Label $Label -Errors $Errors
+  return $message
 }
 
 function Test-Document {
   param([string]$DocumentPath, [string]$SchemaPath, [string]$Label, [System.Collections.ArrayList]$Errors)
-  if (-not (Test-Path $DocumentPath)) { [void]$Errors.Add("$Label`: missing $DocumentPath"); return }
-  if (-not (Test-Path $SchemaPath)) { [void]$Errors.Add("$Label`: missing schema $SchemaPath"); return }
-  $doc = Read-JsonSafe $DocumentPath
-  if ($null -eq $doc) { [void]$Errors.Add("$Label`: invalid JSON in $DocumentPath"); return }
-  $schema = Get-CachedSchema $SchemaPath
-  if ($null -eq $schema) { [void]$Errors.Add("$Label`: invalid schema $SchemaPath"); return }
-  Test-AgainstSchema -Document $doc -Schema $schema -Label $Label -Errors $Errors
+  if (-not (Test-Path -LiteralPath $DocumentPath)) { [void]$Errors.Add("$Label`: missing $DocumentPath"); return }
+  if (-not (Test-Path -LiteralPath $SchemaPath)) { [void]$Errors.Add("$Label`: missing schema $SchemaPath"); return }
+  try {
+    $document = [IO.File]::ReadAllText($DocumentPath)
+    $schema = Get-CachedSchema $SchemaPath
+    $validationErrors = @()
+    $valid = Test-Json -Json $document -Schema $schema -ErrorAction SilentlyContinue -ErrorVariable validationErrors
+    if (-not $valid) {
+      foreach ($validationError in $validationErrors) {
+        [void]$Errors.Add("$Label`: $(Format-SchemaDiagnostic $validationError)")
+      }
+      if ($validationErrors.Count -eq 0) { [void]$Errors.Add("$Label`: schema validation failed in $DocumentPath") }
+    } else {
+      # State consumers use PSCustomObject parsing. Reject schema-valid JSON that
+      # they cannot read (including case-variant keys), so skipped state is never success.
+      $null = ConvertFrom-Json -InputObject $document -ErrorAction Stop
+    }
+  } catch {
+    [void]$Errors.Add("$Label`: validation failed in $DocumentPath (schema $SchemaPath): $($_.Exception.Message)")
+  }
 }
 
 $root = (Resolve-Path $ProjectRoot).Path

@@ -3,15 +3,16 @@
 - You are a worker for one assigned Task, not the project coordinator.
 - Treat the injected Orca preamble as the only authority for worker handle, Task ID, Dispatch ID, capability, and message address.
 - Execute only the current Task, Role, Skills, branch, and scope.
-- Do not start `orca-project-delivery`.
+- Do not start `orca-project-delivery` unless the Task explicitly authorizes nested coordination.
 - Do not create other workers unless the Task explicitly authorizes nested coordination.
 - Check coordinator messages at natural checkpoints and before completion.
 - Make reversible local engineering decisions yourself under `AGENTS.md`.
 - Ask the coordinator only for genuinely external, directional, or missing decisions.
 - Escalate when blocked and include what you tried, current Git state, and what is needed.
 - Write only the assigned `.dev-work` report/evidence path. Never modify run-global state.
-- Commit your work on your task branch before reporting: the coordinator reviews a branch, not a dirty
-  worktree. An uncommitted deliverable cannot be reviewed or merged.
+- Source/deliverable Tasks: commit your work within the authorized scope on your task branch before
+  reporting; the coordinator reviews and merges the committed deliverable.
+- Read-only Tasks: produce no commits and write only the assigned report path.
 - Do not merge your branch.
 - Report exactly one explicit outcome using the vocabulary below.
 - Send authoritative completion exactly once using the current global `orchestration` Skill.
