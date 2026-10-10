@@ -176,7 +176,7 @@ python -I ./skills/document-production/scripts/office-document.py --input "$work
 
 ## 6. 运行 2.4.0 本地工具
 
-文件处理命令离线运行，只写 `$work`，需要 Node.js 22.15+。可选浏览器测试还需要 Python Playwright 和现有 Chromium，没有命令联系提供方。
+这些命令于 2.4.0 引入，在 2.8.0 中仍然可用。文件处理命令离线运行，只写 `$work`，需要 Node.js 22.15+。可选浏览器测试还需要 Python Playwright 和现有 Chromium，没有命令联系提供方。
 
 黑对白对比度为 21:1，满足 4.5:1 文本与 3:1 边界阈值。灰色 `#777777` 对白不足 4.5:1，第二条命令以 `2` 退出：
 

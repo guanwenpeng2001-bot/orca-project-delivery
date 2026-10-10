@@ -30,6 +30,31 @@ for (const metadataOnly of [false, true]) {
   });
 }
 
+test('MetadataOnly cleanup failure exits 1 with the failure in JSON and summary', (t) => {
+  const source = fileURLToPath(new URL('../', import.meta.url));
+  const copy = mkdtempSync(path.join(tmpdir(), 'package-cleanup-failure-'));
+  t.after(() => rmSync(copy, { recursive: true, force: true }));
+  cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work', '.claude'].includes(path.basename(item)) });
+  const entrypoint = path.join(copy, 'scripts', 'verify-package.ps1');
+  const original = readFileSync(entrypoint, 'utf8');
+  const anchor = 'Assert-Condition (-not (Test-Path -LiteralPath $resolvedTemporary)) "Temporary root remains: $resolvedTemporary"';
+  assert.equal(original.split(anchor).length - 1, 1, 'cleanup assertion anchor must be unique');
+  writeFileSync(entrypoint, original.replace(anchor, "Assert-Condition $false 'induced cleanup failure for regression test'"));
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-PackageRoot', copy, '-MetadataOnly'], {
+    encoding: 'utf8', timeout: 20000,
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  const lines = result.stdout.trim().split(/\r?\n/);
+  const jsonLines = lines.filter((line) => line.startsWith('{'));
+  assert.equal(jsonLines.length, 1, result.stdout);
+  const summary = JSON.parse(jsonLines[0]);
+  assert.ok(summary.failed >= 1, result.stdout);
+  assert.equal(summary.ok, false);
+  assert.match(lines.at(-1), /^METADATA SUMMARY PASS=\d+ FAIL=[1-9]\d*$/);
+  assert.match(result.stdout, /FAIL cleanup\/temporary-root: induced cleanup failure/);
+});
+
 for (const characters of [19799, 19800, 22000, 22001]) {
   test(`entry character budget at ${characters} Unicode characters`, (t) => {
     const source = fileURLToPath(new URL('../', import.meta.url));

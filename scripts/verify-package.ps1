@@ -7,7 +7,8 @@ test is read-only; all runtime fixtures and copies use temporary directories.
 [CmdletBinding()]
 param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly, [string]$DocumentPython = '', [switch]$SkipMutationTests, [ValidateRange(1, 86400)][int]$SuiteTimeoutSeconds = 600)
 
-# Unicode code points include whitespace; 22000 leaves growth room over 19231, with a 90% warning.
+# Unicode code points include whitespace. Hard limit 22000; warning at 19800 (90%).
+# Keep the shipped entry under the warning threshold; raise both constants together if it ever must grow.
 $entryCharacterLimit = 22000
 $entryCharacterWarning = 19800
 $warnings = [Collections.Generic.List[string]]::new()
@@ -34,10 +35,7 @@ try {
   $git = (Get-Command git -CommandType Application | Select-Object -First 1).Source
   $files = @(Get-PackageFiles $root)
   Invoke-Suite 'package structure' { Test-PackageStructure }
-  if ($MetadataOnly) {
-    if ($failed) { exit 1 }
-    exit 0
-  }
+  if (-not $MetadataOnly) {
   $stagedPackage = Join-Path $temporaryRoot 'skills/orca-project-delivery'
   Invoke-Check 'fixtures/stage-package-and-skills' {
     [void][IO.Directory]::CreateDirectory($stagedPackage)
@@ -61,6 +59,7 @@ try {
   if ($SkipMutationTests) {
     Write-Host 'SKIP evidence source mutations: -SkipMutationTests was explicitly requested'
   } else { Invoke-Suite 'evidence source mutations' { Test-EvidenceMutations } }
+  }
 } catch {
   $failed++
   Write-Host "FAIL harness/setup: $($_.Exception.Message)"
