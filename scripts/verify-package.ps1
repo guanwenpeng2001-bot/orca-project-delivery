@@ -7,6 +7,10 @@ test is read-only; all runtime fixtures and copies use temporary directories.
 [CmdletBinding()]
 param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly, [string]$DocumentPython = '', [switch]$SkipMutationTests, [ValidateRange(1, 86400)][int]$SuiteTimeoutSeconds = 600)
 
+# Unicode code points include whitespace; 22000 leaves growth room over 19231, with a 90% warning.
+$entryCharacterLimit = 22000
+$entryCharacterWarning = 19800
+$warnings = [Collections.Generic.List[string]]::new()
 $ErrorActionPreference = 'Stop'
 $passed = 0
 $failed = 0
@@ -31,7 +35,6 @@ try {
   $files = @(Get-PackageFiles $root)
   Invoke-Suite 'package structure' { Test-PackageStructure }
   if ($MetadataOnly) {
-    Write-Host "METADATA SUMMARY PASS=$passed FAIL=$failed"
     if ($failed) { exit 1 }
     exit 0
   }
@@ -72,12 +75,14 @@ try {
       Write-Host "CLEANED $resolvedTemporary"
     }
   }
+  if (-not $MetadataOnly -and $null -ne $resolvedSkills) {
+    $siblings = @($resolvedSkills | Where-Object Origin -eq 'package-bundled').Count
+    $declaredCount = try { @((Read-PackageJson 'routing/skill-catalog.json').skills).Count } catch { '?' }
+    Write-Host "skills: $($resolvedSkills.Count)/$declaredCount resolved ($siblings package-bundled)"
+  }
+  [ordered]@{ ok = ($failed -eq 0); passed = $passed; failed = $failed; warnings = @($warnings.ToArray()) } | ConvertTo-Json -Compress
+  $summaryPrefix = if ($MetadataOnly) { 'METADATA SUMMARY' } else { 'SUMMARY' }
+  Write-Host "$summaryPrefix PASS=$passed FAIL=$failed"
 }
-if ($null -ne $resolvedSkills) {
-  $siblings = @($resolvedSkills | Where-Object Origin -eq 'package-bundled').Count
-  $declaredCount = try { @((Read-PackageJson 'routing/skill-catalog.json').skills).Count } catch { '?' }
-  Write-Host "skills: $($resolvedSkills.Count)/$declaredCount resolved ($siblings package-bundled)"
-}
-Write-Host "SUMMARY PASS=$passed FAIL=$failed"
 if ($failed -gt 0) { exit 1 }
 exit 0

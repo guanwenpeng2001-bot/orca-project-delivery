@@ -86,7 +86,7 @@ function Test-PackageStructure {
   # Presence is a fixed package contract; discovery below also covers added scripts.
   $requiredScripts = @(
     'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1',
-    'probe-claude-capabilities.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
+    'probe-claude-capabilities.ps1', 'query-routing.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
     'validate-run.ps1', 'validate-git-evidence.ps1', 'verify-package.ps1',
     'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',
     'verify-requirements.ps1', 'project-common.ps1', 'verification-common.ps1',
@@ -138,6 +138,18 @@ function Test-PackageStructure {
   }
   Invoke-Check 'package/no-mirror-tables' {
     Assert-AbsentPaths $root @('agents/role-compatibility.json', 'routing/agent-selection.json')
+  }
+  Invoke-Check 'metadata/entry-character-budget' {
+    $entry = [IO.File]::ReadAllText((Join-Path $root 'SKILL.md'), $utf8)
+    $characterCount = 0
+    foreach ($rune in $entry.EnumerateRunes()) { $characterCount++ }
+    Write-Host "ENTRY SKILL.md: $characterCount Unicode characters including whitespace"
+    Assert-Condition ($characterCount -le $entryCharacterLimit) "SKILL.md has $characterCount Unicode characters including whitespace; limit is $entryCharacterLimit"
+    if ($characterCount -ge $entryCharacterWarning) {
+      $warning = "SKILL.md has $characterCount Unicode characters including whitespace; warning threshold is $entryCharacterWarning, limit is $entryCharacterLimit"
+      $warnings.Add($warning)
+      Write-Host "WARNING: $warning"
+    }
   }
   Invoke-Check 'metadata/entry-outline' {
     $entryPath = Join-Path $root 'SKILL.md'
