@@ -1,5 +1,17 @@
 # Worker Handoff and Replacement
 
+## Fix returns to original implementer session
+
+After a confirmed source completion, retain the original implementer terminal while independent review runs; retain the original reviewer terminal through any repair rounds. Record retention and ownership before acknowledging settlement, and do not release either terminal until the final review verdict.
+
+On CHANGES_REQUIRED, create a scoped fix Task carrying the accepted findings, current target SHA, acceptance criteria and a unique report path. Dispatch it to the original implementer's settled session with `worker-start --terminal <settled worker terminal>` and `--worktree <that terminal's worktree>`. After the fix settles, dispatch a re-review Task to the original reviewer's settled terminal with that review terminal's own worktree. The reviewer remains read-only and checks the new target SHA; reused context is not fresh evidence.
+
+This is sequential continuation by the same writer, not writer replacement or a retry of an unresolved attempt. Confirm the prior Task/Dispatch settled and branch ownership still belongs to that writer before dispatching; never add a concurrent writer. Keep fresh assignment, source and review evidence for each round, following [Evidence Binding](evidence-binding.md#storage-and-ownership) for superseded repair rounds. Session reuse preserves Task isolation and all review/integration gates.
+
+Consult installed help for exact placement syntax. Explicit `--worktree` must identify the selected terminal's worktree; `current` would select the coordinator worktree. Reuse does not accept `--model` or `--effort`; changing route requires a cold session under the normal routing and recovery rules.
+
+If the terminal is gone or reuse fails, record the reason and runtime evidence, then allow a cold session only after resolving the attempt's state. Unknown start outcomes, timeouts or silence do not authorize fallback. A different writer, or any writing retry after failure, must pass the unchanged [writer-replacement gate](recovery-and-idempotency.md#writer-replacement-hardened-gate) and the handoff procedure below; session reuse is not an exemption for recovery. Preserve the original reports and give each cold review attempt a unique report path.
+
 ## Writing Task handoff
 
 Before a writing retry or replacement, pass the [writer-replacement gate](recovery-and-idempotency.md#writer-replacement-hardened-gate); this file owns its required capture and takeover procedure.

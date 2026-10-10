@@ -57,9 +57,13 @@ Define:
 
 ### Implementation
 
-Use the Software Implementer Role (`software-implementer`) in an isolated branch. Preserve the failing evidence before the fix and passing evidence after it.
+Use the Software Implementer Role (`software-implementer`) in an isolated branch. Preserve the failing evidence before the fix and passing evidence after it. Workers run Task-relevant verify suites and affected tests, plus explicit Task-required checks, recording coverage and skips.
 
 ### Review
+
+Dispatch independent review as soon as the implementation completion is confirmed, alongside other ready work. Supply the Task objective, acceptance criteria, exact `base..branch` diff bound to SHAs and relevant contract clauses; whole-package re-reading is not required.
+
+For CHANGES_REQUIRED, retain both original terminals until the final verdict, return fixes to the original implementer session and re-review to the original reviewer session, following [Session reuse](../references/worker-handoff.md#fix-returns-to-original-implementer-session) and its fallback/replacement gates.
 
 Independent review focuses on:
 
@@ -71,12 +75,12 @@ Independent review focuses on:
 
 ### Integration and verification
 
-Merge the approved fix directly into `delivery_branch` as soon as review passes — with several fixes pending, merge serially, one at a time in dependency order, and base Tasks created afterwards on the updated `delivery_branch`. Verify from a clean worktree only after all intended changes are integrated:
+Merge the approved fix directly into `delivery_branch` as soon as review passes — with several fixes pending, merge serially, one at a time in dependency order, and base Tasks created afterwards on the updated `delivery_branch`. Run the full verification suite at each post-merge integrated HEAD. After all intended changes are integrated, run final verification from a clean independent worktree on latest `delivery_branch`:
 
 - original symptom;
 - regression test;
 - nearby affected behavior;
-- relevant full suite or integration checks.
+- full suite again and integration checks.
 
 ## Stop conditions
 

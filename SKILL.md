@@ -19,7 +19,7 @@ Normal workers execute only their assigned Task, Role, professional Skills, bran
 
 ## System boundaries
 
-- `AGENTS.md`: project-local policy, preserved and appended last to worker input.
+- `AGENTS.md`: project-local policy; applicable sections are preserved verbatim, always last in worker input.
 - `.dev-work/`: process state, reports, decisions and evidence, physically only in the coordinator control tree.
 - Git: source, branches, commits and integration truth.
 - Orca Runtime: Run, Task, Dispatch, Worker, Message, Gate and lifecycle truth.
@@ -93,8 +93,8 @@ Role defines identity, Skill defines method, and Task defines this attempt's obj
 ## Model and effort routing
 
 All workers use Claude Code: haiku for reconnaissance, fable for planning/adjudication, sonnet for implementation, opus for independent review/verification.
-The sole routing authority is `routing/model-routing.json`: select the role's `chain`, start at `default`, never go below `floor`.
-Dispatch through `worker-start` with `--agent claude` and the selected `--model` / `--effort`; obtain exact syntax from installed help, not a copied command line.
+The sole routing authority is `routing/model-routing.json`: select the role's `chain`, start at `default`, never go below `floor`. For narrowly bounded read-only comparison, link-check and document Tasks with explicit output, apply `trivialTaskAdjustment`: move one step left from default, dispatching at the haiku floor when that step reaches it; never skip chain steps or override a pinned choice.
+Dispatch fresh sessions through `worker-start` with `--agent claude` and the selected `--model` / `--effort`; reused terminals keep their session route and omit those launch flags. Obtain exact syntax from installed help.
 Use the tier's request shape. Haiku prefers `claude-haiku-4-5` plus effort; on parameter rejection or first receipt mismatch, use alias `haiku` without effort and record the degradation, unless the user pinned the choice.
 A pinned model or effort forbids automatic changes, including the haiku fallback: suspend the affected Task and ask the user if rejected or mismatched.
 On every dispatch, apply **Effective receipt** and record [Dispatch assignment evidence](references/evidence-binding.md#dispatch-assignment-evidence), even with an assembled brief; reconcile mismatches before declaring a verified route.
@@ -127,8 +127,8 @@ Use `templates/task-spec.md`; `assemble-task` automatically inlines the role and
 7. `.dev-work` report contract
 8. Acceptance and tests
 9. Orca Worker Contract
-10. Applicable `AGENTS.md` content
-Preserve project policy verbatim; `AGENTS.md` is always last.
+10. Applicable `AGENTS.md` sections, verbatim, always last
+Use `taskKind` (`source` or `read-only`, default `source`), `briefProfile` (`standard` or `review`, default `standard`) and `agentsSections` (section numbers or titles, default all) to scope assembly; preserve every applicable project rule verbatim.
 
 ## Execution loop
 
@@ -136,13 +136,13 @@ Preserve project policy verbatim; `AGENTS.md` is always last.
 2. Reconnaissance: dispatch independent information domains as needed; stop when unknowns cease to affect the solution.
 3. Plan: use solution-planner, multiple plans plus plan-adjudicator when needed; resolve real product ambiguity with requirements-analyst first.
 4. Task graph: write task-definition and assemble input; record machine-readable assignments, true dependencies and parallel waves.
-5. Dispatch every ready Task; ready means its real dependencies settled successfully through their existing gates — a source dependency counts only after its own review and integration, never on `worker_done` alone — write scope disjoint from in-flight Tasks, and a usable baseline and route. Verify the first `launch.effective` receipt and fill assignment runtime evidence.
+5. Dispatch all independent ready Tasks before waiting, and keep ready work parallel; ready means its real dependencies settled successfully through their existing gates — a source dependency counts only after its own review and integration, never on `worker_done` alone — write scope disjoint from in-flight Tasks, and a usable baseline and route. Verify the first `launch.effective` receipt and fill assignment runtime evidence.
 6. Wait using `check --wait`; process every question/escalation, confirm worker_done belongs to the active Dispatch, decide the terminal's next owner, then acknowledge. After each confirmed settle, immediately re-evaluate readiness and dispatch newly ready Tasks (rolling dispatch) without waiting for unrelated in-flight Tasks.
 7. After three consecutive empty waits, enumerate using `worker-list` and act on `projection.nextAction`; use bounded `worker-read` inspection where needed.
 8. After matching `worker_done` to the active Task/Dispatch, register source evidence and pass `sourceRegistered`; for a source Task, immediately dispatch review under **Independent review** and **Current verification**, alongside other implementation.
-9. Record reviews and validate `review`; apply **Independent review** to accepted findings. Validation failure is UNVERIFIABLE, never approval.
-10. After approval, pass `preMerge`, integrate serially, capture fresh checks and pass `postMerge` before satisfying source dependencies. Apply **Artifact exclusion**; base later Tasks on updated delivery, then reclaim eligible worktrees.
-11. At the **Current verification** barrier, dispatch release-verifier; write the unique run-final and pass run-scoped `final`. Write reports, summarize decisions, settle workers and release the coordinator.
+9. Record reviews and validate `review`; on CHANGES_REQUIRED dispatch fixes to the original implementer session and re-review to the original reviewer session under **Review and integration**. Validation failure is UNVERIFIABLE, never approval.
+10. After approval, pass `preMerge`, integrate serially, run the full verification suite at the integrated HEAD and pass `postMerge` before satisfying source dependencies. Apply **Artifact exclusion**; base later Tasks on updated delivery, then reclaim eligible worktrees.
+11. At the **Current verification** barrier, dispatch release-verifier for full verification on latest delivery; write the unique run-final and pass run-scoped `final`. Write reports, summarize decisions, settle workers and release the coordinator.
 
 For steps 8–11, load [Phase obligations](references/evidence-binding.md#phase-obligations) for fields, states and checkpoint semantics, [Storage and ownership](references/evidence-binding.md#storage-and-ownership) for paths/selectors, and [Record fields](references/evidence-binding.md#record-fields) for worker_done ID formats and authenticity limits. Invoke `scripts/validate-git-evidence.ps1` after recording each observation; it is read-only.
 
@@ -150,11 +150,14 @@ A nonzero start receipt alone does not prove a failed attempt: inspect `failedSt
 `outcome_unknown`, `turn_start_unobserved`, timeouts and unverifiable liveness do not authorize stop, abandon, retry or release.
 User decisions use decision gates suspending only dependent Tasks; independent work proceeds. Resolve gates after the user decides.
 Release is post-settlement cleanup. Record `retained` or `user_owned` decisions; explicitly resolve terminal ownership before removing its worktree.
-Rolling dispatch changes no stage or gate: stages and gates are neither added nor removed, `AGENTS.md` stays verbatim, model routing and failure/unverifiable semantics are unchanged; only artificial batch waits between independent Tasks are removed.
+Rolling dispatch changes no stage or gate: stages and gates are neither added nor removed, applicable `AGENTS.md` sections stay verbatim and always last, model routing and failure/unverifiable semantics are unchanged; only artificial batch waits between independent Tasks are removed.
 
 ## Review and integration
 
 Apply **Independent review**, **Control separation**, and **Current verification** at the execution-loop gates. Review verdicts are `APPROVED`, `CHANGES_REQUIRED`, or `UNVERIFIABLE`; use `templates/review-report.md` for target/baseline SHAs and clean status.
+Narrow review input to the Task objective, acceptance criteria, exact `base..branch` diff bound to SHAs, and relevant contract clauses (`briefProfile: review`, `taskKind: read-only`, applicable `agentsSections`); do not require re-reading the whole package. Reviewers inspect affected context as needed.
+Keep original implementer and reviewer terminals explicitly retained and unreleased until the final review verdict. After CHANGES_REQUIRED, create a fix Task for the original implementer and a re-review Task for the original reviewer: use `worker-start --terminal <settled worker terminal>` with `--worktree <that terminal's worktree>` for each. This resumes the same writer sequentially, never a second writer. If a terminal is gone or reuse fails, record the reason before a cold session; apply runtime recovery and the writer-replacement gate where applicable. See [Session reuse](references/worker-handoff.md#fix-returns-to-original-implementer-session) for admission and evidence.
+Workers run only Task-relevant verify suites and affected tests, recording coverage and skips; explicit Task-required checks still apply. Run the full suite at post-merge integration and again at final verification in a clean independent worktree from latest `delivery_branch`; all evidence gates remain unchanged.
 After approval, load [Integration results and checks](references/evidence-binding.md#integration-results-and-checks) and [Phase obligations](references/evidence-binding.md#phase-obligations): source HEAD must still match approval and both trees must be clean; drift requires re-review. The coordinator performs Git merge in the delivery worktree; Orca has no merge primitive.
 Integrate serially in dependency order. Conflicts require abort, an isolated resolution Task, independent re-review and renewed admission; never repair unreviewed source in delivery. A clean three-way merge requires recorded parents/process evidence and fresh successful verification at `headAfter`; the validator does not run tests.
 Remove task worktrees and safe-to-delete branches only after integration or explicit abandonment and terminal ownership resolution.

@@ -60,7 +60,9 @@ A separate reviewer or coordinator:
 
 ## Optional remediation
 
-When fixes are requested, convert accepted findings into separate implementation Tasks. Reviewers do not modify source directly.
+When fixes are requested, convert accepted findings into separate implementation Tasks. Reviewers do not modify source directly. Review each implementation with the Task objective, acceptance criteria, exact `base..branch` diff bound to SHAs and relevant contract clauses, without requiring a whole-package re-read.
+
+If that review requires changes, retain both original terminals until the final verdict and route repairs to the original implementer session and re-review to the original reviewer session under [Session reuse](../references/worker-handoff.md#fix-returns-to-original-implementer-session). Workers run Task-relevant verify suites and affected tests plus explicit Task-required checks; remediation integration runs the full suite post-merge and final verification runs it again on latest `delivery_branch` in a clean independent worktree.
 
 ## Completion
 

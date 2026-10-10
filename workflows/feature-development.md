@@ -82,23 +82,25 @@ A Task is ready when its real dependencies have settled successfully through the
 
 ### Implementation
 
-Each source Task runs in an independent worktree. Implementers do not merge themselves.
+Each source Task runs in an independent worktree. Implementers do not merge themselves. Workers run Task-relevant verify suites and affected tests, plus any explicit Task-required checks; record coverage and skips.
 
 ### Independent review
 
 Dispatch the independent review Task as soon as the source Task's `worker_done` is confirmed, in parallel with other in-flight implementation.
 
-Review each source branch against requirements, Task Contract, project rules, diff, tests, and implementation report.
+Give each reviewer the Task objective, acceptance criteria, exact `base..branch` diff bound to SHAs, and relevant contract clauses. Use `taskKind: read-only`, `briefProfile: review` and applicable `agentsSections`; append applicable `AGENTS.md` sections verbatim, always last. Inspect affected code, tests and implementation evidence as needed; do not require a whole-package re-read.
+
+Keep the original implementer and reviewer terminals retained until the final review verdict. On CHANGES_REQUIRED, return the fix to the original implementer session and re-review to the original reviewer session under [Session reuse](../references/worker-handoff.md#fix-returns-to-original-implementer-session), including explicit worktree placement and recorded cold-session fallback.
 
 ### Integration
 
 After approval, merge the source branch directly into `delivery_branch`. Do not use the coordinator control branch. Orca has no merge primitive: this is an explicit coordinator `git merge` in the worktree that has `delivery_branch` checked out, recorded together with the diff, the tests, and the process-artifact exclusion check.
 
-Integrate each approved branch as soon as its review passes: with several branches pending, merge serially, one at a time in dependency order, recording the diff, tests and process-artifact exclusion for every merge, and base Tasks created afterwards on the updated `delivery_branch`. Final verification still starts only after all intended changes are integrated.
+Integrate each approved branch as soon as its review passes: with several branches pending, merge serially, one at a time in dependency order, recording the diff, tests and process-artifact exclusion for every merge, and base Tasks created afterwards on the updated `delivery_branch`. Run the full verification suite at each post-merge integrated HEAD before satisfying source dependencies. Final verification still starts only after all intended changes are integrated.
 
 ### Final verification
 
-Create a clean verification worktree from the latest `delivery_branch`. Verify end-to-end acceptance, integration, regressions, and process-artifact exclusion.
+Create a clean verification worktree from the latest `delivery_branch`. Run the full suite again and verify end-to-end acceptance, integration, regressions, and process-artifact exclusion.
 
 ### Close
 
@@ -109,5 +111,5 @@ Write final delivery and pending-user-decision reports, settle workers, and clea
 - Missing evidence: return to reconnaissance.
 - Requirements ambiguity: return to product/requirements.
 - Plan defect: revise planning artifacts before implementation.
-- Review finding: create a fix Task, then re-review.
+- Review finding: create a fix Task in the original implementer session, then re-review in the original reviewer session under the session-reuse contract above.
 - Integration failure: create a scoped fix Task from the latest delivery state.
