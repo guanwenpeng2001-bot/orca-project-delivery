@@ -2,7 +2,7 @@
 
 [English](../external-skills.md) | **简体中文**
 
-**2.5.0** 支持通过显式配置使用已安装的外部 Skill，并与包内 **46 个 Skill、16 个 Role、4 个工作流** 混用。注册不会复制或改写第三方文件，不修改包目录，也不增加包计数。上游声明与许可证保留在原安装处。包内原生扩展见[扩展指南](extending.md)，环境规则见[配置优先级](../../references/configuration-precedence.md)。
+**2.6.0** 支持通过显式配置使用已安装的外部 Skill，并与包内 **46 个 Skill、16 个 Role、4 个工作流** 混用。注册不会复制或改写第三方文件，不修改包目录，也不增加包计数。上游声明与许可证保留在原安装处。包内原生扩展见[扩展指南](extending.md)，环境规则见[配置优先级](../../references/configuration-precedence.md)。
 
 ## 注册已安装的文件
 
