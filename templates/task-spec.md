@@ -56,7 +56,8 @@ Read before starting:
 - Work branch: `<work-branch>`
 - Worktree: `<path>`
 - Merge target: `<delivery-branch or none>`
-- Commit your work on the work branch before you report; the coordinator reviews and merges it.
+- Source/deliverable Tasks: commit your work within the authorized scope on the work branch before reporting; the coordinator reviews and merges it.
+- Read-only Tasks: produce no commits and write only the assigned report path.
 - You must not merge the branch yourself.
 
 ## Process Artifact Contract
