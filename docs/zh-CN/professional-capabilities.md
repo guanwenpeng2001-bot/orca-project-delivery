@@ -113,7 +113,7 @@
 | `ui-designer` | product | 页面或组件需要视觉规范、状态矩阵或设计评审。 | `product-design`、`frontend-visual-design` | `accessibility-audit`、`icon-assets`、`design-system`、`localization` | 不收集需求，不实现产品 UI，只在任务授权路径写原型。 |
 | `browser-test-engineer` | quality | 任务需要浏览器回归证据、可访问性审计，或缺陷的 trace。 | `browser-e2e`、`integration-verification` | `accessibility-audit`、`systematic-debugging` | 不实现被测产品，也不替代 `release-verifier`。实现某页面的人不同时验收该页面。 |
 | `media-producer` | media | 图标、Logo、网站资产、插图、分镜、字幕或音视频母版，附来源和许可清单。 | 默认没有，任务选一到三个。 | 相关资产、图像、音视频、`subtitle-production` 与 `technical-diagrams`。 | 未经明确批准不上传、发布或花钱，不改产品源码。 |
-| `document-specialist` | product | 任务产出可编辑的文档、幻灯片、电子表格或 PDF，并检查它能往返打开。 | `document-production` | `visual-slide-deck` | 不把图片型 deck 说成可编辑对象，也不复制专有的文档 Skill。 |
+| `document-specialist` | product | 任务产出可编辑的文档、幻灯片、电子表格或 PDF，并检查它能往返打开。 | `document-production` | `visual-slide-deck`、`editorial-illustration` | 不把图片型 deck 说成可编辑对象，也不复制专有的文档 Skill。 |
 
 其余十二个角色的身份不变。架构师按需加载 `domain-modeling`、`migration-upgrade`、`mcp-server-development`、`technical-diagrams`；实施者按需加载 `migration-upgrade`、`mcp-server-development`、`localization`、`skill-authoring-evaluation`。React、PostgreSQL、可观测性与 CI 仍不新增角色。可选 Skill 的权威是安装版本的 `roles/catalog.json`。
 

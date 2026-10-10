@@ -57,7 +57,7 @@ Role、Skill、模型默认值和通用最佳实践不得覆盖项目规则。
 - 协调者控制分支不开发源码、不接收源码任务分支合并、不作为任务基线、不作为审查目标、不作为最终交付来源。
 - 协调者控制分支是否跟随源码更新不影响交付；涉及最新源码事实时，必须读取实际 `delivery_branch` 或目标任务分支的工作树。
 - 协调者不得在控制工作区中把当前 HEAD、当前文件或当前测试结果当成最新集成状态。
-- 控制分支必须与 `delivery_branch` 不同；不得在交付分支上启动协调者会话。`scripts/bootstrap-project.ps1` 在当前分支等于解析出的交付分支时会拒绝初始化，除非显式传 `-AllowControlEqualsDelivery` 承担 invariant 3 违规。
+- 控制分支必须与 `delivery_branch` 不同；不得在交付分支上启动协调者会话。`scripts/bootstrap-project.ps1` 在当前分支等于解析出的交付分支时会拒绝初始化，除非显式传 `-AllowControlEqualsDelivery` 承担违反“控制分支与交付分支分离”规则的责任（见 `SKILL.md` 的 `Bootstrap` 节）。
 
 ## 4. 交付分支
 

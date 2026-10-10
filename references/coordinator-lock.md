@@ -22,7 +22,7 @@ Written by `scripts/bootstrap-project.ps1`; `activeRun` is updated by `scripts/c
 | `coordinatorWorktreeId` | `ORCA_WORKTREE_ID` of the control worktree |
 | `livenessProbe` | The exact command used to test liveness |
 | `hostProcessId` / `processId` | Diagnostic only — **never** the liveness signal (the bootstrap process exits immediately) |
-| `coordinatorControlBranch` | Control branch; must differ from `delivery_branch` (invariant 3) |
+| `coordinatorControlBranch` | Control branch; must differ from `delivery_branch` (control/delivery branch separation rule in [SKILL.md — Bootstrap](../SKILL.md#bootstrap)) |
 | `coordinatorWorktree` | Absolute control worktree path |
 | `startedAt`, `updatedAt`, `releasedAt`, `releaseReason` | Timestamps and release audit |
 | `activeRun` | Run slug currently owned by this coordinator |
