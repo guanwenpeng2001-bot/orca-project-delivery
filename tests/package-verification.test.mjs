@@ -10,6 +10,41 @@ const verifier = fileURLToPath(new URL('../scripts/verification-runtime.ps1', im
 const helpers = fileURLToPath(new URL('../scripts/verification-common.ps1', import.meta.url));
 const requiredSuites = ['document-production.test.py', 'document-depth-office.test.py'];
 
+for (const characters of [19799, 19800, 22000, 22001]) {
+  test(`entry character budget at ${characters} Unicode characters`, (t) => {
+    const source = fileURLToPath(new URL('../', import.meta.url));
+    const entrypoint = path.join(source, 'scripts', 'verify-package.ps1');
+    const copy = mkdtempSync(path.join(tmpdir(), 'package-entry-budget-'));
+    t.after(() => rmSync(copy, { recursive: true, force: true }));
+    cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work'].includes(path.basename(item)) });
+    const entryPath = path.join(copy, 'SKILL.md');
+    const original = readFileSync(entryPath, 'utf8');
+    const padding = characters - [...original].length;
+    assert.ok(padding > 0);
+    writeFileSync(entryPath, original + '\u{10400}'.repeat(padding - 1) + ' ');
+    const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-PackageRoot', copy, '-MetadataOnly'], {
+      encoding: 'utf8', timeout: 20000,
+    });
+    assert.ifError(result.error);
+    const output = result.stdout + result.stderr;
+    const oversized = characters > 22000;
+    assert.equal(result.status, oversized ? 1 : 0, output);
+    if (oversized) assert.match(output, /FAIL metadata\/entry-character-budget: SKILL\.md has 22001 Unicode characters including whitespace; limit is 22000/);
+    else assert.match(output, /PASS metadata\/entry-character-budget/);
+    const summaryLine = output.split(/\r?\n/).find((line) => line.startsWith('{'));
+    assert.ok(summaryLine, output);
+    const summary = JSON.parse(summaryLine);
+    assert.equal(summary.failed, oversized ? 1 : 0, output);
+    assert.equal(summary.ok, !oversized);
+    assert.equal(summary.warnings.length, characters >= 19800 && !oversized ? 1 : 0);
+    if (summary.warnings.length) {
+      assert.ok(summary.warnings[0].includes(`SKILL.md has ${characters} Unicode characters including whitespace`));
+      assert.ok(output.includes(`WARNING: ${summary.warnings[0]}`), output);
+    } else assert.doesNotMatch(output, /WARNING: SKILL\.md/);
+    t.diagnostic(`characters=${characters}, status=${result.status}, warnings=${summary.warnings.length}`);
+  });
+}
+
 // Keep the baseline entrypoints plus the extracted runtime dependencies mandatory.
 test('MetadataOnly rejects every missing required script and parses discovered extensions', (t) => {
   const source = fileURLToPath(new URL('../', import.meta.url));
@@ -19,7 +54,7 @@ test('MetadataOnly rejects every missing required script and parses discovered e
   cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work'].includes(path.basename(item)) });
   const required = [
     'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1',
-    'probe-claude-capabilities.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
+    'probe-claude-capabilities.ps1', 'query-routing.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
     'validate-run.ps1', 'validate-git-evidence.ps1', 'verify-package.ps1',
     'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',
     'verify-requirements.ps1', 'project-common.ps1', 'verification-common.ps1',

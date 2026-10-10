@@ -7,6 +7,10 @@ test is read-only; all runtime fixtures and copies use temporary directories.
 [CmdletBinding()]
 param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly, [string]$DocumentPython = '', [switch]$SkipMutationTests, [ValidateRange(1, 86400)][int]$SuiteTimeoutSeconds = 600)
 
+# Unicode code points include whitespace; 22000 leaves growth room over 19231, with a 90% warning.
+$entryCharacterLimit = 22000
+$entryCharacterWarning = 19800
+$warnings = [Collections.Generic.List[string]]::new()
 $ErrorActionPreference = 'Stop'
 $passed = 0
 $failed = 0
@@ -72,6 +76,7 @@ try {
       Write-Host "CLEANED $resolvedTemporary"
     }
   }
+  [ordered]@{ ok = ($failed -eq 0); passed = $passed; failed = $failed; warnings = @($warnings.ToArray()) } | ConvertTo-Json -Compress
 }
 if ($null -ne $resolvedSkills) {
   $siblings = @($resolvedSkills | Where-Object Origin -eq 'package-bundled').Count
