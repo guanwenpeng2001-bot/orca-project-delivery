@@ -10,7 +10,16 @@ Highest to lowest:
 6. Package catalog selection and `routing/model-routing.json` policies.
 7. Agent defaults.
 
-This is instruction precedence. Version 2 project config has a narrow explicit
+## Skill configuration and delivery
+
+Under `skills/`, the original 16 Skills are package-maintained adaptations of the MIT-licensed baseline; the 30 methods added in versions 2.3.0 and 2.4.0 are original package content. `skills/README.md` records provenance and current hashes. See [Extending](../docs/extending.md) for native authoring/registration and metadata/full verification.
+
+- `explicit-path` is the default: give the absolute `SKILL.md` path in the Task and require reading it.
+- `inline-extract` is the fallback: embed required Skill bodies as a snapshot and record source path and hash.
+
+A Skill name alone is not loading evidence. Skills supply method and cannot expand Task scope or grant orchestration control.
+
+The list above is instruction precedence. Version 2 project config has a narrow explicit
 `externalSkills` / `roleBindings` resolver through `-ConfigPath`; it does not merge
 arbitrary catalogs or routing, scan installed directories, or load `.dev-work/config/`.
 Version 1 remains env-only; both versions require `env`, even when `{}`.
@@ -27,7 +36,11 @@ plus activated conditional selectors explicitly to both helpers.
 External absolute paths may be outside ProjectRoot; relative registrations resolve
 from ProjectRoot. Config files remain confined to that root. Traversal and linked
 paths are unsupported. Both delivery modes retain the original resource base for
-relative scripts. See [installed external Skills](../docs/external-skills.md) for
+relative scripts/resources via the original `resourceBase`. Provenance distinguishes observed entry SHA256 from unverified `declaredVersion`; `configPath` echoes the supplied argument. Registration never rewrites originals or changes bundled counts. No automatic install/scanning or host-feature emulation occurs; arbitrary host loading/effectiveness is not guaranteed.
+
+Catalog and external `requires` use the existing CLI/env/API schema of names and purposes, never prose or frontmatter inference. Assembly lists required and conditional requirements inside Inputs and Dependencies, preserving the ten-part order and AGENTS last. Pass the execution root/config with the selected IDs to both requirement helpers.
+
+See [installed external Skills](../docs/external-skills.md) for
 registration, provenance, declared requirements and an executable offline walkthrough.
 
 ## Execution configuration
@@ -42,9 +55,9 @@ are not automatically selected. Values resolve by key presence: process environm
 `check-requirements.ps1` reports names/purposes, configured-file status, current-process
 availability and effective child availability; API checks never verify authentication
 or network access. `invoke-with-requirements.ps1` accepts an authorized executable and
-argument array, inherits process variables and adds only selected declared file values
+`-Arguments @(...)` array with `-Executable`, inherits process variables and adds only selected declared file values
 to the child without changing the parent. Child output is not redacted. Config paths
-stay inside ProjectRoot; an explicitly authorized executable may be outside it.
+stay inside ProjectRoot; an explicitly authorized executable may be outside it. API checks are presence-only and perform no network or install actions. Prefer real executables/interpreters over batch launchers.
 
 See [Extending and configuration](../docs/extending.md) for literal dotenv grammar,
 JSON restrictions, exact interfaces, bootstrap behavior and runnable offline examples.

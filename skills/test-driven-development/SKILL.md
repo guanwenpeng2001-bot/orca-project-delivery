@@ -57,15 +57,7 @@ Keep the test that reproduced a bug. Once the fix lands, that test is the regres
 
 ## Worked example
 
-The bug: applying a discount code twice stacks the discount. Intended behavior: a code applies at most once.
-
-RED: a test that starts a basket with one item priced 100, applies `SAVE10` twice, and asserts the total equals 90. The run fails with the total reported as 81. That failure names the real behavior — the second application compounded — so it is the right RED. A failure saying the basket module could not be imported would not be.
-
-GREEN: the smallest change is recording applied codes on the basket and returning early when the code is already present. The same test now passes showing 90.
-
-A second test, applying two different codes, guards the neighboring behavior so the fix does not reject legitimate stacking. It passes without further changes, which is what you want from a regression guard.
-
-The refactor extracts the "already applied" check into a named predicate. The tests stay green and their assertions are untouched.
+When choosing a behavior-level RED or guarding neighboring behavior, load [Discount regression example](examples/discount-regression.md) for a complete RED–GREEN–REFACTOR walkthrough.
 
 ## Failure signals
 
@@ -78,7 +70,7 @@ The refactor extracts the "already applied" check into a named predicate. The te
 
 ## Evaluation scenario
 
-Given a bug where a retried webhook is processed twice, the result should show: a RED run whose failure message states the webhook was processed twice rather than an error setting the test up; the minimal change that records processed message ids; and one additional test proving a genuinely distinct webhook is still processed. It fails the method if no failing run is shown, or if the shown failure is anything other than the duplicate-processing assertion.
+When maintaining or evaluating this Skill, load [Test-driven development evaluation](references/evaluation.md) for the webhook regression scenario and failure criteria.
 
 ## Output
 

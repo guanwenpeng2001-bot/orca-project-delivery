@@ -89,49 +89,22 @@ silently.
 
 ### Writer replacement (hardened gate)
 
-The failed or silent worker is a **writer** on a task branch.
+A runtime-authorized retry of a proven `failed` or `stopped` attempt and admission of a new branch writer are separate decisions. Follow the receipt or authoritative projection's next-action guidance for the retry; the stricter package-local gate below still applies to every writing retry/replacement, like the local [coordinator-lock convention](coordinator-lock.md).
 
-**Principle.** Two decisions must not be conflated. Retrying one proven
-`failed` or `stopped` attempt is a runtime decision: when a mutation
-receipt or an authoritative projection proves that state, its own
-next-action guidance authorizes the retry. Whether a **new writer** may
-take over the same task branch is a separate decision, and this package
-deliberately holds it to a stricter local convention, in the same spirit as
-the coordinator-lock convention in `references/coordinator-lock.md`:
-`failed`, silence, and timeout each fail to prove that the original writer
-has stopped — an accepted `failed` settles the attempt while the writer's
-terminal and process can still be live. A replacement writer may start only
-after both:
+Admission requires all three:
 
-1. the original writer is confirmed stopped, fenced, isolated, or has
-   completed an explicit handoff, **and** its Dispatch (and Task, if the
-   Task itself is being replaced rather than retried) has settled; and
-2. the task worktree's Git state — branch, HEAD, commits, status, diff,
-   untracked files — is captured in a handoff record under
-   `.dev-work/runs/<run>/handoffs/`.
+1. Positive evidence that the original writer is stopped, fenced, isolated, or has completed an explicit handoff, as defined below.
+2. Separate settlement of its Dispatch, and of its Task when replacing the Task rather than retrying it. Release is post-settlement cleanup, not evidence for either gate.
+3. Captured Git state in a handoff record using [Writing Task handoff](worker-handoff.md#writing-task-handoff), even when the branch looks clean. Once admitted, follow that procedure for sequential takeover.
 
-Here, *confirmed* means evidence for each admission term as defined below;
-for isolation it proves inability to write, not process exit.
+Admission terms:
 
-Admission terms: *stopped* is a positively proven exit; *fenced* is the
-runtime's fenced consumer generation (`consumer_fenced` in
-`references/failure-taxonomy.md`); *isolated* means the original writer is
-provably unable to write the task branch even though its exit is
-unobserved, for example its terminal or process has been taken over or cut
-off from the worktree; an *explicit handoff* is the original writer's own
-recorded handoff. A proven `stopped` attempt already carries the stop-side
-evidence; a proven `failed` attempt does not, and that gap is the
-intentional difference between this package-local gate and the runtime's
-own proven-state guidance.
+- **Stopped:** a positively proven exit. A proven `stopped` attempt already carries this evidence.
+- **Fenced:** the runtime's fenced consumer generation ([`consumer_fenced`](failure-taxonomy.md#task-execution)).
+- **Isolated:** the original writer is provably unable to write the task branch, even if exit is unobserved; for example its terminal/process has been taken over or cut off from the worktree. Isolation proves inability to write, not exit.
+- **Explicit handoff:** the original writer's own recorded handoff.
 
-The replacement then takes over sequentially: it reads the original Task,
-Role, Skills, project rules, prior reports and handoff, and the current Git
-state before writing anything.
-
-**Prohibited.** Never run a second concurrent writer on one task branch. Do
-not derive a writer from `failed`, silence, or timeout alone. Do not skip
-the handoff capture because the branch "looks clean". See
-`references/worker-handoff.md` for the capture and takeover procedure.
+An accepted `failed` completion settles the attempt but its terminal/process can remain live; unlike `stopped`, it supplies no stop-side evidence. `failed`, silence and timeout alone never admit a second writer. Unverifiable admission blocks takeover; unobserved exit alone does not invalidate proven isolation. Never allow concurrent writers on one task branch.
 
 ### Task cancellation
 

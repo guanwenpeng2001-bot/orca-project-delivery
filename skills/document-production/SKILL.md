@@ -33,19 +33,9 @@ Original method and scripts using public library APIs: [python-docx](https://pyt
 
 ## Worked example
 
-Run from the package root. PowerShell installation and execution (use `.venv-documents/bin/python` on POSIX):
+Before first-time Office/PDF generation, load [Office generation example](examples/office-generation.md) for dependency setup and commands; keep development environments and generated files outside the formal package.
 
-```powershell
-python -m venv .venv-documents
-.venv-documents/Scripts/python -m pip install --only-binary=:all: -r skills/document-production/scripts/requirements.txt
-.venv-documents/Scripts/python -I skills/document-production/scripts/office-document.py --input tests/fixtures/capability/document-input.json --format docx --output notes.docx
-.venv-documents/Scripts/python -I skills/document-production/scripts/office-document.py --input tests/fixtures/capability/document-input.json --format pptx --output notes.pptx
-.venv-documents/Scripts/python -I skills/document-production/scripts/office-document.py --input tests/fixtures/capability/document-input.json --format xlsx --output notes.xlsx
-.venv-documents/Scripts/python -I skills/document-production/scripts/office-document.py --input tests/fixtures/capability/document-input.json --format pdf --output notes.pdf
-.venv-documents/Scripts/python -I tests/document-production.test.py
-```
-
-Keep the environment and generated files outside the formal package when developing the package itself. Each successful command emits JSON with `output`, `format`, `reopened: true`, and paragraphs/slides/rows/pages. Missing libraries exit 2; invalid source, unsupported text, or output errors exit 1. Output extension must match the selected format, and the destination parent must exist. Unsupported content and failed read-back never replace an existing document.
+Accept JSON `output`, `format`, `reopened: true` and object counts only as programmatic evidence. Missing libraries exit 2; invalid source/text/output exits 1. Match output extension to format and use an existing destination parent. Unsupported content or failed read-back must preserve existing output.
 
 ## Failure signals
 
@@ -57,7 +47,7 @@ Keep the environment and generated files outside the formal package when develop
 
 ## Evaluation scenario
 
-`python -I tests/document-production.test.py` in the configured environment generates and reopens all four formats, compares exact text and numbers, tests literal spreadsheet formula-like input, checks slide pagination, and verifies failed generation preserves existing output. `node --test tests/document-depth.test.mjs` and `python -I tests/document-depth-office.test.py` cover the bounded blocks: a heading, paragraph, ordered list, and table reopened from DOCX, XLSX, and Markdown, literal formula-like table text, an explicit PPTX/PDF table rejection, and a malformed table that leaves existing output untouched. The package's optional `verify-package.ps1 -DocumentPython PATH` runs the original suite. Actual Office-application rendering, table overflow, font substitution, accessibility tagging, and visual PDF pagination still require target-viewer inspection.
+When maintaining this Skill or its scripts, load [Document production evaluation](references/evaluation.md) for regression suites and expected cases; actual viewer rendering, table overflow, font substitution, accessibility tagging and PDF pagination still need visual inspection.
 
 ## Boundary
 
