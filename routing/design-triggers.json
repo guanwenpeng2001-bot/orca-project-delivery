@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "triggers": [
+    {
+      "id": "system-boundary-or-cross-module",
+      "when": ["the change touches system boundaries, interface contracts, or cross-module integration"],
+      "instantiates": ["system-boundaries"]
+    },
+    {
+      "id": "api-contract",
+      "when": ["a public or module API is added or changed"],
+      "instantiates": ["api-contract"]
+    },
+    {
+      "id": "data-model-or-migration",
+      "when": ["entities, constraints, transactions, or stored data change; migration or rollback must be defined"],
+      "instantiates": ["data-model"]
+    },
+    {
+      "id": "ui-or-interaction",
+      "when": ["new user flows, interaction states, or visual hierarchy must be specified"],
+      "instantiates": ["user-flow-and-interaction", "visual-design-spec"]
+    }
+  ]
+}

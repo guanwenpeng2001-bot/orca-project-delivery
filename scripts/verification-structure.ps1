@@ -43,6 +43,23 @@ function Assert-RoleSelection($Selection, $Catalog) {
   }
 }
 
+function Assert-DesignTriggers($Document, $Selection) {
+  Assert-Condition (($Document.schemaVersion -is [int] -or $Document.schemaVersion -is [long]) -and $Document.schemaVersion -eq 1) 'design triggers: schemaVersion must be 1'
+  Assert-Condition ($Document.triggers -is [array] -and $Document.triggers.Count -gt 0) 'design triggers: triggers must be a nonempty array'
+  foreach ($trigger in $Document.triggers) {
+    Assert-Condition ($trigger.id -is [string] -and -not [string]::IsNullOrWhiteSpace($trigger.id)) 'design triggers: id must be a nonempty string'
+    foreach ($field in @('when', 'instantiates')) {
+      Assert-Condition ($trigger[$field] -is [array] -and $trigger[$field].Count -gt 0) "design triggers: $($trigger.id) $field must be a nonempty array"
+      foreach ($value in $trigger[$field]) {
+        Assert-Condition ($value -is [string] -and -not [string]::IsNullOrWhiteSpace($value)) "design triggers: $($trigger.id) $field must contain nonempty strings"
+      }
+    }
+    foreach ($deliverable in $trigger.instantiates) {
+      Assert-Condition (@($Selection.deliverableRoutes.Keys) -ccontains $deliverable) "design triggers: $($trigger.id) instantiates unknown deliverable $deliverable"
+    }
+  }
+}
+
 function Assert-ClaudeText([string]$Content, [string]$Extension, [string]$Source) {
   $segments = @($Content)
   if ($Extension -eq '.ps1') {
@@ -126,6 +143,9 @@ function Test-PackageStructure {
   }
   Invoke-Check 'routing/role-selection-valid' {
     Assert-RoleSelection (Read-PackageJson 'routing/role-selection.json') (Read-PackageJson 'roles/catalog.json')
+  }
+  Invoke-Check 'routing/design-triggers-valid' {
+    Assert-DesignTriggers (Read-PackageJson 'routing/design-triggers.json') (Read-PackageJson 'routing/role-selection.json')
   }
   Invoke-Check 'package/claude-only' {
     Assert-AbsentPaths $root @('agents', 'adapters')
@@ -253,6 +273,16 @@ function Test-PackageContracts {
     Assert-RoleSelection $selection $catalog
     $selection.deliverableRoutes['unknown-deliverable'] = 'unknown-role'
     Assert-Rejected 'unknown-deliverable-role' { Assert-RoleSelection $selection $catalog } 'selection:'
+    $designMutations = [ordered]@{
+      'unknown-design-deliverable' = @{ mutate = { param($document) $document.triggers[0].instantiates = @('unknown-design-deliverable') }; diagnostic = 'design triggers: system-boundary-or-cross-module instantiates unknown deliverable unknown-design-deliverable' }
+      'missing-design-triggers' = @{ mutate = { param($document) $document.Remove('triggers') }; diagnostic = 'design triggers: triggers must be a nonempty array' }
+    }
+    $selection = Read-PackageJson 'routing/role-selection.json'
+    foreach ($case in $designMutations.Keys) {
+      $document = Read-PackageJson 'routing/design-triggers.json'
+      $null = & $designMutations[$case].mutate $document
+      Assert-Rejected $case { Assert-DesignTriggers $document $selection } $designMutations[$case].diagnostic
+    }
   }
   Invoke-Check 'regression/agent-reference-scanner' {
     foreach ($agentId in $forbiddenAgentIds) {
