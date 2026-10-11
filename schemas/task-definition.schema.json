@@ -146,6 +146,18 @@
     {
       "if": { "required": ["briefProfile"], "properties": { "briefProfile": { "const": "review" } } },
       "then": { "required": ["reviewInput"] }
+    },
+    {
+      "if": { "required": ["taskKind"], "properties": { "taskKind": { "const": "read-only" } } },
+      "then": {
+        "properties": { "branch": { "properties": { "mergeTarget": { "const": null } } } }
+      },
+      "else": {
+        "anyOf": [
+          { "properties": { "branch": { "properties": { "mergeTarget": { "type": "string", "minLength": 1 } } } } },
+          { "required": ["supersededBy"], "properties": { "supersededBy": { "type": "string", "minLength": 1 } } }
+        ]
+      }
     }
   ],
   "additionalProperties": true

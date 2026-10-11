@@ -168,6 +168,16 @@ if (-not $definition.artifacts) {
 if ($missing.Count) {
   throw "Task definition $TaskDefinitionPath is incomplete: $($missing -join ', '). Complete it (templates/task-definition.json) and run scripts/assemble-task.ps1 before dispatching."
 }
+$taskKind = if ($definition.taskKind) { "$($definition.taskKind)" } else { 'source' }
+$supersededBy = Get-TextOrNull $definition.supersededBy
+if (($taskKind -ceq 'read-only' -and $definition.branch.mergeTarget) -or
+    ($taskKind -ceq 'source' -and -not $definition.branch.mergeTarget -and -not $supersededBy)) {
+  throw "Task definition taskKind '$taskKind' conflicts with branch.mergeTarget: read-only tasks require null; source tasks require a non-empty mergeTarget or supersededBy."
+}
+if ($definition.PSObject.Properties['supersededBy'] -and
+    (-not $supersededBy -or -not $taskMap.tasks.PSObject.Properties[$supersededBy])) {
+  throw "Task definition supersededBy '$supersededBy' must name an existing task-map entry."
+}
 $taskKey = "$($definition.taskKey)"
 
 if (-not (Test-Path -LiteralPath $BriefPath -PathType Leaf)) {
@@ -353,6 +363,7 @@ $assignment = [ordered]@{
   status = $Status
   fallbackReason = $fallbackReason
 }
+if ($supersededBy) { $assignment['supersededBy'] = $supersededBy }
 if ($previousDispatches.Count) { $assignment['runtime']['previousDispatches'] = @($previousDispatches) }
 
 # Schema gate before any write: a document the state consumers cannot parse must never

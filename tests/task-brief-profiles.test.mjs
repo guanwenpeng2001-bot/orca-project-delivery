@@ -71,6 +71,7 @@ test('review profile narrows input and supports explicit optional sections', (co
   const data = fixture(context);
   const reviewInput = { baseSha: 'a'.repeat(40), branch: 'implementation/topic', diffCommand: 'git diff ' + 'a'.repeat(40) + '...implementation/topic -- scripts/' };
   data.task.skills.required = ['image-generation'];
+  data.task.branch.mergeTarget = null;
   const extra = { taskKind: 'read-only', briefProfile: 'review', reviewInput };
   const result = assemble(data, extra);
   assert.equal(result.code, 0, result.diagnostics);
@@ -103,6 +104,18 @@ test('new fields deduplicate bound role skill lists while legacy bindings remain
 
 test('schema rejects malformed new fields and review briefs without concrete diff input', (context) => {
   const data = fixture(context);
+  for (const extra of [
+    { taskKind: 'source', branch: { ...data.task.branch, mergeTarget: null } },
+    { branch: { ...data.task.branch, mergeTarget: null } },
+    { taskKind: 'source', branch: { ...data.task.branch, mergeTarget: '' } },
+    { taskKind: 'read-only', branch: { ...data.task.branch, mergeTarget: 'main' } },
+  ]) {
+    const result = assemble(data, extra);
+    assert.equal(result.code, 1, `must reject ${JSON.stringify(extra)}`);
+    assert.match(result.diagnostics, /schema/);
+  }
+  const folded = assemble(data, { taskKind: 'source', branch: { ...data.task.branch, mergeTarget: null }, supersededBy: 'successor' });
+  assert.equal(folded.code, 0, folded.diagnostics);
   const validReviewInput = { baseSha: 'a'.repeat(40), branch: 'topic', diffCommand: 'git diff' };
   for (const extra of [{ taskKind: 'readonly' }, { briefProfile: 'compact' }, { agentsSections: '5' }, { agentsSections: [null] }, { agentsSections: [''] }, { briefProfile: 'review' }, { briefProfile: 'review', reviewInput: { baseSha: 'main', branch: 'topic', diffCommand: 'git diff' } }, { reviewIncludes: ['unknown'] }, { briefProfile: 'review', reviewInput: { ...validReviewInput, deltaPaths: 'scripts/x.ps1' } }, { briefProfile: 'review', reviewInput: { ...validReviewInput, deltaPaths: [1] } }, { briefProfile: 'review', reviewInput: { ...validReviewInput, deltaPaths: [''] } }]) {
     const result = assemble(data, extra);
@@ -132,6 +145,7 @@ test('read-only briefs remove the entire source commit clause and retain reporti
   const source = assemble(data);
   assert.equal(source.code, 0, source.diagnostics);
   assert.match(source.brief, /Source\/deliverable Tasks: commit/);
+  data.task.branch.mergeTarget = null;
   const result = assemble(data, { taskKind: 'read-only' });
   assert.equal(result.code, 0, result.diagnostics);
   assert.doesNotMatch(result.brief, /Source\/deliverable Tasks:|coordinator reviews and merges the committed deliverable/);

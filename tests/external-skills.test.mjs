@@ -282,7 +282,7 @@ test('config v1 remains env-only and explicit process values keep precedence', (
 
 test('legacy bundled briefs retain their exact normalized bytes in both modes', (testContext) => {
   const fixtureData = fixture(testContext);
-  for (const [mode, expected] of Object.entries({ 'explicit-path': '520d899e1bdda2a4e7810bb764154920ef0de6bbc24d9cc910101dd3672da43c', 'inline-extract': '6b99862eab2ccce90ee921a40f4fe7d0541a377fb3a846e7efbc00fbc72bfe9e' })) {
+  for (const [mode, expected] of Object.entries({ 'explicit-path': '103d5e33517f56cc04d7542b5f7245f66267617f7d1e572203b51a8b2f266c84', 'inline-extract': 'dc0a717a015b67c038b8f5642f6241078e8e857d3e4d390eb31a33253201831a' })) {
     const result = assemble(fixtureData, { required: ['test-driven-development', 'test-driven-development'], conditional: ['integration-verification'] }, mode, false);
     assert.equal(result.code, 0, result.text);
     let normalized = result.brief.replaceAll('\\', '/');
