@@ -44,6 +44,10 @@ function Get-PackageFiles([string]$Directory) {
 
 function Invoke-Child {
   param([string]$Executable, [string[]]$Arguments, [switch]$DirtyGit, [string]$InputText = '', [int]$TimeoutSeconds = 60)
+  if (-not $PSBoundParameters.ContainsKey('TimeoutSeconds')) {
+    $suiteTimeout = Get-Variable -Name SuiteTimeoutSeconds -ValueOnly -ErrorAction SilentlyContinue
+    if ($null -ne $suiteTimeout -and $suiteTimeout -gt 0) { $TimeoutSeconds = $suiteTimeout }
+  }
   $start = [Diagnostics.ProcessStartInfo]::new()
   $start.FileName = $Executable
   $start.WorkingDirectory = $script:temporaryRoot
