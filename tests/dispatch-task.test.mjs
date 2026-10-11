@@ -177,6 +177,46 @@ test('records a successful dispatch receipt as the run ledger', (t) => {
   assert.notEqual(lock.updatedAt, '2026-01-01T00:00:00Z');
 });
 
+for (const [name, taskKind, mergeTarget, supersededBy, patterns] of [
+  ['source null target', 'source', null, undefined, [/taskKind/, /mergeTarget/]],
+  ['default source null target', undefined, null, undefined, [/taskKind/, /mergeTarget/]],
+  ['source empty target', 'source', '', undefined, [/taskKind/, /mergeTarget/]],
+  ['read-only source target', 'read-only', 'main', undefined, [/taskKind/, /mergeTarget/]],
+  ['unknown successor', 'source', null, 'missing-task', [/supersededBy/, /missing-task/]],
+]) {
+  test(`rejects ${name} without writing the ledger`, (t) => {
+    const { project, runDir, devWork } = createProject(t);
+    const paths = writeInputs(t, project);
+    const definition = readJson(paths.definitionPath);
+    Object.assign(definition, { taskKind, supersededBy });
+    definition.branch.mergeTarget = mergeTarget;
+    writeJson(paths.definitionPath, definition);
+    const ledgerPaths = [path.join(runDir, 'task-map.json'), path.join(runDir, 'branch-map.json'), path.join(runDir, 'run-state.json'), path.join(devWork, 'coordinator-lock.json')];
+    const before = ledgerPaths.map((file) => readFileSync(file, 'utf8'));
+    const result = runDispatch(project, paths);
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    for (const pattern of patterns) assert.match(clean(result.stdout + result.stderr), pattern);
+    assert.equal(existsSync(path.join(runDir, 'assignments', 'fixture-task.json')), false);
+    assert.deepEqual(ledgerPaths.map((file) => readFileSync(file, 'utf8')), before);
+  });
+}
+
+test('accepts a folded source task and records its existing successor', (t) => {
+  const { project, runDir } = createProject(t);
+  const paths = writeInputs(t, project);
+  const definition = readJson(paths.definitionPath);
+  definition.taskKind = 'source';
+  definition.branch.mergeTarget = null;
+  definition.supersededBy = 'successor';
+  writeJson(paths.definitionPath, definition);
+  writeJson(path.join(runDir, 'task-map.json'), { schemaVersion: 1, tasks: { successor: { taskId: 'task_successor123456', assignment: 'assignments/successor.json' } } });
+  const result = runDispatch(project, paths);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
+  assert.equal(assignment.supersededBy, 'successor');
+  assert.equal(assignment.branch.mergeTarget, null);
+});
+
 test('refuses placements the run contract does not allow', (t) => {
   const { project, runDir } = createProject(t);
   const assignmentPath = path.join(runDir, 'assignments', 'refused-task.json');

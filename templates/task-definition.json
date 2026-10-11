@@ -21,7 +21,7 @@
     "delivery": "main",
     "base": "main",
     "work": "scout/replace-me",
-    "mergeTarget": null,
+    "mergeTarget": "main",
     "worktree": "C:\\path\\to\\worktree"
   },
   "artifacts": {
