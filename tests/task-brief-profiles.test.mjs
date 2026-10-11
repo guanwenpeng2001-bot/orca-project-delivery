@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -29,11 +29,11 @@ function fixture(context) {
   task.branch.worktree = root;
   return { root, task };
 }
-function assemble(data, extra = {}, config = null) {
+function assemble(data, extra = {}, config = null, sourceRoot = packageRoot) {
   const taskPath = path.join(data.root, 'task.json');
   const outputPath = path.join(data.root, 'brief.md');
   writeFileSync(taskPath, JSON.stringify({ ...data.task, ...extra }));
-  const args = ['-NoProfile', '-NonInteractive', '-File', path.join(packageRoot, 'scripts/assemble-task.ps1'), '-ProjectRoot', data.root, '-TaskDefinitionPath', taskPath, '-OutputPath', outputPath];
+  const args = ['-NoProfile', '-NonInteractive', '-File', path.join(sourceRoot, 'scripts/assemble-task.ps1'), '-ProjectRoot', data.root, '-TaskDefinitionPath', taskPath, '-OutputPath', outputPath];
   if (config) {
     writeFileSync(path.join(data.root, 'config.json'), JSON.stringify(config));
     args.push('-ConfigPath', 'config.json');
@@ -45,13 +45,61 @@ function assemble(data, extra = {}, config = null) {
 
 test('legacy bundled briefs retain their exact normalized bytes in both modes', (context) => {
   const data = fixture(context);
-  for (const [mode, expected] of Object.entries({ 'explicit-path': '80bc78e11a6484a5cb944ec1f0a7ab813cb9cd569234fe9fa6485c24f7b7fba5', 'inline-extract': '83ba98a2cbd13194ba98dd1d73fe245fa62be28f78cfd112af0b8dbf881daab9' })) {
+  for (const [mode, expected] of Object.entries({ 'explicit-path': 'f94e39a1f65fd40469f9f58d07140c15f28e63fc0a607ef0ae6981c7d978e708', 'inline-extract': '02056f0a92b62fd54d5db745e5d835b9e84ae1aa6ba0a08f8479add355f52640' })) {
     const result = assemble(data, { skills: { required: ['test-driven-development', 'test-driven-development'], conditional: ['integration-verification'] }, skillDeliveryMode: mode });
     assert.equal(result.code, 0, result.diagnostics);
     let normalized = result.brief.replaceAll('\\', '/');
     for (const root of [realpathSync.native(packageRoot), packageRoot]) normalized = normalized.replaceAll(root.replaceAll('\\', '/').replace(/\/$/, ''), '<PACKAGE>');
     for (const root of [realpathSync.native(data.root), data.root]) normalized = normalized.replaceAll(root.replaceAll('\\', '/'), '<PROJECT>');
     assert.equal(createHash('sha256').update(normalized).digest('hex'), expected, mode);
+  }
+});
+
+test('script validation follows the worker copy from stale control and delivery assemblers', (context) => {
+  const data = fixture(context);
+  const control = path.join(data.root, 'control');
+  const worker = path.join(data.root, 'worker');
+  mkdirSync(control);
+  mkdirSync(path.join(worker, 'scripts'), { recursive: true });
+  for (const directory of ['scripts', 'schemas', 'roles', 'routing', 'skills', 'references']) {
+    cpSync(path.join(packageRoot, directory), path.join(control, directory), { recursive: true });
+  }
+  writeFileSync(path.join(control, 'scripts/verify-package.ps1'), 'param([string]$PackageRoot, [switch]$MetadataOnly)\n');
+  cpSync(path.join(packageRoot, 'scripts/verify-package.ps1'), path.join(worker, 'scripts/verify-package.ps1'));
+  for (const name of ['check-requirements.ps1', 'invoke-with-requirements.ps1']) {
+    cpSync(path.join(packageRoot, 'scripts', name), path.join(worker, 'scripts', name));
+  }
+  data.task.branch.worktree = worker;
+  data.task.skills.required = ['image-generation'];
+  data.task.acceptance = [];
+  data.task.tests = ["pwsh scripts/verify-package.ps1 -Suites 'package structure,project lifecycle'"];
+  for (const [label, source] of [['control', control], ['delivery', packageRoot]]) {
+    const result = assemble(data, {}, null, source);
+    assert.equal(result.code, 0, label + ': ' + result.diagnostics);
+    assert.equal(path.resolve(JSON.parse(result.diagnostics).scriptSourceRoot), path.join(worker, 'scripts'));
+    for (const name of ['check-requirements.ps1', 'invoke-with-requirements.ps1']) {
+      assert.ok(result.brief.includes(path.join(worker, 'scripts', name)), name);
+    }
+    context.diagnostic(label + ' invocation: -Suites accepted against worker scripts');
+  }
+  writeFileSync(path.join(worker, 'scripts/verify-package.ps1'), 'param([string]$PackageRoot)\n');
+  const refused = assemble(data);
+  assert.equal(refused.code, 1, refused.diagnostics);
+  assert.match(clean(refused.diagnostics), /no parameter '-Suites'/);
+  context.diagnostic('inverse divergence: worker missing -Suites rejected');
+  writeFileSync(path.join(worker, 'scripts/worker-only.ps1'), 'param([string]$Allowed)\n');
+  const bare = assemble(data, { tests: ['worker-only.ps1 -Unknown'] });
+  assert.equal(bare.code, 1, bare.diagnostics);
+  assert.match(clean(bare.diagnostics), /no parameter '-Unknown'/);
+  const fallback = assemble(data, { tests: ['scripts/validate-run.ps1 -SkipPackageChecks'] });
+  assert.equal(fallback.code, 0, fallback.diagnostics);
+});
+
+test('assembled lifecycle contract carries identity and reporting obligations', (context) => {
+  const result = assemble(fixture(context));
+  assert.equal(result.code, 0, result.diagnostics);
+  for (const text of ['--type heartbeat', 'orca orchestration ask', '--task-id', '--dispatch-id', 'git show --stat', 'paraphrase']) {
+    assert.ok(result.brief.includes(text), text);
   }
 });
 
