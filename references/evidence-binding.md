@@ -55,7 +55,7 @@ Per-task states are only `source-registered`, `reviewed`, `integrated`. Pre-merg
 
 `-EvidencePath` and `-Run` are mutually exclusive. With neither, the validator reads `.dev-work/active-run.json`; without an active run it returns NOT_APPLICABLE. `-Phase` defaults to audit.
 
-Both modes inspect all run assignments, first validating the superseded exemption above: a non-superseded formal assignment has a nonblank `branch.mergeTarget`; it owes evidence if its status is one of `review, completed, integrating, integrated` or it declares a truthy `evidence.gitEvidencePath`. When no path is declared, the fallback is `runs/<run>/evidence/git/<taskKey>.json`. Required files must exist, pass schema/run/path/commit validation and match assignment subject kind/taskKey. During phase final, every formal assignment in those four statuses must point to integrated evidence. The script does not validate the whole assignment schema or query Runtime; keep `validate-run.ps1` as the separate structural gate.
+Both modes inspect all run assignments, first validating the superseded exemption above: a non-superseded formal assignment has a nonblank `branch.mergeTarget`; it owes evidence if its status is one of `review, completed, integrating, integrated`. When no path is declared, the fallback is `runs/<run>/evidence/git/<taskKey>.json`. Required files must exist, pass schema/run/path/commit validation and match assignment subject kind/taskKey. During phase final, every formal assignment in those four statuses must point to integrated evidence. The script does not validate the whole assignment schema or query Runtime; keep `validate-run.ps1` as the separate structural gate.
 
 | Selector | Actual scope and appropriate use |
 | --- | --- |

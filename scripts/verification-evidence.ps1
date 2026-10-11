@@ -137,6 +137,33 @@ function Test-GitEvidence {
     Write-EvidenceJson $runFinalPath (New-RunFinalDocument $fixture.RunSlug $latestMain $verificationWorktree @('evidence-contract'))
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' 'latest final covering historical headAfter'
   }
+  foreach ($checkpoint in @('audit', 'postMerge')) {
+    Invoke-Check "evidence/predicted-path-in-flight-$checkpoint" {
+      $fixture = New-EvidenceProject "predicted-path-$checkpoint"
+      $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+      $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', $fixture.TaskBranch)
+      $document = New-TaskEvidenceDocument $fixture.RunSlug $fixture.TaskBranch $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+      Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+      Add-AdmissionEvidence $document $taskCommit $fixture.BaselineCommit
+      Complete-IntegrationEvidence $document $taskCommit 'advanced-fast-forward' "git merge --no-edit $($fixture.TaskBranch)"
+      $evidencePath = Join-Path $fixture.EvidenceDirectory "$($fixture.TaskBranch).json"
+      Write-EvidenceJson $evidencePath $document
+      Write-AssignmentFixture $fixture
+      $assignmentPath = Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/assignments/in-flight-task.json"
+      $inFlight = [ordered]@{
+        taskKey = 'in-flight-task'; status = 'active'
+        branch = @{ mergeTarget = 'main' }
+        evidence = @{ gitEvidencePath = "runs/$($fixture.RunSlug)/evidence/git/in-flight-task.json" }
+      }
+      Write-EvidenceJson $assignmentPath $inFlight
+      Assert-Condition (-not (Test-Path -LiteralPath (Join-Path $fixture.EvidenceDirectory 'in-flight-task.json'))) 'In-flight evidence must be absent'
+      $selector = if ($checkpoint -ceq 'audit') { @('-Run', $fixture.RunSlug) } else { @('-EvidencePath', $evidencePath) }
+      Assert-EvidenceStatus (Invoke-EvidenceValidator ($selector + @('-Phase', $checkpoint, '-ProjectRoot', $fixture.ProjectRoot))) 'PASS' "$checkpoint with an in-flight predicted path"
+      $inFlight.status = 'review'
+      Write-EvidenceJson $assignmentPath $inFlight
+      Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'review requires the predicted evidence file' 'in-flight-task gitEvidencePath missing'
+    }
+  }
   Invoke-Check 'evidence/positive-clean-merge' {
     $fixture = New-EvidenceProject 'clean-merge'
     $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'

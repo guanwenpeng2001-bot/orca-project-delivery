@@ -18,9 +18,13 @@ function Test-EvidenceMutations {
         $pointerCheck = 'Test-SupersededAssignment $assignment $assignments $enteredStatuses'
         Assert-Condition ($original.Contains($exemption) -and $original.Contains($pointerCheck)) 'Superseded mutation targets missing'
         try {
+          $rework.supersededBy = 'missing-successor'
+          Write-EvidenceJson $assignmentPath $rework
+          $result = Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)
+          Assert-EvidenceStatus $result 'FAIL' 'superseded routing baseline' 'supersededBy'
           [IO.File]::WriteAllText($validatorPath, $original.Replace($exemption, 'if ($false)'), $utf8)
           $result = Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)
-          Assert-Rejected 'removed superseded exemption' { Assert-EvidenceStatus $result 'PASS' 'superseded positive assertion' } 'expected status PASS'
+          Assert-Rejected 'removed superseded exemption' { Assert-EvidenceStatus $result 'FAIL' 'superseded routing assertion' } 'expected status FAIL'
           [IO.File]::WriteAllText($validatorPath, $original.Replace($pointerCheck, ''), $utf8)
           $rework.Remove('supersededBy')
           Write-EvidenceJson (Join-Path $assignmentDirectory 'rework-round.json') $rework

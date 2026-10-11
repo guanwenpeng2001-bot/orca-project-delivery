@@ -319,7 +319,7 @@ function Test-Assignments($Entries, [string]$CoverageTaskKey) {
     }
     $entered = $assignment.status -in $enteredStatuses
     $path = $assignment.evidence.gitEvidencePath
-    if ($formal -and ($entered -or $path)) {
+    if ($formal -and $entered) {
       if (-not $path) { $path = "runs/$script:runName/evidence/git/$($assignment.taskKey).json" }
       $resolved = Resolve-EvidencePath $path $script:devWork
       Assert-Evidence (Test-Path -LiteralPath $resolved -PathType Leaf) "Assignment $($assignment.taskKey) gitEvidencePath missing: $resolved; rebuild evidence or mark UNVERIFIABLE"
