@@ -72,7 +72,7 @@ try {
   if (-not $MetadataOnly -and ($runningSuites -ccontains 'git evidence')) {
     Invoke-Suite 'git evidence' { Test-GitEvidence }
   }
-  if (-not $MetadataOnly -and $SkipMutationTests) {
+  if (Test-MutationSuiteSkipNotice -SuiteSelection $suiteSelection -MetadataOnly:$MetadataOnly -SkipMutationTests:$SkipMutationTests) {
     Write-Host 'SKIP evidence source mutations: -SkipMutationTests was explicitly requested'
   } elseif (-not $MetadataOnly -and ($runningSuites -ccontains 'evidence source mutations')) {
     Invoke-Suite 'evidence source mutations' { Test-EvidenceMutations }

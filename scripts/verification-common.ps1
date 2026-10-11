@@ -139,6 +139,11 @@ function Invoke-Suite([string]$Name, [scriptblock]$Suite) {
   finally { Write-Host ("SUITE {0} duration={1:N2}s" -f $Name, $timer.Elapsed.TotalSeconds) }
 }
 
+function Test-MutationSuiteSkipNotice {
+  param($SuiteSelection, [switch]$MetadataOnly, [switch]$SkipMutationTests)
+  return (-not $MetadataOnly) -and $SkipMutationTests -and ((-not $SuiteSelection.Explicit) -or ($SuiteSelection.Requested -ccontains 'evidence source mutations'))
+}
+
 function Resolve-SuiteSelection {
   param([string[]]$Requested = @(), [switch]$MetadataOnly, [switch]$SkipMutationTests)
   $canonicalSuites = @('package structure', 'package runtime', 'package contracts', 'project lifecycle', 'git evidence', 'evidence source mutations')
