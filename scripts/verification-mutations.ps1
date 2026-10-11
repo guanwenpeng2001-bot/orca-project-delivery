@@ -15,7 +15,7 @@ function Test-EvidenceMutations {
         $validatorPath = Join-Path $stagedPackage 'scripts/validate-git-evidence.ps1'
         $original = [IO.File]::ReadAllText($validatorPath, $utf8)
         $exemption = "if (`$formal -and `$assignment.status -ceq 'superseded')"
-        $pointerCheck = 'Test-SupersededAssignment $assignment $assignments $enteredStatuses'
+        $pointerCheck = 'Test-SupersededAssignment $assignment $assignments $enteredStatuses $script:Phase'
         Assert-Condition ($original.Contains($exemption) -and $original.Contains($pointerCheck)) 'Superseded mutation targets missing'
         try {
           $rework.supersededBy = 'missing-successor'

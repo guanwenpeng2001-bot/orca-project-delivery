@@ -184,6 +184,9 @@ if (-not (Test-Path -LiteralPath $BriefPath -PathType Leaf)) {
   throw "Worker brief not found: $BriefPath. Assemble it with scripts/assemble-task.ps1 before dispatching."
 }
 
+$recordedBriefPath = (Resolve-Path -LiteralPath $BriefPath).Path
+$briefSha256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([IO.File]::ReadAllBytes($recordedBriefPath))).ToLowerInvariant()
+
 # ---------------------------------------------------------- dispatch receipt
 $receipt = Read-JsonDocument -Path $ReceiptPath -Label 'dispatch receipt'
 if ($receipt.ok -ne $true) {
@@ -229,9 +232,12 @@ if ($hasProfiles) {
     $verificationNote = "Worker-start receipt $dispatchId launch.effective differs from launch.requested: $($differences -join '; ')."
     $fallbackReason = $verificationNote
     $warnings += "Runtime launch differs from the request: $($differences -join '; ')."
-  } else {
+  } elseif ($null -ne $effectiveProfile['model'] -or $null -ne $effectiveProfile['effort']) {
     $verificationStatus = 'verified'
     $verificationNote = "Worker-start receipt $dispatchId launch.requested matches launch.effective."
+  } else {
+    $verificationNote = "Dispatch receipt $dispatchId profiles present but carry no usable route values."
+    $warnings += "$verificationNote Runtime verification recorded as 'unverified'."
   }
 } else {
   $warnings += "Dispatch receipt $dispatchId has no launch.requested/effective block; runtime verification recorded as 'unverified'."
@@ -349,6 +355,8 @@ $assignment = [ordered]@{
     worktree = $receiptWorktree
   }
   artifacts = [ordered]@{
+    briefPath = $recordedBriefPath
+    briefSha256 = $briefSha256
     reportPath = "$($definition.artifacts.reportPath)"
     evidencePath = "$($definition.artifacts.evidencePath)"
   }
@@ -443,6 +451,8 @@ $output = [ordered]@{
   worktree = $receiptWorktree
   runtimeVerification = $verificationStatus
   assignmentPath = $assignmentPath
+  briefPath = $recordedBriefPath
+  briefSha256 = $briefSha256
   postValidation = $postValidation
   warnings = @($warnings)
 }

@@ -19,9 +19,7 @@
     },
     "verification": {
       "status": "mismatch",
-      "evidence": [
-        "首次 worker-start 回执 launch.effective.model=haiku、无 effort 字段；按 §4.4 回退规则改用别名且不指定 effort"
-      ]
+      "evidence": "首次 worker-start 回执 launch.effective.model=haiku、无 effort 字段；按 §4.4 回退规则改用别名且不指定 effort"
     }
   },
   "branch": {
@@ -31,6 +29,8 @@
     "worktree": "<absolute-path>"
   },
   "artifacts": {
+    "briefPath": "<absolute-assembled-brief-path>",
+    "briefSha256": "<lowercase-sha256-of-brief-bytes>",
     "reportPath": "<absolute-path>",
     "evidencePath": "<absolute-path>"
   },

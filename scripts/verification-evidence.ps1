@@ -88,6 +88,32 @@ function Test-GitEvidence {
       }
     }
   }
+  Invoke-Check 'evidence/superseded-reviewed-preMerge' {
+    $fixture = New-EvidenceProject 'superseded-reviewed-preMerge'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $document = New-TaskEvidenceDocument $fixture.RunSlug $fixture.TaskBranch $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+    Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+    Add-AdmissionEvidence $document $taskCommit $fixture.BaselineCommit
+    $evidencePath = Join-Path $fixture.EvidenceDirectory "$($fixture.TaskBranch).json"
+    Write-EvidenceJson $evidencePath $document
+    Write-AssignmentFixture $fixture
+    $assignmentDirectory = Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/assignments"
+    $rework = [IO.File]::ReadAllText((Join-Path $assignmentDirectory "$($fixture.TaskBranch).json")) | ConvertFrom-Json -AsHashtable
+    $rework.taskKey = 'rework-round'
+    $rework.status = 'superseded'
+    $rework.supersededBy = $fixture.TaskBranch
+    $rework.Remove('evidence')
+    Write-EvidenceJson (Join-Path $assignmentDirectory 'rework-round.json') $rework
+    foreach ($selector in @('task', 'run')) {
+      $arguments = if ($selector -ceq 'task') { @('-EvidencePath', $evidencePath) } else { @('-Run', $fixture.RunSlug) }
+      foreach ($phase in @('sourceRegistered', 'review', 'preMerge', 'audit', 'final')) {
+        $expected = if ($phase -cin @('audit', 'final')) { 'FAIL' } else { 'PASS' }
+        $result = Invoke-EvidenceValidator ($arguments + @('-Phase', $phase, '-ProjectRoot', $fixture.ProjectRoot))
+        Assert-EvidenceStatus $result $expected "reviewed successor $selector $phase" 'requires integrated successor evidence'
+        Write-Host "FOLD $selector $phase $($result.Stdout.Trim())"
+      }
+    }
+  }
   Invoke-Check 'evidence/positive-full-chain' {
     $fixture = New-EvidenceProject 'chain'
     $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'

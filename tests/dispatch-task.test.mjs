@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -129,6 +130,50 @@ function runDispatch(project, paths, args = ['-SkipPostValidation']) {
   });
   assert.ifError(result.error);
   return result;
+}
+
+test('binds the recorded brief bytes and refreshes the digest on redispatch', (t) => {
+  const { project, runDir } = createProject(t);
+  const paths = writeInputs(t, project);
+  let previousHash;
+  for (const brief of [Buffer.from('﻿# Brief 中文\r\n'), Buffer.from('# Edited brief\n')]) {
+    writeFileSync(paths.briefPath, brief);
+    const result = runDispatch(project, paths);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const output = parseOutput(result);
+    const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
+    const hash = createHash('sha256').update(readFileSync(paths.briefPath)).digest('hex');
+    assert.equal(assignment.artifacts.briefPath, paths.briefPath);
+    assert.equal(assignment.artifacts.briefSha256, hash);
+    assert.equal(output.briefPath, paths.briefPath);
+    assert.equal(output.briefSha256, hash);
+    assert.notEqual(hash, previousHash);
+    previousHash = hash;
+  }
+});
+
+for (const [name, launch, status, note] of [
+  ['explicit-null', { requested: null, effective: null }, 'unverified', /no usable route values/],
+  ['object-of-nulls', { requested: { agent: null, model: null, effort: null }, effective: { agent: null, model: null, effort: null } }, 'unverified', /no usable route values/],
+  ['missing', undefined, 'unverified', /no launch.requested\/effective block/],
+  ['missing fields', { requested: {}, effective: {} }, 'unverified', /no usable route values/],
+  ['equal', { requested: { agent: 'claude', model: 'sonnet', effort: 'high' }, effective: { agent: 'claude', model: 'sonnet', effort: 'high' } }, 'verified', /matches/],
+  ['mismatch', { requested: { agent: 'claude', model: 'sonnet', effort: 'high' }, effective: { agent: 'claude', model: 'haiku', effort: null } }, 'mismatch', /differs/],
+  ['alias-fallback', { requested: { agent: 'claude', model: 'haiku', effort: null }, effective: { agent: 'claude', model: 'haiku', effort: null } }, 'verified', /matches/],
+]) {
+  test(`routing comparator ${name} records ${status}`, (t) => {
+    const { project, runDir } = createProject(t);
+    const paths = writeInputs(t, project);
+    const receipt = readJson(paths.receiptPath);
+    receipt.result.launch = launch;
+    writeJson(paths.receiptPath, receipt);
+    const result = runDispatch(project, paths);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(parseOutput(result).runtimeVerification, status);
+    const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
+    assert.equal(assignment.runtime.verification.status, status);
+    assert.match(assignment.runtime.verification.evidence, note);
+  });
 }
 
 test('records a successful dispatch receipt as the run ledger', (t) => {

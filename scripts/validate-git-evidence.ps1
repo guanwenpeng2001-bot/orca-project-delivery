@@ -274,7 +274,7 @@ function Get-RunEvidence {
   }
 }
 
-function Test-SupersededAssignment($Assignment, $Assignments, $EnteredStatuses) {
+function Test-SupersededAssignment($Assignment, $Assignments, $EnteredStatuses, [string]$RequestedPhase) {
   $label = "Assignment $($Assignment.taskKey) supersededBy"
   $key = $Assignment.supersededBy
   if ($key -isnot [string] -or [string]::IsNullOrWhiteSpace($key) -or $key -ceq $Assignment.taskKey) {
@@ -296,7 +296,12 @@ function Test-SupersededAssignment($Assignment, $Assignments, $EnteredStatuses) 
   if (-not $path) { $path = "runs/$script:runName/evidence/git/$key.json" }
   $evidence = Get-Evidence (Resolve-EvidencePath $path $script:devWork)
   Assert-Evidence ($evidence.subject.kind -ceq 'task' -and $evidence.subject.taskKey -ceq $key) "$label evidence task identity mismatch"
-  Assert-Evidence ($evidence.state -ceq 'integrated') "$label requires integrated successor evidence"
+  if ($RequestedPhase -cin @('sourceRegistered', 'review', 'preMerge')) {
+    Assert-Evidence ($evidence.state -cin @('reviewed', 'integrated')) "$label requires reviewed or integrated successor evidence"
+    if ($evidence.state -ceq 'reviewed') { Test-TaskEvidence $evidence 'review' }
+  } else {
+    Assert-Evidence ($evidence.state -ceq 'integrated') "$label requires integrated successor evidence"
+  }
   if ($evidence.state -ceq 'integrated') {
     Assert-Evidence ($evidence.integration.headAfter.branch -ceq $successor.branch.mergeTarget) "$label integrated delivery branch mismatch"
     Test-TaskEvidence $evidence 'audit'
@@ -314,7 +319,7 @@ function Test-Assignments($Entries, [string]$CoverageTaskKey) {
       Assert-Evidence $false "Assignment $($assignment.taskKey) status '$($assignment.status)' is outside the assignment lifecycle; use one of: $($legalStatuses -join ', ')"
     }
     if ($formal -and $assignment.status -ceq 'superseded') {
-      Test-SupersededAssignment $assignment $assignments $enteredStatuses
+      Test-SupersededAssignment $assignment $assignments $enteredStatuses $script:Phase
       continue
     }
     $entered = $assignment.status -in $enteredStatuses
