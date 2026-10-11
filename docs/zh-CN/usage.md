@@ -48,19 +48,21 @@ pwsh -NoProfile -File "$package/scripts/validate-run.ps1" -ProjectRoot '<project
 标准运行的阶段顺序：
 
 ```text
-intake -> reconnaissance -> plan -> task graph -> dispatch
+intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> task graph -> dispatch
        -> wait & process -> review -> integration -> final verification -> close
 ```
 
 ### 1. 受理（Intake）
 
-在运行状态中记录：目标、规模、交付分支、任何用户锁定的 Agent / 模型选择，以及副作用边界。用 `routing/workflow-selection.json` 选择工作流（`feature-development`、`bug-fix`、`refactor` 或 `audit`），以及深度 — light、standard 或 high-risk — 若缩小规模，记下原因。
+在运行状态中记录：目标、规模、交付分支、任何用户锁定的 Agent / 模型选择，以及副作用边界。用 `routing/workflow-selection.json` 选择工作流（`feature-development`、`bug-fix`、`refactor` 或 `audit`），以及深度 — light、standard 或 high-risk — 若缩小规模，记下原因。侦察结束后、规划开始前，将设计判断（`required` 或 `skipped`）及其原因和证据记录在运行状态的 `stageDecisions.design` 中。
 
 ### 2. 侦察
 
 不要启动固定名单的侦察者。问：*哪些未知事实会实质改变方案、范围、风险或验收决定？* 每个独立信息域创建一个隔离的 Scout 任务，并行进行 — 当前代码与调用路径、既有过程记录、官方文档、日志与失败样本、配置与部署行为、用户反馈。当剩余未知不能改变做法时停止，或把它们明确记为不可验证。
 
 ### 3. 方案
+
+若执行了设计阶段，其产出就是规划的输入。
 
 使用方案规划者角色。当备选方案或风险实质存在时，派发上下文隔离的独立规划任务，并由方案裁决者决定。真正的产品歧义先由需求分析师解决。
 
