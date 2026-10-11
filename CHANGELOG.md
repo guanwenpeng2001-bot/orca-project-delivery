@@ -4,6 +4,19 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 2.9.0 — 2026-10-11
+
+- Conditional-design and contract-hardening release; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together; historical release entries remain unchanged.
+- Added `routing/design-triggers.json` for system boundaries, API contracts, data models and UI interactions, mapped to existing deliverable routes. Package structure verification checks trigger shape and referenced keys; contract mutations reject missing triggers and unknown deliverables. Trigger evaluation remains coordinator judgment, not a new runtime engine.
+- Standard and high-risk delivery now place conditional design before planning. The entry point, feature workflow and bilingual operator guides require a `required` or `skipped` verdict with reason and evidence; design outputs feed planning, and boundary/interface/data-model discoveries reopen design before revising the plan. The light chain stays unchanged; `architecture` is removed as a workflow stage.
+- Added optional `stageDecisions.design` recording with verdict, reason, evidence, timestamp and actor, plus empty initialization and a per-run `designs/` directory. Historical records without the field remain valid. A missing verdict after reconnaissance emits a warning rather than invalidating the run.
+- Added `interactive-prototype` routing to the existing `ui-designer` role. Off-default initial dispatches must record the routing reason in `fallbackReason` and coordinator judgment in `decisions.md`; model chains, default indices and floors are unchanged.
+- Run creation now initializes `dispatch-receipts/`, `dispatch-waves/` and `evidence/git/`. Existing parallel-dispatch wave records receive schema validation, while absent or empty wave directories remain valid. Wave records document dispatch activity; Orca Runtime and receipts retain lifecycle authority.
+- Dispatch assignments and output now record the assembled brief's absolute path and raw-byte SHA-256. This proves which bytes were recorded at dispatch, not that the worker received or read them. The release adds recording and a stated proof boundary, not gate enforcement of the digest. Matching launch profiles with no usable model/effort values remain unverified.
+- Task assembly resolves command signatures and requirements helpers from the worker's script copy when present, with per-script fallback to the invoked package. The worker contract now includes complete lifecycle payloads; reports derive changed files from the committed Git diff and quote archived errors verbatim with their log path, preserving language and encoding or explicitly labeling paraphrases.
+- The shared child runner inherits a positive `SuiteTimeoutSeconds` when no per-call timeout is supplied; explicit per-call values win and standalone consumers retain the 60-second fallback. This is a per-child limit, not a whole-suite deadline.
+- Superseded assignments may use a reviewed successor at source-registration, review and pre-merge checkpoints. Post-merge, audit and final checks still require integrated successor evidence; superseded, parent-binding and scope-parity mutation checks remain active.
+
 ## 2.8.0 — 2026-10-11
 
 - Coordination and evidence-hardening release; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together; historical release entries remain unchanged.

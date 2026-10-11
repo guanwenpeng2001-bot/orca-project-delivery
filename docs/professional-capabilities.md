@@ -9,8 +9,8 @@ carries **46 professional Skills**, **16 Roles**, and **4 workflows**. This
 guide explains what each new or deepened capability is for, what it does not
 do, and how far its claims have actually been checked.
 
-This guide describes the 2.8.0 package: 46 Skills, 16 Roles, and 4
-workflows. Install the complete matching release. Confirm `VERSION` is `2.8.0`,
+This guide describes the 2.9.0 package: 46 Skills, 16 Roles, and 4
+workflows. Install the complete matching release. Confirm `VERSION` is `2.9.0`,
 `routing/skill-catalog.json` contains 46 Skills, `roles/catalog.json`
 contains 16 Roles, `workflows/` holds 4 definitions, and
 `PACKAGE-MANIFEST.json` agrees before running the
