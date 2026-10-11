@@ -65,8 +65,8 @@ Use `scripts/verify-package.ps1` for offline package acceptance and `scripts/rel
 
 Select `feature-development`, `bug-fix`, `refactor`, or `audit` using `routing/workflow-selection.json` and the corresponding file in `workflows/`.
 - Lightweight: intake → implementation → independent review → final verification.
-- Standard: intake → reconnaissance → plan → task graph → implementation → review → final verification.
-- High risk: parallel reconnaissance/audit → independent plans → adjudication → architecture → staged implementation and review loops → final verification.
+- Standard: intake → reconnaissance → design (conditional; verdict recorded either way) → plan → task graph → implementation → review → final verification.
+- High risk: parallel reconnaissance/audit → design (conditional; verdict recorded either way) → independent plans → adjudication → staged implementation and review loops → final verification.
 Record scale in run-state/decisions; upgrade as evidence warrants, and record reasons for reducing scale. Workflows adapt to the problem.
 
 ## Dynamic reconnaissance
@@ -134,17 +134,18 @@ Use `taskKind` (`source` or `read-only`, default `source`), `briefProfile` (`sta
 
 1. Intake: record objective, scale, delivery branch, user-pinned choices and side-effect boundaries in run-state.
 2. Reconnaissance: dispatch independent information domains as needed; stop when unknowns cease to affect the solution.
-3. Plan: use solution-planner, multiple plans plus plan-adjudicator when needed; resolve real product ambiguity with requirements-analyst first.
-4. Task graph: write task-definition and assemble input; record machine-readable assignments, true dependencies and parallel waves.
-5. Dispatch all independent ready Tasks before waiting, and keep ready work parallel; ready means its real dependencies settled successfully through their existing gates — a source dependency counts only after its own review and integration, never on `worker_done` alone — write scope disjoint from in-flight Tasks, and a usable baseline and route. Verify the first `launch.effective` receipt and fill assignment runtime evidence, recording `mode`/`surface`; name background (`structured`) workers as such in user-facing reports, and treat a control-worktree placement as invalid — re-dispatch with an explicit `--worktree`.
-6. Wait using `check --wait`; process every question/escalation, confirm worker_done belongs to the active Dispatch, decide the terminal's next owner, then acknowledge. After each confirmed settle, immediately re-evaluate readiness and dispatch newly ready Tasks (rolling dispatch) without waiting for unrelated in-flight Tasks.
-7. After three consecutive empty waits, enumerate using `worker-list` and act on `projection.nextAction`; use bounded `worker-read` inspection where needed.
-8. After matching `worker_done` to the active Task/Dispatch, register source evidence and pass `sourceRegistered`; for a source Task, immediately dispatch review under **Independent review** and **Current verification**, alongside other implementation.
-9. Record reviews and validate `review`; on CHANGES_REQUIRED dispatch fixes to the original implementer session and re-review to the original reviewer session under **Review and integration**. Validation failure is UNVERIFIABLE, never approval.
-10. After approval, pass `preMerge`, integrate serially, run the full verification suite at the integrated HEAD and pass `postMerge` before satisfying source dependencies. Apply **Artifact exclusion**; base later Tasks on updated delivery, then reclaim eligible worktrees.
-11. At the **Current verification** barrier, dispatch release-verifier for full verification on latest delivery; write the unique run-final and pass run-scoped `final`. Write reports, summarize decisions, settle workers and release the coordinator.
+3. Design: after reconnaissance closes, evaluate `routing/design-triggers.json`; record `required`/`skipped`, reason and evidence in run-state `stageDecisions`. If required, dispatch read-only design Tasks by deliverable key via `routing/role-selection.json`; if skipped, proceed to planning.
+4. Plan: use solution-planner, multiple plans plus plan-adjudicator when needed; resolve real product ambiguity with requirements-analyst first.
+5. Task graph: write task-definition and assemble input; record machine-readable assignments, true dependencies and parallel waves.
+6. Dispatch all independent ready Tasks before waiting, and keep ready work parallel; ready means its real dependencies settled successfully through their existing gates — a source dependency counts only after its own review and integration, never on `worker_done` alone — write scope disjoint from in-flight Tasks, and a usable baseline and route. Verify the first `launch.effective` receipt and fill assignment runtime evidence, recording `mode`/`surface`; name background (`structured`) workers as such in user-facing reports, and treat a control-worktree placement as invalid — re-dispatch with an explicit `--worktree`.
+7. Wait using `check --wait`; process every question/escalation, confirm worker_done belongs to the active Dispatch, decide the terminal's next owner, then acknowledge. After each confirmed settle, immediately re-evaluate readiness and dispatch newly ready Tasks (rolling dispatch) without waiting for unrelated in-flight Tasks.
+8. After three consecutive empty waits, enumerate using `worker-list` and act on `projection.nextAction`; use bounded `worker-read` inspection where needed.
+9. After matching `worker_done` to the active Task/Dispatch, register source evidence and pass `sourceRegistered`; for a source Task, immediately dispatch review under **Independent review** and **Current verification**, alongside other implementation.
+10. Record reviews and validate `review`; on CHANGES_REQUIRED dispatch fixes to the original implementer session and re-review to the original reviewer session under **Review and integration**. Validation failure is UNVERIFIABLE, never approval.
+11. After approval, pass `preMerge`, integrate serially, run the full verification suite at the integrated HEAD and pass `postMerge` before satisfying source dependencies. Apply **Artifact exclusion**; base later Tasks on updated delivery, then reclaim eligible worktrees.
+12. At the **Current verification** barrier, dispatch release-verifier for full verification on latest delivery; write the unique run-final and pass run-scoped `final`. Write reports, summarize decisions, settle workers and release the coordinator.
 
-For steps 8–11, load [Phase obligations](references/evidence-binding.md#phase-obligations) for fields, states and checkpoint semantics, [Storage and ownership](references/evidence-binding.md#storage-and-ownership) for paths/selectors, and [Record fields](references/evidence-binding.md#record-fields) for worker_done ID formats and authenticity limits. Invoke `scripts/validate-git-evidence.ps1` after recording each observation; it is read-only.
+For steps 9–12, load [Phase obligations](references/evidence-binding.md#phase-obligations) for fields, states and checkpoint semantics, [Storage and ownership](references/evidence-binding.md#storage-and-ownership) for paths/selectors, and [Record fields](references/evidence-binding.md#record-fields) for worker_done ID formats and authenticity limits. Invoke `scripts/validate-git-evidence.ps1` after recording each observation; it is read-only.
 
 A nonzero start receipt alone does not prove a failed attempt: inspect `failedStage` and `residualResources` using `references/failure-taxonomy.md`.
 `outcome_unknown`, `turn_start_unobserved`, timeouts and unverifiable liveness do not authorize stop, abandon, retry or release.
