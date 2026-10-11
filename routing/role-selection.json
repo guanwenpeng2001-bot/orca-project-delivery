@@ -12,6 +12,7 @@
     "product-scope": "requirements-analyst",
     "user-flow-and-interaction": "requirements-analyst",
     "visual-design-spec": "ui-designer",
+    "interactive-prototype": "ui-designer",
     "design-review": "ui-designer",
     "structured-document": "document-specialist",
     "testable-requirements": "requirements-analyst",
