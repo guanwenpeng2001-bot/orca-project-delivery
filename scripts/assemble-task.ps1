@@ -32,11 +32,19 @@ Assert-RequirementsSchema $task 'task-definition' 'Task definition (including sk
 # every scripts/<name>.ps1 mention in acceptance and tests against the real param blocks;
 # mentions of paths outside the package and of variables are left alone. A mention that cannot
 # be parsed as a command is checked with a per-line fallback instead of being trusted.
+function Resolve-PackageScriptPath {
+  param([string]$Name)
+  if ($task.branch.worktree -and (Test-Path -LiteralPath $task.branch.worktree -PathType Container)) {
+    $candidate = Join-Path $task.branch.worktree "scripts/$Name"
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) { return (Resolve-Path -LiteralPath $candidate).Path }
+  }
+  return Join-Path $PSScriptRoot $Name
+}
 $scriptInfoCache = @{}
 function Get-PackageScriptInfo {
   param([string]$Name)
   if ($scriptInfoCache.ContainsKey($Name)) { return $scriptInfoCache[$Name] }
-  $path = Join-Path $PSScriptRoot $Name
+  $path = Resolve-PackageScriptPath $Name
   $info = [pscustomobject]@{
     Path = $path
     Exists = (Test-Path -LiteralPath $path -PathType Leaf)
@@ -82,7 +90,7 @@ function Test-BriefCommand {
         $match = [regex]::Match($text, '^scripts[\\/]([A-Za-z0-9._-]+\.ps1)$')
         if ($match.Success) {
           $name = $match.Groups[1].Value
-        } elseif (($text -match '^[A-Za-z0-9._-]+\.ps1$') -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot $text) -PathType Leaf)) {
+        } elseif (($text -match '^[A-Za-z0-9._-]+\.ps1$') -and (Test-Path -LiteralPath (Resolve-PackageScriptPath $text) -PathType Leaf)) {
           $name = $text
         }
         if (-not $name) { continue }
@@ -259,8 +267,8 @@ if ($requirementLines.Count) {
 
 $($requirementLines -join "`n")
 
-On the execution host, run ``$(Join-Path $PSScriptRoot 'check-requirements.ps1') -ProjectRoot <explicit-project-root> -Role $($task.role) -Skills <selected-skill-ids>``. Add ``-ConfigPath <project-relative-config.json>`` only for an explicitly chosen non-secret config file.
-File configuration is not current-process availability. Use ``$(Join-Path $PSScriptRoot 'invoke-with-requirements.ps1')`` with the same selectors plus ``-Executable <authorized-executable> -Arguments <argument-array>`` for an explicitly authorized local child command. Process environment takes precedence; only declared file variables are added to the child. No parent environment mutation or automatic coordinator configuration copying occurs.
+On the execution host, run ``$(Resolve-PackageScriptPath 'check-requirements.ps1') -ProjectRoot <explicit-project-root> -Role $($task.role) -Skills <selected-skill-ids>``. Add ``-ConfigPath <project-relative-config.json>`` only for an explicitly chosen non-secret config file.
+File configuration is not current-process availability. Use ``$(Resolve-PackageScriptPath 'invoke-with-requirements.ps1')`` with the same selectors plus ``-Executable <authorized-executable> -Arguments <argument-array>`` for an explicitly authorized local child command. Process environment takes precedence; only declared file variables are added to the child. No parent environment mutation or automatic coordinator configuration copying occurs.
 Escalate missing dependencies by name; never print values. These helpers make no API calls and do not install tools. Child programs control their own output and may disclose values.
 "@
 }
@@ -509,6 +517,7 @@ $result = [ordered]@{
   role = $task.role
   skills = $effectiveSkills
   agentsFiles = @($agentsFiles)
+  scriptSourceRoot = Split-Path -Parent (Resolve-PackageScriptPath 'verify-package.ps1')
 }
 if ($provenance.Count) { $result.skillProvenance = $provenance }
 if ($binding) { $result.roleBinding = $binding }

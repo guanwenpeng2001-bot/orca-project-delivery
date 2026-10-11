@@ -97,11 +97,16 @@ Run:
 <commands or manual checks>
 ```
 
-Record exact commands, relevant output, environment, skipped checks, and anomalies. Standard and read-only briefs add a `Minimum relevant suites` clause (task-named suites plus tests the change touches; runnable as `scripts/verify-package.ps1 -Suites '<name>'`; full gates stay at post-merge and final). Review briefs add `Re-verification scaled by the delta` and, when `reviewInput.deltaPaths` is present, list those paths above the clause.
+Record exact commands, relevant output, environment, skipped checks, and anomalies. Error text quoted in a report must be verbatim from the archived log, preserving the original language and encoding; ANSI styling may be omitted only with a note. Label a restatement as paraphrase and never place it in quotation marks. Every quoted error names its log path.
+
+The changed-file list of record is the task branch's committed diff (`git show --stat` / `git diff --stat <base>..<work>`); `--files-modified` is a hint that must agree with it. The coordinator reconciles both at source-evidence registration and records disagreements in `decisions.md`.
+
+Standard and read-only briefs add a `Minimum relevant suites` clause (task-named suites plus tests the change touches; runnable as `scripts/verify-package.ps1 -Suites '<name>'`; full gates stay at post-merge and final). Review briefs add `Re-verification scaled by the delta` and, when `reviewInput.deltaPaths` is present, list those paths above the clause.
 
 ## Orca Worker Contract
 
 - Use lifecycle identity exactly from the injected Orca preamble.
+- Use the lifecycle payloads in `references/worker-contract.md`; the injected preamble, installed `orchestration` Skill, and command `--help` are authoritative for exact syntax.
 - Execute only this Task.
 - Check coordinator messages at natural checkpoints and before completion.
 - Ask only when the decision cannot be made under project policy.
