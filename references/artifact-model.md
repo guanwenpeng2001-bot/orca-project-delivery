@@ -25,6 +25,7 @@ Only the coordinator control worktree contains `.dev-work/`.
     ├── handoffs/
     ├── reconnaissance/
     ├── audits/
+    ├── designs/
     ├── plans/
     ├── task-briefs/
     ├── worker-reports/

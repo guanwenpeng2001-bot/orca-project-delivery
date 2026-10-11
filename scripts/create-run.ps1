@@ -117,6 +117,7 @@ try {
     "handoffs",
     "reconnaissance",
     "audits",
+    "designs",
     "plans",
     "task-briefs",
     "worker-reports",
@@ -165,6 +166,7 @@ try {
     coordinatorWorktree = $gitRoot
     orcaRunId = $(if ($OrcaRunId) { $OrcaRunId } else { $null })
     completedStages = @()
+    stageDecisions = @{}
     pendingUserDecisions = @()
     createdAt = $now
     updatedAt = $now
