@@ -432,6 +432,7 @@ if ($isReview) {
     ''
     '- Suites this Task names, plus the tests your change touches, are this Task''s verification duty; run them before reporting.'
     '- Run named suites as `scripts/verify-package.ps1 -Suites ''<name>''` (one of: package structure, package runtime, package contracts, project lifecycle, git evidence, evidence source mutations). Several suites go in one quoted value, comma-separated, for example `scripts/verify-package.ps1 -Suites ''package contracts,git evidence''`; passing them as separate arguments fails. Prerequisites are added automatically; the run prints SUITES requested and SUITES running lines.'
+    '- A change that can move assembled brief bytes must include `tests/task-brief-profiles.test.mjs` in its write set and required tests.'
     '- Full package gates run at post-merge and final verification, not here.'
     '- Use -MetadataOnly for metadata or boundary probes; in full mode run at most one representative point.'
   )

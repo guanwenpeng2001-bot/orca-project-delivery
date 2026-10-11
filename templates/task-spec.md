@@ -60,6 +60,8 @@ Read before starting:
 
 - `<path or subsystem>`
 
+The assembled-brief pin inputs are `scripts/assemble-task.ps1`, `templates/task-definition.json`, `references/worker-contract.md`, `roles/**` (the resolved role file), the pin fixture's `AGENTS.md`, and bundled `skills/**/SKILL.md` under `inline-extract` mode. Any Task whose write set intersects these inputs must include `tests/task-brief-profiles.test.mjs` in its write set and required tests; it owns any resulting re-pin. `templates/task-spec.md` is not a pin input.
+
 ## Forbidden Scope
 
 - `<path, operation, external side effect>`

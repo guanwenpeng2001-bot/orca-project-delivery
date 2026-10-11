@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -41,6 +42,18 @@ function assemble(data, extra = {}, config = null) {
   assert.ifError(result.error);
   return { code: result.status, diagnostics: result.stdout + result.stderr, brief: result.status === 0 ? readFileSync(outputPath, 'utf8') : '' };
 }
+
+test('legacy bundled briefs retain their exact normalized bytes in both modes', (context) => {
+  const data = fixture(context);
+  for (const [mode, expected] of Object.entries({ 'explicit-path': '80bc78e11a6484a5cb944ec1f0a7ab813cb9cd569234fe9fa6485c24f7b7fba5', 'inline-extract': '83ba98a2cbd13194ba98dd1d73fe245fa62be28f78cfd112af0b8dbf881daab9' })) {
+    const result = assemble(data, { skills: { required: ['test-driven-development', 'test-driven-development'], conditional: ['integration-verification'] }, skillDeliveryMode: mode });
+    assert.equal(result.code, 0, result.diagnostics);
+    let normalized = result.brief.replaceAll('\\', '/');
+    for (const root of [realpathSync.native(packageRoot), packageRoot]) normalized = normalized.replaceAll(root.replaceAll('\\', '/').replace(/\/$/, ''), '<PACKAGE>');
+    for (const root of [realpathSync.native(data.root), data.root]) normalized = normalized.replaceAll(root.replaceAll('\\', '/'), '<PROJECT>');
+    assert.equal(createHash('sha256').update(normalized).digest('hex'), expected, mode);
+  }
+});
 
 test('AGENTS selection accepts numbers and titles, preserves descendants and source order', (context) => {
   const data = fixture(context);
@@ -184,6 +197,7 @@ test('verification clauses scale with the brief profile and print review deltas'
   const standard = assemble(data);
   assert.equal(standard.code, 0, standard.diagnostics);
   assert.match(standard.brief, /### Minimum relevant suites/);
+  assert.ok(standard.brief.includes('A change that can move assembled brief bytes must include `tests/task-brief-profiles.test.mjs` in its write set and required tests.'));
   assert.doesNotMatch(standard.brief, /### Re-verification scaled by the delta/);
   assert.match(standard.brief, /scripts\/verify-package\.ps1 -Suites/);
   assert.match(standard.brief, /-Suites 'package contracts,git evidence'/);

@@ -280,18 +280,6 @@ test('config v1 remains env-only and explicit process values keep precedence', (
   assert.equal(result.status, 0, result.stdout + result.stderr);
 });
 
-test('legacy bundled briefs retain their exact normalized bytes in both modes', (testContext) => {
-  const fixtureData = fixture(testContext);
-  for (const [mode, expected] of Object.entries({ 'explicit-path': '103d5e33517f56cc04d7542b5f7245f66267617f7d1e572203b51a8b2f266c84', 'inline-extract': 'dc0a717a015b67c038b8f5642f6241078e8e857d3e4d390eb31a33253201831a' })) {
-    const result = assemble(fixtureData, { required: ['test-driven-development', 'test-driven-development'], conditional: ['integration-verification'] }, mode, false);
-    assert.equal(result.code, 0, result.text);
-    let normalized = result.brief.replaceAll('\\', '/');
-    for (const root of [realpathSync.native(packageRoot), packageRoot]) normalized = normalized.replaceAll(root.replaceAll('\\', '/').replace(/\/$/, ''), '<PACKAGE>');
-    for (const root of [realpathSync.native(fixtureData.project), fixtureData.project]) normalized = normalized.replaceAll(root.replaceAll('\\', '/'), '<PROJECT>');
-    assert.equal(createHash('sha256').update(normalized).digest('hex'), expected, mode);
-  }
-});
-
 test('installed alias participates in preflight without rewriting its origin', (testContext) => {
   const fixtureData = fixture(testContext);
   const before = hash(fixtureData.entry);
