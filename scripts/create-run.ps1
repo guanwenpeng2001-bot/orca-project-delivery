@@ -112,6 +112,8 @@ try {
   $subdirs = @(
     "assignments",
     "attempts",
+    "dispatch-receipts",
+    "dispatch-waves",
     "handoffs",
     "reconnaissance",
     "audits",
@@ -120,7 +122,8 @@ try {
     "worker-reports",
     "reviews",
     "verification",
-    "evidence"
+    "evidence",
+    "evidence/git"
   )
   foreach ($dir in $subdirs) {
     New-Item -ItemType Directory -Path (Join-Path $runDir $dir) -Force | Out-Null

@@ -19,6 +19,9 @@ Only the coordinator control worktree contains `.dev-work/`.
     ├── task-map.json
     ├── assignments/
     ├── attempts/
+    ├── dispatch-receipts/
+    ├── dispatch-waves/
+    │   └── <wave>.json
     ├── handoffs/
     ├── reconnaissance/
     ├── audits/
@@ -41,6 +44,8 @@ Coordinator-only:
 
 - lock, active run, run state;
 - branch/task maps;
+- `dispatch-receipts/`: capture `worker-start` receipts on the same command line that launches each worker;
+- `dispatch-waves/<wave>.json`: write one record at dispatch time, never reconstruct it afterwards;
 - accepted plan and decisions;
 - final report;
 - accepted `evidence/git/<task-key>.json` and the unique `evidence/git/run-final-verification.json`, written from observations before read-only validation.
@@ -48,6 +53,12 @@ Coordinator-only:
 Worker-exclusive path:
 
 - the report/evidence path assigned to that Task.
+
+## Dispatch wave records
+
+A wave file records the coordinator's launch order and first-receipt routes: `waveId`, `runSlug`, `orcaRunId`, `waveStartedAt`, `waveRecordedAt`, `taskCount`, and ordered `tasks` entries keyed by `taskKey`. Entries may include requested model/effort, Orca Task/Dispatch IDs, start exit/state, `launchRequested`, `launchEffective`, and `recordedInLedger`; `parallelWindowSeconds` and `note` supply context. Unknown launch values remain null. The wave record is not lifecycle authority: Orca Runtime and its receipts remain authoritative for lifecycle and observed launch facts.
+
+`schemas/dispatch-wave.schema.json` requires core identity, timestamps, count and task keys while allowing extension fields. `validate-run.ps1` validates every JSON file in the active run's `dispatch-waves/` directory when it exists. No wave file is mandatory; absent or empty directories remain valid for older runs and runs that dispatch no wave.
 
 ## Evidence references
 
