@@ -40,6 +40,7 @@
     "standard": [
       "intake",
       "dynamic-reconnaissance",
+      "design",
       "planning",
       "task-graph",
       "implementation",
@@ -50,9 +51,9 @@
       "intake",
       "parallel-reconnaissance",
       "audit",
+      "design",
       "independent-plans",
       "adjudication",
-      "architecture",
       "task-graph",
       "implementation",
       "review-loops",

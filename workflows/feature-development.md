@@ -49,7 +49,13 @@ Outputs may include:
 - explicit non-goals;
 - measurable acceptance.
 
-### Planning and architecture
+### Design
+
+Design is conditional at standard and high-risk depth. Evaluate `routing/design-triggers.json` once after reconnaissance closes (and after product/requirements when that ran), before planning. The coordinator records `required` or `skipped`, with reason and evidence, in run-state `stageDecisions.design`; a skipped stage is not added to `completedStages`.
+
+On `required`, dispatch read-only design Tasks by deliverable key through `routing/role-selection.json`. Design outputs must identify boundaries, interfaces, data ownership, migrations, integration points, rollback, and verification; planning consumes these outputs. On `skipped`, proceed directly to planning. At light depth, a trigger hit is evidence to upgrade to standard under the existing scale rule.
+
+### Planning
 
 For low-risk work, one plan may be enough.
 
@@ -59,8 +65,6 @@ For material alternatives or high risk:
 - keep their contexts isolated;
 - dispatch a Plan Adjudicator;
 - record accepted and rejected decisions.
-
-Architecture Tasks must identify boundaries, interfaces, data ownership, migrations, integration points, rollback, and verification.
 
 ### Task graph
 
@@ -113,3 +117,4 @@ Write final delivery and pending-user-decision reports, settle workers, and clea
 - Plan defect: revise planning artifacts before implementation.
 - Review finding: create a fix Task in the original implementer session, then re-review in the original reviewer session under the session-reuse contract above.
 - Integration failure: create a scoped fix Task from the latest delivery state.
+- Boundary, interface, or data-model discovery: return to design. If the stage was skipped, re-evaluate the trigger and record the flipped verdict (`stageDecisions`); if a design artifact exists, revise it. Then revise planning artifacts before further implementation. Preserve completed work and append-only `completedStages`; record the flip and its reason in `decisions.md`.
