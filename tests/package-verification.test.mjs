@@ -10,6 +10,62 @@ const verifier = fileURLToPath(new URL('../scripts/verification-runtime.ps1', im
 const helpers = fileURLToPath(new URL('../scripts/verification-common.ps1', import.meta.url));
 const requiredSuites = ['document-production.test.py', 'document-depth-office.test.py'];
 
+const childTimeoutHarness = String.raw`
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+. $env:PACKAGE_TEST_HELPERS
+$script:temporaryRoot = $env:PACKAGE_TEST_ROOT
+if ($env:PACKAGE_TEST_SUITE_TIMEOUT -ne 'unset') {
+  $SuiteTimeoutSeconds = if ($env:PACKAGE_TEST_SUITE_TIMEOUT -eq 'null') { $null } else { [int]$env:PACKAGE_TEST_SUITE_TIMEOUT }
+}
+$parameters = @{}
+if ($env:PACKAGE_TEST_CHILD_TIMEOUT) { $parameters.TimeoutSeconds = [int]$env:PACKAGE_TEST_CHILD_TIMEOUT }
+try {
+  $result = Invoke-Child $env:PACKAGE_TEST_NODE @('-e', $env:PACKAGE_TEST_CHILD_CODE) @parameters
+  if ($result.ExitCode -ne 0) { throw "Unexpected child exit: $($result.ExitCode)" }
+} catch {
+  Write-Host $_.Exception.Message
+  exit 1
+}
+`;
+
+function runChildTimeout(t, suiteTimeout, childTimeout, sleepMilliseconds) {
+  const root = mkdtempSync(path.join(tmpdir(), 'package-child-timeout-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', childTimeoutHarness], {
+    encoding: 'utf8', timeout: 15000, env: { ...process.env,
+      PACKAGE_TEST_HELPERS: helpers, PACKAGE_TEST_ROOT: root, PACKAGE_TEST_NODE: process.execPath,
+      PACKAGE_TEST_SUITE_TIMEOUT: String(suiteTimeout), PACKAGE_TEST_CHILD_TIMEOUT: childTimeout === undefined ? '' : String(childTimeout),
+      PACKAGE_TEST_CHILD_CODE: `setTimeout(() => console.log('child completed'), ${sleepMilliseconds});`,
+    },
+  });
+  assert.ifError(result.error);
+  return { status: result.status, output: result.stdout + result.stderr };
+}
+
+test('Invoke-Child inherits the suite timeout and kills a sleeping child', (t) => {
+  const result = runChildTimeout(t, 1, undefined, 8000);
+  t.diagnostic(result.output.trim());
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /Child timed out after 1 seconds:/);
+  assert.doesNotMatch(result.output, /^child completed\r?$/m);
+});
+
+test('Invoke-Child explicit timeout wins over the suite timeout', (t) => {
+  const result = runChildTimeout(t, 1, 5, 2000);
+  t.diagnostic(result.output.trim());
+  assert.equal(result.status, 0, result.output);
+  assert.match(result.output, /^child completed\r?$/m);
+});
+
+for (const suiteTimeout of ['unset', 'null', 0, -1]) {
+  test(`Invoke-Child supports standalone consumers with suite timeout ${suiteTimeout}`, (t) => {
+    const result = runChildTimeout(t, suiteTimeout, undefined, 100);
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /^child completed\r?$/m);
+  });
+}
+
 for (const metadataOnly of [false, true]) {
   test(`setup failure emits one JSON result before closing summary (MetadataOnly=${metadataOnly})`, (t) => {
     const root = mkdtempSync(path.join(tmpdir(), 'package-setup-failure-'));
