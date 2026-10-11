@@ -166,6 +166,41 @@ function runResolver(requested, { metadataOnly = false, skipMutationTests = fals
   return JSON.parse(result.stdout.trim());
 }
 
+const skipNoticeHarness = String.raw`
+$ErrorActionPreference = 'Stop'
+$tokens = $null
+$errors = $null
+$ast = [Management.Automation.Language.Parser]::ParseFile($env:PACKAGE_TEST_RESOLVER_SOURCE, [ref]$tokens, [ref]$errors)
+if ($errors.Count) { throw ($errors | Out-String) }
+$definitions = @($ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-MutationSuiteSkipNotice' }, $true))
+if ($definitions.Count -ne 1) { throw 'Expected exactly one Test-MutationSuiteSkipNotice definition' }
+. ([scriptblock]::Create($definitions[0].Extent.Text))
+$selection = $env:PACKAGE_TEST_SELECTION | ConvertFrom-Json
+Test-MutationSuiteSkipNotice -SuiteSelection $selection -MetadataOnly:($env:PACKAGE_TEST_METADATA_ONLY -eq '1') -SkipMutationTests:($env:PACKAGE_TEST_SKIP -eq '1') | ConvertTo-Json -Compress
+`;
+
+for (const { name, selection, metadataOnly = false, skipMutationTests = true, expected } of [
+  { name: 'mutations requested', selection: { Explicit: true, Requested: ['evidence source mutations'] }, expected: true },
+  { name: 'mutations not requested', selection: { Explicit: true, Requested: ['package contracts'] }, expected: false },
+  { name: 'default full selection', selection: { Explicit: false, Requested: [] }, expected: true },
+  { name: 'metadata only', selection: { Explicit: false, Requested: [] }, metadataOnly: true, expected: false },
+  { name: 'skip switch absent', selection: { Explicit: true, Requested: ['evidence source mutations'] }, skipMutationTests: false, expected: false },
+]) {
+  test(`Test-MutationSuiteSkipNotice: ${name}`, () => {
+    const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', skipNoticeHarness], {
+      encoding: 'utf8', timeout: 20000, env: { ...process.env,
+        PACKAGE_TEST_RESOLVER_SOURCE: helpers,
+        PACKAGE_TEST_SELECTION: JSON.stringify(selection),
+        PACKAGE_TEST_METADATA_ONLY: metadataOnly ? '1' : '0',
+        PACKAGE_TEST_SKIP: skipMutationTests ? '1' : '0',
+      },
+    });
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(JSON.parse(result.stdout.trim()), expected);
+  });
+}
+
 test('suite selection rejects an unknown suite name', (t) => {
   const entrypoint = fileURLToPath(new URL('../scripts/verify-package.ps1', import.meta.url));
   const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-Suites', 'no-such-suite'], {
@@ -274,6 +309,16 @@ function spawnSubsetRun(t, tempPrefix, ...selectionArguments) {
   assert.ifError(result.error);
   return result;
 }
+
+test('SkipMutationTests does not announce a mutation suite absent from the selection', (t) => {
+  const result = spawnSubsetRun(t, 'package-suite-skip-notice-', '-Suites', 'package contracts', '-SkipMutationTests');
+  const output = result.stdout + result.stderr;
+  assert.equal(result.status, 0, output);
+  assert.ok(result.stdout.includes('SUITES requested: package contracts'), output);
+  assert.ok(result.stdout.includes('SUITES running: package structure, package contracts'), output);
+  assert.doesNotMatch(output, /SKIP evidence source mutations/);
+  assert.match(result.stdout.trim().split(/\r?\n/).at(-1), /^SUMMARY PASS=\d+ FAIL=0$/);
+});
 
 test('comma-joined multi-suite selection runs both suites', (t) => {
   const result = spawnSubsetRun(t, 'package-suite-comma-', '-Suites', 'package structure,package contracts');
