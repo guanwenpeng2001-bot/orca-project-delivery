@@ -62,12 +62,14 @@
 
 | 工作流 | 何时 | 阶段形状 |
 | --- | --- | --- |
-| feature-development（默认） | 目标是新增或改变的产品 / 系统行为 | intake → reconnaissance → plan → task graph → implementation → review → final verification |
+| feature-development（默认） | 目标是新增或改变的产品 / 系统行为 | intake → reconnaissance → design（条件阶段；无论执行或跳过都记录判断）→ plan → task graph → implementation → review → final verification |
 | bug-fix | 目标是缺陷修正；复现或回归是核心 | intake → reproduction → investigation → fix planning → implementation → review → integration and verification |
 | refactor | 外部行为保持稳定；内部结构是目标 | define invariants → reconnaissance → refactor plan → implementation → review → integration |
 | audit | 目标是评估 / 发现项；实施不是初始目标 | intake → dynamic audit fan-out → finding contract → validation and deduplication → optional remediation |
 
-high-risk 深度会在任务图之前插入并行侦察、独立方案、裁决和架构，并在实施期间插入审查循环。
+high-risk 深度依次为：并行侦察 / 审计 → 设计（条件阶段；无论执行或跳过都记录判断）→ 独立方案 → 裁决 → 任务图 → 分阶段实施与审查循环 → 最终验证。
+
+设计触发规则位于 `routing/design-triggers.json`。
 
 ## 46 个专业 Skill
 

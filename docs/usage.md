@@ -75,7 +75,7 @@ binding. Never copy template placeholders into live records as observations.
 The stage order for a standard run:
 
 ```text
-intake -> reconnaissance -> plan -> task graph -> dispatch
+intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> task graph -> dispatch
        -> wait & process -> review -> integration -> final verification -> close
 ```
 
@@ -85,7 +85,9 @@ Record in run-state: the objective, the scale, the delivery branch, any
 user-pinned Agent/model choices, and side-effect boundaries. Choose the
 workflow (`feature-development`, `bug-fix`, `refactor`, or `audit`) with
 `routing/workflow-selection.json`, and the depth — light, standard, or
-high-risk — recording the reasons if you reduce scale.
+high-risk — recording the reasons if you reduce scale. After reconnaissance,
+record the design verdict (`required` or `skipped`), with reason and evidence,
+in run-state `stageDecisions.design` before planning.
 
 ### 2. Reconnaissance
 
@@ -98,6 +100,8 @@ feedback. Stop when remaining unknowns cannot change the approach, or record
 them explicitly as unverifiable.
 
 ### 3. Plan
+
+When the design stage ran, its output is planning's input.
 
 Use the Solution Planner role. When alternatives or risk are material,
 dispatch independent planner Tasks with isolated contexts and a Plan

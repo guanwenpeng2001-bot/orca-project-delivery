@@ -86,14 +86,16 @@ and the choice plus any scale reduction is recorded.
 
 | Workflow | When | Stage shape |
 | --- | --- | --- |
-| feature-development (default) | New or changed product/system behavior is the target | intake → reconnaissance → plan → task graph → implementation → review → final verification |
+| feature-development (default) | New or changed product/system behavior is the target | intake → reconnaissance → design (conditional; verdict recorded either way) → plan → task graph → implementation → review → final verification |
 | bug-fix | Objective is defect correction; reproduction or regression is central | intake → reproduction → investigation → fix planning → implementation → review → integration and verification |
 | refactor | External behavior stays stable; internal structure is the target | define invariants → reconnaissance → refactor plan → implementation → review → integration |
 | audit | Objective is assessment/findings; implementation is not the initial goal | intake → dynamic audit fan-out → finding contract → validation and deduplication → optional remediation |
 
-The high-risk depth inserts parallel reconnaissance, independent plans,
-adjudication, and architecture before the task graph, and review loops during
-implementation.
+The high-risk depth follows parallel reconnaissance/audit → design (conditional;
+verdict recorded either way) → independent plans → adjudication → task graph →
+staged implementation and review loops → final verification.
+
+Design trigger rules live in `routing/design-triggers.json`.
 
 ## The 46 professional Skills
 
