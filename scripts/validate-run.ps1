@@ -165,6 +165,9 @@ if ($state) {
     if ($probeDetail) { $message = "$message (git said: $probeDetail)" }
     if ($state.stage -and $state.stage -ne "intake") { [void]$errors.Add("$message (run stage is '$($state.stage)').") } else { $warnings += $message }
   }
+  if (@($state.completedStages | Where-Object { $_ -cin @('reconnaissance', 'dynamic-reconnaissance', 'parallel-reconnaissance') }).Count -gt 0 -and -not $state.stageDecisions.design) {
+    $warnings += "Design verdict is missing: stageDecisions.design must record the evaluation after reconnaissance."
+  }
   if ($lock -and $active) {
     # The lock and the active-run pointer must not diverge.
     if ($lock.activeRun -and ($lock.activeRun -ne $active.run)) {

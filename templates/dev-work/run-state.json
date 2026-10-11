@@ -12,6 +12,7 @@
   "orcaRunId": null,
   "coordinatorModelReported": null,
   "completedStages": [],
+  "stageDecisions": {},
   "pendingUserDecisions": [],
   "createdAt": "<ISO-8601-UTC>",
   "updatedAt": "<ISO-8601-UTC>"

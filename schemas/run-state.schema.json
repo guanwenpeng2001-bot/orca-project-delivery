@@ -82,6 +82,42 @@
       },
       "uniqueItems": true
     },
+    "stageDecisions": {
+      "type": "object",
+      "properties": {
+        "design": {
+          "type": "object",
+          "required": [
+            "verdict",
+            "reason",
+            "evidence",
+            "decidedAt",
+            "decidedBy"
+          ],
+          "properties": {
+            "verdict": {
+              "enum": ["required", "skipped"]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "evidence": {
+              "type": "string",
+              "minLength": 1
+            },
+            "decidedAt": {
+              "type": "string"
+            },
+            "decidedBy": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
     "pendingUserDecisions": {
       "type": "array",
       "items": {
