@@ -143,6 +143,25 @@ function Get-BranchHead([string]$Branch) {
   return Invoke-GitRead $script:root @('rev-parse', '--verify', "refs/heads/$Branch`^{commit}")
 }
 
+function Get-BranchHeadOrNull([string]$Branch) {
+  # A recorded work branch may already be reclaimed. Absence is an unknown, not a defect.
+  try { return (Get-BranchHead $Branch) } catch { return $null }
+}
+
+function Test-WorkLanded($Assignment) {
+  # Whether the Task's work has reached the delivery branch is a Git fact, independent of the
+  # self-reported assignment status. Unknown or unresolvable branches are treated as not-landed:
+  # a missing work branch, or a mergeTarget that is not a real branch, must leave a historical
+  # run readable rather than inventing an obligation it cannot satisfy.
+  $work = [string]$Assignment.branch.work
+  $target = [string]$Assignment.branch.mergeTarget
+  if ([string]::IsNullOrWhiteSpace($work) -or [string]::IsNullOrWhiteSpace($target)) { return $false }
+  $workHead = Get-BranchHeadOrNull $work
+  if (-not $workHead) { return $false }
+  if (-not (Get-BranchHeadOrNull $target)) { return $false }
+  return (Invoke-GitRead $script:root @('merge-base', '--is-ancestor', $workHead, $target) -Probe)
+}
+
 function Get-BranchWorktree([string]$Branch) {
   $listing = Invoke-GitRead $script:root @('-c', 'core.quotePath=false', 'worktree', 'list', '--porcelain')
   $worktree = $null
@@ -175,6 +194,43 @@ function Test-Checks($Checks, [string]$Commit, [string]$Branch, [string]$Label) 
   $verification = @($Checks | Where-Object { $_.kind -ceq 'verification' -and $_.commitSha -ceq $Commit -and $_.exitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace($_.observed) })
   Assert-Evidence ($verification.Count -gt 0) "$Label requires verification checks bound to commit $Commit"
   foreach ($check in @($Checks | Where-Object kind -CEQ 'verification')) { Assert-Evidence ($check.commitSha -ceq $Commit) "$Label verification commit does not equal $Commit" }
+}
+
+function Test-MergeCommand([string]$Command, [string]$SourceBranch) {
+  # The record must be the single non-interactive merge of the reviewed branch that actually ran.
+  # Options that shape history or supply a message are legitimate: a conflict-free three-way merge
+  # needs --no-ff or -m to produce the very merge commit the advanced-clean-merge outcome requires,
+  # so demanding one exact string rejected true records and rewarded invented ones. What is still
+  # rejected is anything that is not one merge invocation, names another ref, or would block an
+  # unattended coordinator on a merge-message editor.
+  if ([string]::IsNullOrWhiteSpace($Command)) { return $false }
+  if ($Command -cmatch '[;&|<>$`]') { return $false }
+  # A message may contain spaces; drop quoted spans so they cannot be read as refs.
+  $stripped = $Command -replace '"[^"]*"', 'MESSAGE' -replace "'[^']*'", 'MESSAGE'
+  $tokens = @($stripped -split '\s+' | Where-Object { $_ -ne '' })
+  if ($tokens.Count -lt 3 -or $tokens[0] -cne 'git' -or $tokens[1] -cne 'merge') { return $false }
+  $positional = [Collections.Generic.List[string]]::new()
+  $hasMessageFlag = $false
+  $index = 2
+  while ($index -lt $tokens.Count) {
+    $token = $tokens[$index]
+    if ($token -in @('-m', '--message', '-F', '--file')) {
+      # These take a separate value, which may be an unquoted word that looks like a ref.
+      $hasMessageFlag = $true
+      $index += 2
+      continue
+    }
+    if ($token -eq '--no-edit' -or $token -eq 'MESSAGE' -or $token -like '-m*' -or $token -like '-F*' -or $token -like '--message=*' -or $token -like '--file=*') {
+      $hasMessageFlag = $true
+      $index++
+      continue
+    }
+    if ($token.StartsWith('-')) { $index++; continue }
+    $positional.Add($token)
+    $index++
+  }
+  if (-not $hasMessageFlag) { return $false }
+  return ($positional.Count -eq 1 -and $positional[0] -ceq $SourceBranch)
 }
 
 function Test-TaskEvidence($Document, [string]$TaskPhase) {
@@ -236,7 +292,7 @@ function Test-TaskEvidence($Document, [string]$TaskPhase) {
   Test-Ancestor $targetSha $headAfter "$taskKey reviewed target"
   $merge = $integration.mergeEvidence
   Assert-Evidence ($merge.exitCode -eq 0 -and $merge.conflictFree -eq $true) "$taskKey mergeEvidence must record a successful conflict-free admitted merge"
-  Assert-Evidence ($merge.command -ceq "git merge --no-edit $($integration.sourceBranch)") "$taskKey mergeEvidence command must be a single non-interactive merge"
+  Assert-Evidence (Test-MergeCommand $merge.command $integration.sourceBranch) "$taskKey mergeEvidence command must be a single non-interactive merge of the reviewed branch"
   Assert-Evidence ($integration.sourceBranch -cmatch '^[A-Za-z0-9][A-Za-z0-9._/-]*$') "$taskKey mergeEvidence source branch cannot contain shell syntax"
   $resolution = $integration.resolution
   if ($integration.outcome -ceq 'advanced-with-resolution') {
@@ -323,15 +379,21 @@ function Test-Assignments($Entries, [string]$CoverageTaskKey) {
       continue
     }
     $entered = $assignment.status -in $enteredStatuses
+    # Work that actually reached the delivery branch owes a record whatever the self-reported
+    # status says. A status label is a local workflow record and must never be able to void the
+    # evidence obligation for an integration that really landed. Superseded rounds are excluded:
+    # their own record is deliberately waived and the successor's integrated evidence carries it.
+    $landed = $formal -and $assignment.status -cne 'superseded' -and (Test-WorkLanded $assignment)
+    $owes = $entered -or $landed
     $path = $assignment.evidence.gitEvidencePath
-    if ($formal -and $entered) {
+    if ($formal -and $owes) {
       if (-not $path) { $path = "runs/$script:runName/evidence/git/$($assignment.taskKey).json" }
       $resolved = Resolve-EvidencePath $path $script:devWork
       Assert-Evidence (Test-Path -LiteralPath $resolved -PathType Leaf) "Assignment $($assignment.taskKey) gitEvidencePath missing: $resolved; rebuild evidence or mark UNVERIFIABLE"
       if (Test-Path -LiteralPath $resolved -PathType Leaf) {
         $evidence = Get-Evidence $resolved
         Assert-Evidence ($evidence.subject.kind -ceq 'task' -and $evidence.subject.taskKey -ceq $assignment.taskKey) "Assignment gitEvidencePath task identity mismatch"
-        if ($script:Phase -ceq 'final' -and $entered) { Assert-Evidence ($evidence.state -ceq 'integrated') "Final coverage lacks intended integrated task $($assignment.taskKey); UNVERIFIABLE" }
+        if ($script:Phase -ceq 'final' -and $owes) { Assert-Evidence ($evidence.state -ceq 'integrated') "Final coverage lacks intended integrated task $($assignment.taskKey); UNVERIFIABLE" }
         if (-not $CoverageTaskKey -or $assignment.taskKey -ceq $CoverageTaskKey) {
           Assert-Evidence (@($Entries | Where-Object { [IO.Path]::GetFullPath($_.Path) -eq $resolved }).Count -eq 1) 'Assignment gitEvidencePath must be in the run evidence/git directory'
         }

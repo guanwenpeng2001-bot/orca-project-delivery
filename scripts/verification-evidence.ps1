@@ -536,6 +536,79 @@ function Test-GitEvidence {
     Write-EvidenceJson $otherEvidencePath $otherDocument
     $script:mutationFixtures['scope-parity'] = @{ fixture = $fixture; evidencePath = $evidencePath }
   }
+  Invoke-Check 'evidence/negative-status-cannot-void-landed-obligation' {
+    # A status label is a local workflow record. Flipping one to a non-entered value must not
+    # release the evidence obligation for work that actually reached the delivery branch:
+    # otherwise a run-final claiming READY can be manufactured by relabelling the gaps.
+    $fixture = New-EvidenceProject 'landed-obligation'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-edit', $fixture.TaskBranch)
+    Write-AssignmentFixture $fixture "runs/$($fixture.RunSlug)/evidence/git/absent.json"
+    [IO.File]::WriteAllText((Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/run-state.json"), '{"deliveryBranch":"main"}', $utf8)
+    $assignmentPath = Join-Path $fixture.ProjectRoot ".dev-work/runs/$($fixture.RunSlug)/assignments/$($fixture.TaskBranch).json"
+
+    foreach ($status in @('active', 'unverifiable', 'failed', 'abandoned', 'planned', 'starting')) {
+      $assignment = [IO.File]::ReadAllText($assignmentPath, $utf8) | ConvertFrom-Json -AsHashtable
+      $assignment.status = $status
+      Write-EvidenceJson $assignmentPath $assignment
+      Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' "landed work relabelled '$status' still owes evidence" 'gitEvidencePath missing'
+    }
+
+    # The same assignment with its work NOT landed stays exempt: a status label may still
+    # describe work that never reached delivery, and historical runs must stay readable.
+    $unlandedWorktree = Join-Path $script:temporaryRoot 'landed-obligation-unlanded'
+    $null = Invoke-FixtureGit @('-C', $fixture.ProjectRoot, 'worktree', 'add', '--quiet', '-b', 'unlanded-round', $unlandedWorktree, 'main')
+    $null = New-FixtureCommit $unlandedWorktree 'unlanded.txt' "unlanded`n" 'Unlanded round'
+    $assignment = [IO.File]::ReadAllText($assignmentPath, $utf8) | ConvertFrom-Json -AsHashtable
+    $assignment.status = 'unverifiable'
+    $assignment.branch.work = 'unlanded-round'
+    Write-EvidenceJson $assignmentPath $assignment
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot)) 'NOT_APPLICABLE' 'unlanded work keeps the historical exemption'
+
+    # A reclaimed work branch is an unknown, not a landed integration.
+    $assignment.branch.work = 'branch-that-was-reclaimed'
+    Write-EvidenceJson $assignmentPath $assignment
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'audit', '-ProjectRoot', $fixture.ProjectRoot)) 'NOT_APPLICABLE' 'reclaimed work branch stays readable'
+  }
+  Invoke-Check 'evidence/merge-command-accepts-true-rejects-invented' {
+    # The command assertion must accept the merge that really ran. Demanding one exact string
+    # rejected a true `git merge --no-ff -m ...` while accepting an invented `--no-edit` record,
+    # which rewarded a false record and punished an honest one.
+    $fixture = New-EvidenceProject 'merge-command'
+    $taskCommit = New-FixtureCommit $fixture.TaskWorktree 'feature.txt' "task work`n" 'Task commit'
+    $null = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'merge', '--no-ff', '-m', 'Merge evidence-contract', $fixture.TaskBranch)
+    $mergeHead = Invoke-FixtureGit @('-C', $fixture.DeliveryWorktree, 'rev-parse', 'HEAD')
+    $evidencePath = Join-Path $fixture.EvidenceDirectory 'evidence-contract.json'
+
+    function Write-CommandDocument([string]$command) {
+      $document = New-TaskEvidenceDocument $fixture.RunSlug 'evidence-contract' $fixture.TaskBranch $fixture.TaskWorktree $taskCommit
+      Add-ReviewEvidence $document $taskCommit $fixture.BaselineCommit
+      Add-AdmissionEvidence $document $taskCommit $fixture.BaselineCommit
+      Complete-IntegrationEvidence $document $mergeHead 'advanced-clean-merge' $command
+      Write-EvidenceJson $evidencePath $document
+    }
+
+    foreach ($command in @(
+        'git merge --no-ff -m "Merge evidence-contract" evidence-contract',
+        'git merge --no-ff -m Merge evidence-contract',
+        'git merge -m "Merge evidence-contract" evidence-contract',
+        'git merge --no-edit evidence-contract')) {
+      Write-CommandDocument $command
+      Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'PASS' "true merge command accepted: $command"
+    }
+
+    foreach ($case in @(
+        @{ Command = 'git merge evidence-contract'; Name = 'no-message-flag-would-block-on-an-editor' }
+        @{ Command = 'git merge --no-edit other-branch'; Name = 'different-source-branch' }
+        @{ Command = 'git merge --no-edit evidence-contract && rm -rf .'; Name = 'compound-command' }
+        @{ Command = 'git merge --no-edit evidence-contract; git push'; Name = 'semicolon-command' }
+        @{ Command = 'git merge --no-edit evidence-contract extra-ref'; Name = 'second-positional-ref' }
+        @{ Command = 'git merge --abort'; Name = 'abort-is-not-an-integration' }
+        @{ Command = 'git rebase --no-edit evidence-contract'; Name = 'not-a-merge' })) {
+      Write-CommandDocument $case.Command
+      Assert-EvidenceStatus (Invoke-EvidenceValidator @('-EvidencePath', $evidencePath, '-Phase', 'postMerge', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' "rejected merge command: $($case.Name)" 'mergeEvidence command'
+    }
+  }
   Invoke-Check 'evidence/negative-vacuous-run-final' {
     $fixture = New-EvidenceProject 'vacuous-final'
     $verificationWorktree = Join-Path $script:temporaryRoot 'vacuous-final-verification'
