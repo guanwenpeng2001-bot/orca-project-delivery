@@ -197,7 +197,7 @@ Six validation phases:
 | `sourceRegistered` | After a matched, active `worker_done` | Schema, run/path/assignment scope, recorded commit existence |
 | `review` | After independent review is recorded | Reviewer independence (Task and Dispatch both differ from the source worker's), target/baseline binding, baseline is an ancestor of target, APPROVED target is clean |
 | `preMerge` | After the latest APPROVED review, while still `reviewed` | Admission binds the approved SHA; live source HEAD equals it; source and delivery worktrees are clean; delivery HEAD equals the recorded baseline |
-| `postMerge` | After the actual merge plus fresh checks at `headAfter` | Integration result, merge evidence (`git merge --no-edit <branch>`, exit 0, conflict-free), ancestry, verification checks bound to `headAfter` |
+| `postMerge` | After the actual merge plus fresh checks at `headAfter` | Integration result, merge evidence (one `git merge` of the reviewed branch carrying a message flag, exit 0, conflict-free), ancestry, verification checks bound to `headAfter` |
 | `final` | After all intended integrations, from a clean independent verification worktree | Unique run-final record, verified + READY, complete exact coverage of integrated Tasks, checks at the current delivery HEAD |
 | `audit` | Any time, for historical runs | Schema/commits plus state-appropriate checks, with **no** live HEAD-equality or clean-tree requirements |
 

@@ -147,7 +147,7 @@ Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json
 | `sourceRegistered` | 匹配且活动的 `worker_done` 之后 | Schema、运行 / 路径 / 指派范围、记录的提交是否存在 |
 | `review` | 独立审查被记录之后 | 审查者独立性（Task 与 Dispatch 都不同于源码工作者的）、目标 / 基线绑定、基线是目标的祖先、APPROVED 的目标是干净的 |
 | `preMerge` | 最新 APPROVED 审查之后，且仍为 `reviewed` | 准入绑定批准的 SHA；活动源码 HEAD 等于它；源码与交付工作树干净；交付 HEAD 等于记录的基线 |
-| `postMerge` | 实际合并加上在 `headAfter` 的新鲜检查之后 | 集成结果、合并证据（`git merge --no-edit <branch>`，退出码 0，无冲突）、祖先关系、绑定到 `headAfter` 的验证检查 |
+| `postMerge` | 实际合并加上在 `headAfter` 的新鲜检查之后 | 集成结果、合并证据（对已审查分支的一次 `git merge`，带消息旗标，退出码 0，无冲突）、祖先关系、绑定到 `headAfter` 的验证检查 |
 | `final` | 所有预定集成之后，来自干净的独立验证工作树 | 唯一的运行终态记录、verified + READY、对已集成任务的完整精确覆盖、检查位于当前交付 HEAD |
 | `audit` | 任何时候，针对历史运行 | Schema / 提交加上与状态相符的检查，**没有**活动 HEAD 相等或干净树的要求 |
 
