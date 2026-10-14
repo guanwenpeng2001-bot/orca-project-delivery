@@ -46,7 +46,7 @@ try {
   Save-Json $skillPath $skills
   [void][IO.Directory]::CreateDirectory((Join-Path $package 'skills/fixture-skill'))
   [IO.File]::WriteAllText((Join-Path $package 'skills/fixture-skill/SKILL.md'), "---`nname: fixture-skill`ndescription: Temporary extension`n---`n# Fixture Skill`n`n## Method`nInspect synthetic data only.`n", $utf8)
-  [IO.File]::WriteAllText((Join-Path $package 'roles/engineering/fixture-role.md'), "---`nid: fixture-role`n---`n# Fixture Role`nInspect synthetic data only.`n", $utf8)
+  [IO.File]::WriteAllText((Join-Path $package 'roles/engineering/fixture-role.md'), "---`nid: fixture-role`n---`n# Fixture Role`nInspect synthetic data only.`n`n## 默认专业 Skill`n- fixture-skill`n", $utf8)
   $routingPath = Join-Path $package 'routing/model-routing.json'
   $routing = Get-Content $routingPath -Raw | ConvertFrom-Json -AsHashtable
   $routing.roles['fixture-role'] = $routing.roles['software-implementer']
