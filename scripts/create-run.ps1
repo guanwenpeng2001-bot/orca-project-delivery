@@ -1,3 +1,4 @@
+#requires -Version 7.0
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $false)]
@@ -70,7 +71,7 @@ if (-not (Test-Path (Join-Path $devWork "manifest.json"))) {
 $activePath = Join-Path $devWork "active-run.json"
 $previousActive = $null
 if (Test-Path $activePath) {
-  $previousActive = Get-Content $activePath -Raw | ConvertFrom-Json
+  $previousActive = Get-Content -Encoding utf8 $activePath -Raw | ConvertFrom-Json
   if ($previousActive.run -and -not $Force) {
     throw "An active run already exists: $($previousActive.run). Close it or use -Force only after reconciliation."
   }
@@ -100,7 +101,7 @@ if (-not $resolvedRunDir.StartsWith($runsRootPrefix, [System.StringComparison]::
 }
 $lockPath = Join-Path $devWork "coordinator-lock.json"
 if (Test-Path $lockPath) {
-  $lock = Get-Content $lockPath -Raw | ConvertFrom-Json
+  $lock = Get-Content -Encoding utf8 $lockPath -Raw | ConvertFrom-Json
   if ($lock.coordinatorTerminalHandle -and $env:ORCA_TERMINAL_HANDLE -and $lock.coordinatorTerminalHandle -ne $env:ORCA_TERMINAL_HANDLE) {
     Write-Warning "Coordinator lock belongs to '$($lock.coordinatorTerminalHandle)', but caller is '$env:ORCA_TERMINAL_HANDLE'; run state will be updated."
   }
@@ -203,7 +204,7 @@ try {
 
   $lockPath = Join-Path $devWork "coordinator-lock.json"
   if (Test-Path $lockPath) {
-    $lock = Get-Content $lockPath -Raw | ConvertFrom-Json
+    $lock = Get-Content -Encoding utf8 $lockPath -Raw | ConvertFrom-Json
     $lock.activeRun = $RunSlug
     $lock | Add-Member -NotePropertyName updatedAt -NotePropertyValue $now -Force
     Write-JsonFile $lockPath $lock -Depth 30

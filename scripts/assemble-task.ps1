@@ -1,3 +1,4 @@
+#requires -Version 7.0
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $false)]
@@ -16,7 +17,7 @@ $ErrorActionPreference = "Stop"
 
 $root = (Resolve-Path $ProjectRoot).Path
 $skillRoot = Split-Path -Parent $PSScriptRoot
-$task = Get-Content $TaskDefinitionPath -Raw | ConvertFrom-Json
+$task = Get-Content -Encoding utf8 $TaskDefinitionPath -Raw | ConvertFrom-Json
 if ($task.skillDeliveryMode -cnotin @('explicit-path', 'inline-extract')) {
   throw "skillDeliveryMode must be explicit-path or inline-extract."
 }
@@ -188,7 +189,16 @@ function ConvertTo-EmbeddedMarkdown {
   return $body
 }
 
-$roleText = Get-Content $rolePath -Raw
+$roleText = Get-Content -Encoding utf8 $rolePath -Raw
+$roleNotes = @()
+if ($roleText -notmatch '(?m)^## 默认专业 Skill\r?\n') {
+  $packageRoles = Get-Content -Encoding utf8 (Join-Path $skillRoot 'roles/catalog.json') -Raw | ConvertFrom-Json
+  $packageRole = $packageRoles.roles | Where-Object { $_.id -ceq $task.role }
+  if (@($packageRole.defaultSkills).Count) {
+    throw "Role '$($task.role)' is missing required default-skill section '## 默认专业 Skill': $rolePath"
+  }
+  $roleNotes += "Role '$($task.role)': default-skill substitution skipped because catalog defaultSkills is empty and the section is absent."
+}
 if ($binding) {
   $roleSkills = @{ defaultSkills = @($effectiveSkills.required); optionalSkills = @($effectiveSkills.conditional) }
   foreach ($field in @('defaultSkills', 'optionalSkills')) {
@@ -230,7 +240,7 @@ foreach ($skillName in @($effectiveSkills.required | Where-Object { $null -ne $_
       $snapshot = [Text.Encoding]::UTF8.GetString($bytes).TrimStart([char]0xFEFF)
       $inlineSkills += "`n### Inlined Skill: $skillName`n`n" + (ConvertTo-EmbeddedMarkdown $snapshot)
     } else {
-      $inlineSkills += "`n## Inlined Skill: $skillName`n`n" + (Get-Content $path -Raw)
+      $inlineSkills += "`n## Inlined Skill: $skillName`n`n" + (Get-Content -Encoding utf8 $path -Raw)
     }
   } else {
     $skillLines += "- ``$skillName`` — ``$path``"
@@ -275,7 +285,7 @@ Escalate missing dependencies by name; never print values. These helpers make no
 
 # Drop the contract's duplicate title; the document already has its own
 # "## Orca Worker Contract" heading. Remaining headings nest two levels deeper.
-$workerContract = (Get-Content (Join-Path $skillRoot "references\worker-contract.md") -Raw)
+$workerContract = (Get-Content -Encoding utf8 (Join-Path $skillRoot "references\worker-contract.md") -Raw)
 $workerContract = $workerContract -replace '(?m)^# Orca Worker Contract\r?\n+', ''
 if ($task.taskKind -eq 'read-only') {
   $workerContract = $workerContract -replace '(?m)^- Source/deliverable Tasks:[^\r\n]*\r?\n(?:[ \t]+[^\r\n]*\r?\n)*', ''
@@ -351,7 +361,7 @@ foreach ($candidate in $agentsCandidates) {
   if ($seen.ContainsKey($key)) { continue }
   $seen[$key] = $true
   $agentsFiles += (Get-Item -LiteralPath $resolved).FullName
-  $agentsText = Get-Content $resolved -Raw
+  $agentsText = Get-Content -Encoding utf8 $resolved -Raw
   if ($task.agentsSections -and @($task.agentsSections).Count -gt 0) {
     $agentsText = Select-AgentsSections $agentsText $task.agentsSections $matchedAgentsSections
     if (-not $agentsText) { continue }
@@ -519,6 +529,7 @@ $result = [ordered]@{
   agentsFiles = @($agentsFiles)
   scriptSourceRoot = Split-Path -Parent (Resolve-PackageScriptPath 'verify-package.ps1')
 }
+if ($roleNotes.Count) { $result.notes = $roleNotes }
 if ($provenance.Count) { $result.skillProvenance = $provenance }
 if ($binding) { $result.roleBinding = $binding }
 $result | ConvertTo-Json -Depth 10

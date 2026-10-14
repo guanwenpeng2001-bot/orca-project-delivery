@@ -1,3 +1,4 @@
+#requires -Version 7.0
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $false)]
@@ -58,7 +59,7 @@ $reclaimableScope = "bound-to-caller-terminal"
 $scopeRunId = $null
 $scopeActivePath = Join-Path $devWork "active-run.json"
 if (Test-Path $scopeActivePath) {
-  $scopeActive = Get-Content $scopeActivePath -Raw | ConvertFrom-Json
+  $scopeActive = Get-Content -Encoding utf8 $scopeActivePath -Raw | ConvertFrom-Json
   if ($scopeActive.orcaRunId) { $scopeRunId = "$($scopeActive.orcaRunId)" }
 }
 try {
@@ -95,7 +96,7 @@ $archived = @()
 $activeRun = $null
 
 if (Test-Path $activePath) {
-  $active = Get-Content $activePath -Raw | ConvertFrom-Json
+  $active = Get-Content -Encoding utf8 $activePath -Raw | ConvertFrom-Json
   $activeRun = $active.run
   Copy-Item $activePath (Join-Path $archiveDir "active-run.json")
   $archived += "active-run.json"
@@ -107,7 +108,7 @@ if (Test-Path $activePath) {
 if (Test-Path $lockPath) {
   Copy-Item $lockPath (Join-Path $archiveDir "coordinator-lock.json")
   $archived += "coordinator-lock.json"
-  $lock = Get-Content $lockPath -Raw | ConvertFrom-Json
+  $lock = Get-Content -Encoding utf8 $lockPath -Raw | ConvertFrom-Json
   $lock.status = "released"
   $lock | Add-Member -NotePropertyName releasedAt -NotePropertyValue ([DateTimeOffset]::UtcNow.ToString("o")) -Force
   $lock | Add-Member -NotePropertyName releaseReason -NotePropertyValue $Reason -Force

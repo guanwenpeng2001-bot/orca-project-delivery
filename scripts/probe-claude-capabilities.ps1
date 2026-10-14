@@ -1,3 +1,4 @@
+#requires -Version 7.0
 [CmdletBinding()]
 param(
   [string]$ProjectRoot = (Get-Location).Path,
@@ -98,7 +99,7 @@ try {
     throw '.dev-work is not initialized. Run bootstrap-project.ps1 first, or pass -Standalone.'
   }
   if (-not $RoutingPath) { $RoutingPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'routing/model-routing.json' }
-  $routing = Get-Content -LiteralPath $RoutingPath -Raw | ConvertFrom-Json
+  $routing = Get-Content -Encoding utf8 -LiteralPath $RoutingPath -Raw | ConvertFrom-Json
   if (-not $routing.modelTiers -or -not $routing.vocabulary.modelLadder -or -not $routing.vocabulary.effortLevels) {
     throw 'Routing file lacks modelTiers or vocabulary.'
   }

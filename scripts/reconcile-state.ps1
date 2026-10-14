@@ -1,3 +1,4 @@
+#requires -Version 7.0
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $false)]
@@ -27,7 +28,7 @@ $devWork = Join-Path $gitRoot ".dev-work"
 $activePath = Join-Path $devWork "active-run.json"
 if (-not (Test-Path $activePath)) { throw "No active run." }
 
-$active = Get-Content $activePath -Raw | ConvertFrom-Json
+$active = Get-Content -Encoding utf8 $activePath -Raw | ConvertFrom-Json
 $runDir = Join-Path $devWork ($active.runDirectory -replace "/", "\")
 $assignmentsDir = Join-Path $runDir "assignments"
 $worktreeText = (Invoke-Git -Root $gitRoot -Arguments @("worktree", "list", "--porcelain")) -join "`n"
@@ -56,7 +57,7 @@ $rows = @()
 if (Test-Path $assignmentsDir) {
   foreach ($file in Get-ChildItem $assignmentsDir -Filter *.json) {
     try {
-      $assignment = Get-Content $file.FullName -Raw | ConvertFrom-Json
+      $assignment = Get-Content -Encoding utf8 $file.FullName -Raw | ConvertFrom-Json
       $workBranch = $assignment.branch.work
       $branchExists = $(if ($workBranch) { $branches.ContainsKey($workBranch) } else { $false })
       $worktreePath = $assignment.branch.worktree
