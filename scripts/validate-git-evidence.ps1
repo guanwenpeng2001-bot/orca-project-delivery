@@ -488,10 +488,11 @@ try {
       $entries = @(Get-RunEvidence)
       Test-Assignments $entries
       $tasks = @($entries | Where-Object { $_.Document.subject.kind -ceq 'task' })
-      if ($tasks.Count -eq 0 -and $entries.Count -eq 0 -and $problems.Count -eq 0) {
+      if ($tasks.Count -eq 0 -and $entries.Count -eq 0 -and $problems.Count -eq 0 -and $Phase -cne 'final') {
         $status = 'NOT_APPLICABLE'; $reason = 'No Task has entered the evidence lifecycle in this run.'
       } elseif ($Phase -ceq 'final') {
         $finals = @($entries | Where-Object { $_.Document.subject.kind -ceq 'run' })
+        if ($finals.Count -eq 0) { Assert-Evidence $false 'No run-final evidence exists.' }
         Assert-Evidence ($finals.Count -eq 1) 'Final evidence must be unique; rebuild evidence or mark UNVERIFIABLE'
         if ($finals.Count -eq 1) { Test-RunFinal $finals[0].Document $entries $true }
       } else {
