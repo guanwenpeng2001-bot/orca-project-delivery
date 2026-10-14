@@ -4,14 +4,14 @@
 
 A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
-![Version](https://img.shields.io/badge/version-2.9.0-blue)
+![Version](https://img.shields.io/badge/version-2.9.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-These guides describe the **2.9.0 package: 46 Skills, 16 Roles, and 4 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
+These guides describe the **2.9.1 package: 46 Skills, 16 Roles, and 4 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
 
-New in 2.9.0: conditional design comes before planning in standard and high-risk delivery, using `routing/design-triggers.json` and existing deliverable routes. Coordinators record `required` or `skipped` with reason and evidence in `stageDecisions.design`; design outputs feed planning, and boundary changes can reopen design. The package checks trigger bindings, validates recorded parallel dispatch waves, and routes `interactive-prototype` to `ui-designer`. Dispatch records now capture the assembled brief's path and raw-byte SHA-256, proving which bytes were recorded, not worker receipt or reading; no hash-enforcement gate is added. Contract repairs cover empty route profiles, worker-script command validation, per-child timeout inheritance, phase-appropriate superseded evidence, and complete lifecycle/reporting guidance. Bundled counts remain 46 Skills, 16 Roles, and 4 workflows; [installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
+New in 2.9.1: a remediation release fixing the eleven findings of the 2026-10-13 quality review. Coordinator lock liveness is fail-closed — only the runtime's explicit stale-handle error proves a dead predecessor, every other probe outcome refuses takeover, and the lock is acquired under a named mutex before any project write; release now clears the active-run pointer. Dispatch ledger writes are atomic and exit nonzero on validation failure, evidence phases are normalized before the case-sensitive gates, and the final gate fails closed when no run-final evidence exists. All entry scripts declare PowerShell 7 with explicit UTF-8 reads, closing the silent GBK misread on 5.1. The entry point is trimmed to 18,621 characters with execution mechanics in `references/execution-loop.md`, and five behavioral test files (98 cases) pin the lock, ledger, gate and state-script lifecycles. Bundled counts remain 46 Skills, 16 Roles, and 4 workflows; [installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
 
 Orca Project Delivery is a coordinator-only Skill that runs a complete software
 delivery pipeline with Claude Code worker agents. It solves the problem of
@@ -124,7 +124,7 @@ integrate, and close. The walkthrough lives in
 orca-project-delivery/
 ├── SKILL.md                  # Coordinator entry point (17 sections, <= 250 lines)
 ├── LICENSE                   # MIT
-├── VERSION                   # 2.9.0
+├── VERSION                   # 2.9.1
 ├── PACKAGE-MANIFEST.json     # Package metadata and deliverable counts
 ├── CHANGELOG.md
 ├── README.md                 # English (default)

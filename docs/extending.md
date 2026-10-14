@@ -18,7 +18,7 @@ Extend the package's native catalogs when a reusable method or a distinct delive
 
 ## Native registration
 
-Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 2.9.0 package ships 46 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
+Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 2.9.1 package ships 46 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
 
 | File | What to add or update |
 | --- | --- |
@@ -174,7 +174,7 @@ Duplicate declarations within an entry fail. Across selected entries, identical 
 
 ## Validate the extension
 
-After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 2.9.0 package starts at 16 Roles / 46 Skills, so these illustrative additions yield 17 / 47. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 2.9.0. Keep workflow counts correct.
+After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 2.9.1 package starts at 16 Roles / 46 Skills, so these illustrative additions yield 17 / 47. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 2.9.1. Keep workflow counts correct.
 
 ```powershell
 (Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
@@ -182,7 +182,7 @@ After adding the example, derive the manifest counts from the edited catalogs. S
 (Get-Content -Raw ./VERSION).Trim()
 ```
 
-Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 2.9.0 capabilities.
+Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 2.9.1 capabilities.
 
 In a PowerShell 7 session, set `$package` to your edited package copy and compute the hash:
 
@@ -200,7 +200,7 @@ $metadataExit = $LASTEXITCODE
 $packageExit = $LASTEXITCODE
 ```
 
-Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs, manifest counts/version and current hashes; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. Documentation tests run the official 2.9.0 count assertions and the capability tutorial's release guard against a fixed release fixture; acceptance of the edited package compares its actual catalogs, files, manifest and hashes without requiring 16 / 46. A mismatched count, missing route, invalid path or stale hash must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
+Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs, manifest counts/version and current hashes; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. Documentation tests run the official 2.9.1 count assertions and the capability tutorial's release guard against a fixed release fixture; acceptance of the edited package compares its actual catalogs, files, manifest and hashes without requiring 16 / 46. A mismatched count, missing route, invalid path or stale hash must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
 
 ## Select and deliver methods
 

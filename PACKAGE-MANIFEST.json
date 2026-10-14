@@ -1,10 +1,10 @@
 {
   "name": "orca-project-delivery",
-  "version": "2.9.0",
+  "version": "2.9.1",
   "generatedAt": "2026-10-02",
-  "revisedAt": "2026-10-11",
-  "releasedAt": "2026-10-11",
-  "revisionNote": "Add conditional design before planning with trigger validation and recorded verdicts; route interactive prototypes and validate recorded dispatch waves. Record assembled brief bytes with an explicit proof boundary, repair dispatch verification, worker-script resolution, per-child timeout inheritance and phase-specific evidence obligations, and complete lifecycle/reporting contracts. Preserve 46 bundled Skills, 16 Roles and 4 workflows; synchronize English and Chinese release guidance.",
+  "revisedAt": "2026-10-14",
+  "releasedAt": "2026-10-14",
+  "revisionNote": "Remediate the eleven findings of the 2026-10-13 quality review: fail-closed coordinator lock liveness with pre-write acquisition, atomic dispatch ledger writes with honest exit codes, case-normalized evidence phases with a fail-closed final gate, PowerShell 7 and UTF-8 declarations on every entry script, .dev-work-relative artifact resolution, archived run pointers on forced reuse, a trimmed entry point, and behavioral lifecycle tests. Preserve 46 bundled Skills, 16 Roles and 4 workflows; synchronize English and Chinese release guidance.",
   "deliverables": {
     "roles": 16,
     "professionalSkills": 46,

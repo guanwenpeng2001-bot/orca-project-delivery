@@ -4,14 +4,14 @@
 
 面向 Orca 与 Claude Code 用户的**仅协调者** Skill，把软件目标变成隔离、独立审查、集成并验证过的变更。
 
-![Version](https://img.shields.io/badge/version-2.9.0-blue)
+![Version](https://img.shields.io/badge/version-2.9.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-这些指南描述**2.9.0 包：46 个 Skill、16 个角色、4 个工作流**。安装完整且匹配的版本，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。版本不匹配就不是本版本。
+这些指南描述**2.9.1 包：46 个 Skill、16 个角色、4 个工作流**。安装完整且匹配的版本，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。版本不匹配就不是本版本。
 
-2.9.0 新增：standard 与 high-risk 交付在规划之前增加条件设计阶段，依据 `routing/design-triggers.json` 和既有产出物路由执行。协调者在 `stageDecisions.design` 中记录 `required` 或 `skipped` 及原因、证据；设计产出作为规划输入，边界变化时可重新进入设计。包校验检查触发规则的路由绑定，校验已记录的并行派发波次，并把 `interactive-prototype` 路由到 `ui-designer`。派发记录新增已组装简报的路径及原始字节 SHA-256，只证明记录了哪些字节，不证明工作者收到或读过简报，也不新增摘要强制校验闸门。合同修复涵盖空路由回执、工作者脚本命令校验、逐子进程超时继承、按阶段判断被取代任务的证据义务，以及完整生命周期和报告规则。包内计数仍为 46 个 Skill、16 个角色、4 个工作流；继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
+2.9.1 新增：质量修复版本，修复 2026-10-13 质量审查的十一项发现。协调者锁存活判断改为 fail-closed——只有运行时明确的句柄失效错误才能证明前任协调者已死，其余探测结果一律拒绝接管，且先在命名互斥锁下取锁再写任何项目文件；release 现在会清掉活跃 run 指针。派发台账原子写入，校验失败时以非零退出码返回；证据阶段先归一化大小写再进入大小写敏感分支；不存在 run-final 证据时 final 闸门 fail-closed。全部入口脚本声明 PowerShell 7 并显式按 UTF-8 读取，堵住 5.1 上的 GBK 静默乱码。入口文件精简到 18,621 字符，执行机制移入 `references/execution-loop.md`；新增五组行为测试（98 例）锁定锁、台账、闸门与状态脚本的生命周期。包内计数仍为 46 个 Skill、16 个角色、4 个工作流；继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
 
 Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 工作者智能体跑完整条软件交付流水线。它解决的问题是：在同一个仓库里监督许多自主智能体，同时不丢掉分支纪律、独立审查和可核验的证据。它写给担任协调者的人：你已经有 Orca（多代理 IDE）和 Claude Code，希望由隔离的工作者在明确合同下产出、审查、集成并做最终验证大型变更。
 
@@ -83,7 +83,7 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 orca-project-delivery/
 ├── SKILL.md                  # 协调者入口（17 节，不超过 250 行）
 ├── LICENSE                   # MIT
-├── VERSION                   # 2.9.0
+├── VERSION                   # 2.9.1
 ├── PACKAGE-MANIFEST.json     # 包元数据与交付物计数
 ├── CHANGELOG.md
 ├── README.md                 # 英文（默认）

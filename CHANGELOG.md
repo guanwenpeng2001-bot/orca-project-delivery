@@ -4,6 +4,17 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 2.9.1 — 2026-10-14
+
+- Quality-remediation release fixing the eleven findings of the 2026-10-13 review; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together; historical release entries remain unchanged.
+- Coordinator lock liveness is now fail-closed: `bootstrap-project.ps1` reports `dead` only on the runtime's explicit stale-handle error, `live` only on a successful positive probe, and `unknown` (refusal) for every other outcome, including transport failures. The lock is acquired under a named mutex with `FileMode.CreateNew` before any project write, and `release-coordinator.ps1` clears `activeRun` while recording `previousActiveRun`, which bootstrap reads first. The schema and lock reference document both fields.
+- `scripts/dispatch-task.ps1` writes all five ledger files atomically (temporary sibling plus move), records the post-validation result, and exits nonzero when dispatch validation fails, so exit-code-only callers never take a corrupted ledger as success.
+- `scripts/validate-git-evidence.ps1` normalizes `-Phase` casing before its case-sensitive branches, and the final phase fails closed when no run-final evidence exists; ten case-variant regression tests pin the behavior. The `audit` phase keeps its documented NOT_APPLICABLE exit-0 semantics.
+- All sixteen entry scripts declare `#requires -Version 7.0`, and the seven remediated scripts read text explicitly as UTF-8, closing the silent GBK misread on Windows PowerShell 5.1. `assemble-task.ps1` throws when a role card lacks the catalog-declared default-Skill section, and both installation guides state the PowerShell 7 requirement.
+- `reconcile-state.ps1` resolves non-rooted artifact paths against `.dev-work` instead of the caller's working directory; `create-run.ps1 -Force` archives the displaced active-run pointer and warns with its run name; the assignment template no longer cites a nonexistent section or prefills a mismatch status.
+- `SKILL.md` is trimmed to 18,621 characters, below the 19,800-character warning threshold; the detailed execution-loop steps moved to `references/execution-loop.md` and are linked from the entry. `docs/architecture.md` and its Chinese counterpart now describe the fail-closed liveness rule.
+- Added five behavioral test files (98 node:test cases) covering the lock lifecycle with a stubbed `orca`, ledger atomicity and interruption, final-gate phases including case variants, state scripts, and the runtime contract — regression evidence for every remediated path.
+
 ## 2.9.0 — 2026-10-11
 
 - Conditional-design and contract-hardening release; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together; historical release entries remain unchanged.
