@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -45,6 +45,42 @@ function parseStatus(result) {
 const at = '2026-10-14T00:00:00Z';
 const reviewAt = '2026-10-13T00:00:00Z';
 const runSlug = 'gate-run';
+
+for (const phase of ['FINAL', 'Final', 'AUDIT']) {
+  for (const emptyCoverage of [false, true]) {
+    test(`case variant ${phase} preserves ${emptyCoverage ? 'empty coverage' : 'zero evidence'} verdict`, (t) => {
+      const { project } = createProject(t);
+      if (emptyCoverage) writeRunFinal(project, []);
+      const lower = phase.toLowerCase();
+      const expected = lower === 'audit' && !emptyCoverage ? 'NOT_APPLICABLE' : 'FAIL';
+      const canonical = runValidator(project, ['-Run', runSlug, '-Phase', lower]);
+      const variant = runValidator(project, ['-Run', runSlug, '-Phase', phase]);
+      assert.equal(parseStatus(variant).status, expected, variant.stdout);
+      assert.equal(variant.status, expected === 'FAIL' ? 1 : 0, variant.stdout);
+      assert.deepEqual(parseStatus(variant), parseStatus(canonical));
+    });
+  }
+}
+
+for (const phase of ['SourceRegistered', 'Review', 'PreMerge', 'PostMerge']) {
+  test(`case variant ${phase} preserves task phase checks`, (t) => {
+    const { project, runDir } = createProject(t);
+    integrateFixtureTask(project);
+    const evidencePath = path.join(runDir, 'evidence/git/fixture-task.json');
+    const document = JSON.parse(readFileSync(evidencePath, 'utf8'));
+    document.state = 'reviewed';
+    delete document.integration;
+    writeFileSync(evidencePath, JSON.stringify(document));
+    const lower = phase.toLowerCase();
+    const canonical = runValidator(project, ['-EvidencePath', evidencePath, '-Phase', lower]);
+    const variant = runValidator(project, ['-EvidencePath', evidencePath, '-Phase', phase]);
+    const expected = ['premerge', 'postmerge'].includes(lower) ? 'FAIL' : 'PASS';
+    assert.equal(parseStatus(variant).status, expected, variant.stdout);
+    assert.equal(variant.status, expected === 'FAIL' ? 1 : 0, variant.stdout);
+    assert.equal(parseStatus(variant).phase, lower);
+    assert.deepEqual(parseStatus(variant), parseStatus(canonical));
+  });
+}
 
 // One real task branch merged into the delivery branch, with the review/admission/integration
 // chain Test-TaskEvidence demands, so run-final coverage has a legitimate integrated task.
