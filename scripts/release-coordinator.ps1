@@ -112,6 +112,7 @@ if (Test-Path $lockPath) {
   $lock | Add-Member -NotePropertyName releasedAt -NotePropertyValue ([DateTimeOffset]::UtcNow.ToString("o")) -Force
   $lock | Add-Member -NotePropertyName releaseReason -NotePropertyValue $Reason -Force
   $lock | Add-Member -NotePropertyName previousActiveRun -NotePropertyValue $activeRun -Force
+  $lock | Add-Member -NotePropertyName activeRun -NotePropertyValue $null -Force
   Write-JsonFile $lockPath $lock
 } else {
   $warnings += "No coordinator-lock.json found; nothing to release."
