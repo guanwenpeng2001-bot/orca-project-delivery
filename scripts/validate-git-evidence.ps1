@@ -8,6 +8,9 @@ param(
   [string]$Phase = 'audit'
 )
 
+$Phase = $Phase.ToLowerInvariant()
+$script:Phase = $Phase
+
 $ErrorActionPreference = 'Stop'
 $problems = [Collections.Generic.List[string]]::new()
 $documents = @{}
@@ -242,7 +245,7 @@ function Test-TaskEvidence($Document, [string]$TaskPhase) {
       if ($assignment.branch -and $assignment.branch.Contains('mergeTarget') -and $null -eq $assignment.branch.mergeTarget) { $readOnlyTask = $true }
     }
   }
-  if ($TaskPhase -ceq 'sourceRegistered') { return }
+  if ($TaskPhase -ceq 'sourceregistered') { return }
   if ($TaskPhase -in @('audit', 'final') -and $Document.state -ceq 'source-registered') { return }
   Assert-Evidence ($Document.state -in @('reviewed', 'integrated')) "$taskKey requires reviewed or integrated state"
   Assert-Evidence (@($Document.reviews).Count -gt 0) "$taskKey requires reviews"
@@ -269,7 +272,7 @@ function Test-TaskEvidence($Document, [string]$TaskPhase) {
   Assert-Evidence ($integration.admission.sourceWorktreeClean -eq $true -and $integration.admission.deliveryWorktreeClean -eq $true) "$taskKey admission requires clean source and delivery trees"
   $deliveryBranch = $integration.baselineBefore.branch
   if ($script:deliveryBranch) { Assert-Evidence ($deliveryBranch -ceq $script:deliveryBranch) "$taskKey delivery branch differs from run-state" }
-  if ($TaskPhase -ceq 'preMerge') {
+  if ($TaskPhase -ceq 'premerge') {
     Assert-Evidence ($Document.state -ceq 'reviewed') "$taskKey preMerge requires reviewed state"
     Assert-Evidence ((Get-BranchHead $integration.sourceBranch) -ceq $targetSha) "$taskKey approved source HEAD drifted; review again"
     Test-CleanWorktree (Get-BranchWorktree $integration.sourceBranch) 'source worktree' $targetSha
@@ -277,12 +280,12 @@ function Test-TaskEvidence($Document, [string]$TaskPhase) {
     Assert-Evidence ((Get-BranchHead $deliveryBranch) -ceq $integration.baselineBefore.commitSha) "$taskKey baselineBefore does not equal delivery branch HEAD"
     return
   }
-  if ($TaskPhase -ceq 'postMerge') { Assert-Evidence ($Document.state -ceq 'integrated') "$taskKey postMerge requires integrated state" }
+  if ($TaskPhase -ceq 'postmerge') { Assert-Evidence ($Document.state -ceq 'integrated') "$taskKey postMerge requires integrated state" }
   if ($Document.state -cne 'integrated') { return }
   $headAfter = $integration.headAfter.commitSha
   $baselineBefore = $integration.baselineBefore.commitSha
   Assert-Evidence ($integration.headAfter.branch -ceq $deliveryBranch) "$taskKey headAfter branch differs from baselineBefore"
-  if ($TaskPhase -ceq 'postMerge') {
+  if ($TaskPhase -ceq 'postmerge') {
     Assert-Evidence ((Get-BranchHead $deliveryBranch) -ceq $headAfter) "$taskKey headAfter does not equal delivery branch HEAD"
     Test-CleanWorktree (Get-BranchWorktree $deliveryBranch) 'delivery worktree' $headAfter
   }
@@ -352,7 +355,7 @@ function Test-SupersededAssignment($Assignment, $Assignments, $EnteredStatuses, 
   if (-not $path) { $path = "runs/$script:runName/evidence/git/$key.json" }
   $evidence = Get-Evidence (Resolve-EvidencePath $path $script:devWork)
   Assert-Evidence ($evidence.subject.kind -ceq 'task' -and $evidence.subject.taskKey -ceq $key) "$label evidence task identity mismatch"
-  if ($RequestedPhase -cin @('sourceRegistered', 'review', 'preMerge')) {
+  if ($RequestedPhase -cin @('sourceregistered', 'review', 'premerge')) {
     Assert-Evidence ($evidence.state -cin @('reviewed', 'integrated')) "$label requires reviewed or integrated successor evidence"
     if ($evidence.state -ceq 'reviewed') { Test-TaskEvidence $evidence 'review' }
   } else {
@@ -488,10 +491,11 @@ try {
       $entries = @(Get-RunEvidence)
       Test-Assignments $entries
       $tasks = @($entries | Where-Object { $_.Document.subject.kind -ceq 'task' })
-      if ($tasks.Count -eq 0 -and $entries.Count -eq 0 -and $problems.Count -eq 0) {
+      if ($tasks.Count -eq 0 -and $entries.Count -eq 0 -and $problems.Count -eq 0 -and $Phase -cne 'final') {
         $status = 'NOT_APPLICABLE'; $reason = 'No Task has entered the evidence lifecycle in this run.'
       } elseif ($Phase -ceq 'final') {
         $finals = @($entries | Where-Object { $_.Document.subject.kind -ceq 'run' })
+        if ($finals.Count -eq 0) { Assert-Evidence $false 'No run-final evidence exists.' }
         Assert-Evidence ($finals.Count -eq 1) 'Final evidence must be unique; rebuild evidence or mark UNVERIFIABLE'
         if ($finals.Count -eq 1) { Test-RunFinal $finals[0].Document $entries $true }
       } else {

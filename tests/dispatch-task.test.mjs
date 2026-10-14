@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, linkSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -366,4 +366,84 @@ test('warns about task-map drift and keeps unfamiliar top-level keys intact', (t
   const taskMap = readJson(path.join(runDir, 'task-map.json'));
   assert.equal(taskMap['release-metadata'].taskId, 'task_stray000000');
   assert.equal(taskMap.tasks['fixture-task'].taskId, 'task_abcdef123456');
+});
+
+test('a post-validation failure reports ok=false and exits non-zero with the ledger written', (t) => {
+  const { project, runDir, devWork } = createProject(t);
+  const paths = writeInputs(t, project);
+  // Break a ledger input validate-run.ps1 checks: an invalid run-state schema.
+  writeJson(path.join(runDir, 'run-state.json'), {
+    schemaVersion: 1, runSlug: 'fixture-run', objective: 'dispatch fixture', workflow: 'no-such-workflow',
+    status: 'active', stage: 'task-graph', deliveryBranch: 'main', deliveryBranchSource: 'user',
+    coordinatorControlBranch: 'control', coordinatorWorktree: project, orcaRunId,
+    completedStages: ['intake'], pendingUserDecisions: [],
+    createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+  });
+  const result = runDispatch(project, paths, []);
+  assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  const output = parseOutput(result);
+  assert.equal(output.ok, false);
+  assert.equal(output.postValidation.executed, true);
+  assert.equal(output.postValidation.ok, false);
+  assert.equal(output.postValidation.exitCode, 1);
+  assert.ok(output.warnings.some((warning) => /validate-run\.ps1 reports problems/.test(warning)), result.stdout);
+  // The dispatch itself completed: the ledger was written and stays valid JSON.
+  const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
+  assert.equal(assignment.taskKey, 'fixture-task');
+  assert.equal(readJson(path.join(devWork, 'coordinator-lock.json')).activeRun, 'fixture-run');
+});
+
+test('all five ledger files are replaced without modifying their previous file objects', (t) => {
+  const { project, runDir, devWork } = createProject(t);
+  const paths = writeInputs(t, project);
+  assert.equal(runDispatch(project, paths).status, 0);
+  const files = [path.join(runDir, 'assignments', 'fixture-task.json'),
+    ...['task-map.json', 'branch-map.json', 'run-state.json'].map((name) => path.join(runDir, name)),
+    path.join(devWork, 'coordinator-lock.json')];
+  const snapshots = files.map((file) => {
+    const value = readJson(file);
+    value.atomicWriteProbe = true;
+    writeJson(file, value);
+    const alias = file + '.previous';
+    linkSync(file, alias);
+    return { alias, bytes: readFileSync(alias) };
+  });
+  const second = writeInputs(t, project, { dispatchId: 'ctx_second123456' });
+  const result = runDispatch(project, second, ['-ForceReDispatch', '-SkipPostValidation']);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  for (const { alias, bytes } of snapshots) assert.deepEqual(readFileSync(alias), bytes);
+  for (const file of files) assert.doesNotThrow(() => readJson(file));
+});
+
+test('an interrupted ledger write exits non-zero and leaves every written file valid JSON', (t) => {
+  const { project, runDir, devWork } = createProject(t);
+  const paths = writeInputs(t, project);
+  const stateBefore = readFileSync(path.join(runDir, 'run-state.json'), 'utf8');
+  const lockBefore = readFileSync(path.join(devWork, 'coordinator-lock.json'), 'utf8');
+  const harness = String.raw`
+$ErrorActionPreference = 'Stop'
+$lines = [IO.File]::ReadAllLines($env:DISPATCH_SCRIPT)
+$line = 1 + [Array]::FindIndex($lines, [Predicate[string]] { param($text) $text -match '^Write-(Atomic)?JsonFile -Path \$assignmentPath' })
+$null = Set-PSBreakpoint -Script $env:DISPATCH_SCRIPT -Line $line -Action {
+  Remove-Item -LiteralPath $env:COLLISION_PATH
+  $null = New-Item -ItemType Directory -Path $env:COLLISION_PATH
+}
+& $env:DISPATCH_SCRIPT -ProjectRoot $env:FIXTURE_PROJECT -TaskDefinitionPath $env:DEFINITION_PATH -BriefPath $env:BRIEF_PATH -ReceiptPath $env:RECEIPT_PATH -SkipPostValidation
+`;
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', harness], {
+    encoding: 'utf8', timeout: 60000,
+    env: { ...process.env, DISPATCH_SCRIPT: script, COLLISION_PATH: path.join(runDir, 'branch-map.json'),
+      FIXTURE_PROJECT: project, DEFINITION_PATH: paths.definitionPath, BRIEF_PATH: paths.briefPath, RECEIPT_PATH: paths.receiptPath },
+  });
+  assert.ifError(result.error);
+  assert.notEqual(result.status, 0, result.stdout + result.stderr);
+  assert.match(clean(result.stdout + result.stderr), /Ledger write failed for/);
+  assert.match(clean(result.stdout + result.stderr), /branch-map/);
+  assert.equal(readJson(path.join(runDir, 'assignments', 'fixture-task.json')).orca.dispatchId, 'ctx_abcdef123456');
+  assert.equal(readJson(path.join(runDir, 'task-map.json')).tasks['fixture-task'].taskId, 'task_abcdef123456');
+  assert.equal(readFileSync(path.join(runDir, 'run-state.json'), 'utf8'), stateBefore);
+  assert.equal(readFileSync(path.join(devWork, 'coordinator-lock.json'), 'utf8'), lockBefore);
+  for (const directory of [runDir, path.join(runDir, 'assignments'), devWork]) {
+    assert.ok(readdirSync(directory).every((entry) => !/\.tmp\.[0-9a-f]{32}$/.test(entry)));
+  }
 });

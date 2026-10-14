@@ -43,6 +43,19 @@ if ($env:GIT_CONFIG_COUNT -and -not $env:GIT_CONFIG_KEY_0) {
 
 . (Join-Path $PSScriptRoot 'project-common.ps1')
 
+function Write-AtomicJsonFile {
+  param([string]$Path, [object]$Value, [int]$Depth = 20)
+  $tempPath = "$Path.tmp.$([Guid]::NewGuid().ToString('N'))"
+  try {
+    Write-JsonFile -Path $tempPath -Value $Value -Depth $Depth
+    [System.IO.File]::Move($tempPath, $Path, $true)
+  } catch {
+    throw "Ledger write failed for '$Path': $($_.Exception.Message)"
+  } finally {
+    if ([System.IO.File]::Exists($tempPath)) { [System.IO.File]::Delete($tempPath) }
+  }
+}
+
 # The coordinator still runs worker-start itself: command lines for the orchestration runtime
 # belong to the installed runtime's own documentation, not to this package. This script records
 # the receipt that call returned as the run's ledger: one assignment file, one task-map entry,
@@ -418,12 +431,12 @@ $state.updatedAt = $now
 if ($Stage) { $state.stage = $Stage }
 
 # ------------------------------------------------------------------- writes
-Write-JsonFile -Path $assignmentPath -Value $assignment -Depth 30
-Write-JsonFile -Path $taskMapPath -Value $taskMap -Depth 30
-Write-JsonFile -Path $branchMapPath -Value $branchMap -Depth 30
-Write-JsonFile -Path $statePath -Value $state -Depth 30
+Write-AtomicJsonFile -Path $assignmentPath -Value $assignment -Depth 30
+Write-AtomicJsonFile -Path $taskMapPath -Value $taskMap -Depth 30
+Write-AtomicJsonFile -Path $branchMapPath -Value $branchMap -Depth 30
+Write-AtomicJsonFile -Path $statePath -Value $state -Depth 30
 $lock.updatedAt = $now
-Write-JsonFile -Path $lockPath -Value $lock -Depth 30
+Write-AtomicJsonFile -Path $lockPath -Value $lock -Depth 30
 
 $postValidation = [ordered]@{ executed = $false; ok = $null; exitCode = $null }
 if (-not $SkipPostValidation) {
@@ -441,8 +454,9 @@ if (-not $SkipPostValidation) {
   }
 }
 
+$dispatchOk = $SkipPostValidation -or $postValidation.ok -eq $true
 $output = [ordered]@{
-  ok = $true
+  ok = $dispatchOk
   run = $runSlug
   taskKey = $taskKey
   status = $Status
@@ -457,3 +471,5 @@ $output = [ordered]@{
   warnings = @($warnings)
 }
 $output | ConvertTo-Json -Depth 10
+if (-not $dispatchOk) { exit 1 }
+exit 0

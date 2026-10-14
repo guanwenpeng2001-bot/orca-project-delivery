@@ -270,7 +270,7 @@ function Test-GitEvidence {
   }
   Invoke-Check 'evidence/not-applicable-scope' {
     $fixture = New-EvidenceProject 'not-applicable'
-    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'NOT_APPLICABLE' 'run without an evidence lifecycle'
+    Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', $fixture.RunSlug, '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'run without an evidence lifecycle' 'No run-final evidence exists'
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'NOT_APPLICABLE' 'no active run'
     Assert-EvidenceStatus (Invoke-EvidenceValidator @('-Run', 'missing-run', '-Phase', 'final', '-ProjectRoot', $fixture.ProjectRoot)) 'FAIL' 'explicit missing run' 'Run directory missing'
     Remove-Item -LiteralPath $fixture.EvidenceDirectory
