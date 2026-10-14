@@ -59,15 +59,104 @@ if ($currentBranch -eq $DeliveryBranch) {
 
 function Get-CoordinatorLiveness {
   param([string]$Handle)
-  # Orca has no coordinator-lock primitive; the bound terminal handle is the closest
-  # authoritative liveness signal. Returns live | dead | unknown.
   if (-not $Handle) { return "unknown" }
   if (-not (Get-Command orca -ErrorAction SilentlyContinue)) { return "unknown" }
-  $raw = & orca terminal show --terminal $Handle --json 2>$null
-  if ($LASTEXITCODE -ne 0 -or -not $raw) { return "dead" }
-  try { return $(if (($raw | ConvertFrom-Json).ok) { "live" } else { "dead" }) } catch { return "unknown" }
+  try {
+    $raw = & orca terminal show --terminal $Handle --json 2>$null
+    $probeExit = $LASTEXITCODE
+    if (-not $raw) { return "unknown" }
+    $parsed = $raw | ConvertFrom-Json
+  } catch { return "unknown" }
+  if ($parsed.ok -eq $false -and "$($parsed.error.code)" -eq "terminal_handle_stale") { return "dead" }
+  if ($probeExit -eq 0 -and $parsed.ok -eq $true) { return "live" }
+  return "unknown"
 }
 
+# Serialize takeover as well as creation so a contender cannot remove a newly acquired lock.
+$mutexKey = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($gitRoot.ToUpperInvariant())))
+$mutex = [Threading.Mutex]::new($false, "orca-coordinator-$mutexKey")
+$acquired = $false
+try {
+  try { $acquired = $mutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $acquired = $true }
+  if (-not $acquired) { throw "Another bootstrap is acquiring the coordinator lock." }
+$devWork = Join-Path $gitRoot ".dev-work"
+$lockPath = Join-Path $devWork "coordinator-lock.json"
+$lockLiveness = "none"
+if (Test-Path $lockPath) {
+  $existing = Get-Content $lockPath -Raw | ConvertFrom-Json
+  $existingStatus = if ($existing.PSObject.Properties["status"]) { "$($existing.status)" } else { "" }
+  if ($existingStatus -eq "released") {
+    # A released lock is a deliberate handover (references/coordinator-lock.md, Release step 4),
+    # not a live holder: whoever released it may still own the terminal. Never refuse on liveness;
+    # warn with the release audit trail, archive the old lock like the dead path, then take over.
+    $lockLiveness = "released"
+    $releaseRunField = $null
+    $releaseRunValue = $null
+    foreach ($field in @("previousActiveRun", "activeRun")) {
+      $property = $existing.PSObject.Properties[$field]
+      if ($property -and "$($property.Value)") { $releaseRunField = $field; $releaseRunValue = "$($property.Value)"; break }
+    }
+    $releaseFacts = @()
+    foreach ($field in @("releasedAt", "releaseReason")) {
+      $property = $existing.PSObject.Properties[$field]
+      if ($property -and "$($property.Value)") { $releaseFacts += "$field=$($property.Value)" }
+    }
+    if ($releaseRunValue) { $releaseFacts += "$releaseRunField=$releaseRunValue" }
+    $releaseDetail = if ($releaseFacts.Count) { " (" + ($releaseFacts -join "; ") + ")" } else { "" }
+    Write-Warning "Coordinator lock at $lockPath is released$releaseDetail. Taking over; the previous lock is archived."
+  } else {
+    $lockLiveness = Get-CoordinatorLiveness $existing.coordinatorTerminalHandle
+    if (-not $ForceLock) {
+      switch ($lockLiveness) {
+        "live" { throw "A live coordinator is bound to $($existing.coordinatorTerminalHandle). Stop it, or run scripts/release-coordinator.ps1, before starting another." }
+        "unknown" { throw "Coordinator lock exists at $lockPath and liveness is unverifiable. Verify the holder manually, then use -ForceLock (archives the old lock) or release-coordinator.ps1." }
+        "dead" { Write-Warning "Stale coordinator lock detected (holder terminal is gone). Taking over; the previous lock is archived." }
+      }
+    }
+  }
+  $archiveDir = Join-Path $devWork "archive"
+  if (-not (Test-Path $archiveDir)) { New-Item -ItemType Directory -Path $archiveDir | Out-Null }
+  $archiveName = "coordinator-lock-{0}.json" -f ([DateTimeOffset]::UtcNow.ToString("yyyyMMdd-HHmmss"))
+  Copy-Item $lockPath (Join-Path $archiveDir $archiveName)
+  Remove-Item $lockPath -Force
+}
+
+$createdDevWork = $false
+if (-not (Test-Path $devWork)) {
+  New-Item -ItemType Directory -Path $devWork | Out-Null
+  $createdDevWork = $true
+}
+
+# CreateNew prevents a competing writer from overwriting an acquired lock.
+$lock = [ordered]@{
+  schemaVersion = 1
+  status = "active"
+  coordinatorTerminalHandle = $env:ORCA_TERMINAL_HANDLE
+  coordinatorWorktreeId = $env:ORCA_WORKTREE_ID
+  hostProcessId = $PID
+  livenessProbe = "orca terminal show --terminal <coordinatorTerminalHandle> --json"
+  processId = $PID
+  host = [Environment]::MachineName
+  user = [Environment]::UserName
+  coordinatorControlBranch = $currentBranch
+  coordinatorWorktree = $gitRoot
+  startedAt = [DateTimeOffset]::UtcNow.ToString("o")
+  activeRun = $null
+}
+$lockJson = $lock | ConvertTo-Json -Depth 20
+$lockBytes = [System.Text.UTF8Encoding]::new($false).GetBytes($lockJson + [Environment]::NewLine)
+try {
+  $lockStream = [System.IO.File]::Open($lockPath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+} catch [System.IO.IOException] {
+  throw "Lost the coordinator lock race: another process created $lockPath while this bootstrap was acquiring it."
+}
+try {
+  $lockStream.Write($lockBytes, 0, $lockBytes.Length)
+} finally {
+  $lockStream.Dispose()
+}
+
+# --- project writes, only after the lock is held ------------------------------------------
 $agentsPath = Join-Path $gitRoot "AGENTS.md"
 $createdAgents = $false
 if (-not (Test-Path $agentsPath)) {
@@ -80,13 +169,6 @@ foreach ($example in @(@{ Source = 'project.env.example'; Target = '.env.example
   if (-not (Test-Path -LiteralPath $destination)) {
     Copy-Item -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) "templates/$($example.Source)") -Destination $destination
   }
-}
-
-$devWork = Join-Path $gitRoot ".dev-work"
-$createdDevWork = $false
-if (-not (Test-Path $devWork)) {
-  New-Item -ItemType Directory -Path $devWork | Out-Null
-  $createdDevWork = $true
 }
 
 $directories = @(
@@ -133,53 +215,6 @@ foreach ($line in @("/AGENTS.md", "/.dev-work/", "/.env")) {
   }
 }
 
-$lockPath = Join-Path $devWork "coordinator-lock.json"
-$lockLiveness = "none"
-if (Test-Path $lockPath) {
-  $existing = Get-Content $lockPath -Raw | ConvertFrom-Json
-  $existingStatus = if ($existing.PSObject.Properties["status"]) { "$($existing.status)" } else { "" }
-  if ($existingStatus -eq "released") {
-    # A released lock is a deliberate handover (references/coordinator-lock.md, Release step 4),
-    # not a live holder: whoever released it may still own the terminal. Never refuse on liveness;
-    # warn with the release audit trail, archive the old lock like the dead path, then take over.
-    $lockLiveness = "released"
-    $releaseFacts = @()
-    foreach ($field in @("releasedAt", "releaseReason", "activeRun")) {
-      $property = $existing.PSObject.Properties[$field]
-      if ($property -and "$($property.Value)") { $releaseFacts += "$field=$($property.Value)" }
-    }
-    $releaseDetail = if ($releaseFacts.Count) { " (" + ($releaseFacts -join "; ") + ")" } else { "" }
-    Write-Warning "Coordinator lock at $lockPath is released$releaseDetail. Taking over; the previous lock is archived."
-  } else {
-    $lockLiveness = Get-CoordinatorLiveness $existing.coordinatorTerminalHandle
-    if (-not $ForceLock) {
-      switch ($lockLiveness) {
-        "live" { throw "A live coordinator is bound to $($existing.coordinatorTerminalHandle). Stop it, or run scripts/release-coordinator.ps1, before starting another." }
-        "unknown" { throw "Coordinator lock exists at $lockPath and liveness is unverifiable. Verify the holder manually, then use -ForceLock (archives the old lock) or release-coordinator.ps1." }
-        "dead" { Write-Warning "Stale coordinator lock detected (holder terminal is gone). Taking over; the previous lock is archived." }
-      }
-    }
-  }
-  $archiveName = "coordinator-lock-{0}.json" -f ([DateTimeOffset]::UtcNow.ToString("yyyyMMdd-HHmmss"))
-  Copy-Item $lockPath (Join-Path (Join-Path $devWork "archive") $archiveName)
-}
-
-Write-JsonFile $lockPath ([ordered]@{
-  schemaVersion = 1
-  status = "active"
-  coordinatorTerminalHandle = $env:ORCA_TERMINAL_HANDLE
-  coordinatorWorktreeId = $env:ORCA_WORKTREE_ID
-  hostProcessId = $PID
-  livenessProbe = "orca terminal show --terminal <coordinatorTerminalHandle> --json"
-  processId = $PID
-  host = [Environment]::MachineName
-  user = [Environment]::UserName
-  coordinatorControlBranch = $currentBranch
-  coordinatorWorktree = $gitRoot
-  startedAt = [DateTimeOffset]::UtcNow.ToString("o")
-  activeRun = $null
-})
-
 $result = [ordered]@{
   ok = $true
   projectRoot = $gitRoot
@@ -197,3 +232,7 @@ $result = [ordered]@{
   controlEqualsDeliveryWaived = [bool]$AllowControlEqualsDelivery
 }
 $result | ConvertTo-Json -Depth 10
+} finally {
+  if ($acquired) { $mutex.ReleaseMutex() }
+  $mutex.Dispose()
+}

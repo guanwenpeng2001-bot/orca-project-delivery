@@ -71,6 +71,12 @@
         "string",
         "null"
       ]
+    },
+    "previousActiveRun": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "additionalProperties": true
