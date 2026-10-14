@@ -170,6 +170,8 @@ the earlier dispatch under `runtime.previousDispatches`. Record
 worker is a background session, and the next milestone report names it as
 such.
 
+Execution-loop and review/integration mechanics live in [Execution Loop](../references/execution-loop.md); read that reference before dispatching and processing workers.
+
 ### 6. Wait and process
 
 Wait on the runtime's check verb; process every question and escalation.

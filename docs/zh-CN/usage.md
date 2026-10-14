@@ -84,6 +84,8 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 用 `scripts/dispatch-task.ps1` 从协调者捕获的 `worker-start --json` 回执（`-ReceiptPath`）记录本次派发：脚本推导请求值 / 生效值的核对结论，拒绝落点在协调者控制树或与任务定义矛盾的回执，写盘前先用 `schemas/assignment.schema.json` 校验指派，并且同一任务的重复在途派发默认被拒 — 除非 `-ForceReDispatch` 把先前派发记入 `runtime.previousDispatches`。记录 `runtime.mode` 与终端 `surface`；`structured` 工作者属于后台会话，下一次里程碑汇报必须明说。
 
+执行循环和审查 / 集成的操作细节位于[执行循环参考](../../references/execution-loop.md)；派发和处理工作者前先阅读该参考。
+
 ### 6. 等待与处理
 
 在运行时的 check 动词上等待；处理每一个问题和升级。确认每个 `worker_done` 属于活动 Dispatch 后再确认它，并决定每个终端的下一任所有者。每次确认结算之后，重新评估就绪状态并派发新就绪的任务。连续三次空等待之后，枚举工作者并按投影的下一步行动处理，必要时做有界的工作者读取。
