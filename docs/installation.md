@@ -191,8 +191,8 @@ intentional adaptation, review the body and update its hash as described in
 
 ### PowerShell 7 not found
 
-Symptom: `pwsh` is not recognized, or the suite refuses to run under Windows
-PowerShell 5.1.
+All entry scripts require PowerShell 7+ and refuse to run under Windows PowerShell 5.1.
+Symptom: `pwsh` is not recognized, or a script reports that PowerShell 7 is required.
 
 Fix: install PowerShell 7+ and invoke scripts explicitly with `pwsh
 -NoProfile -File <script>`. Verify with:

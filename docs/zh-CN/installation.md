@@ -136,7 +136,8 @@ FAIL metadata/skill-paths: skill file missing: <...>\skills\code-review\SKILL.md
 
 ### 找不到 PowerShell 7
 
-症状：`pwsh` 无法识别，或套件拒绝在 Windows PowerShell 5.1 下运行。
+所有入口脚本都要求 PowerShell 7+，并拒绝在 Windows PowerShell 5.1 下运行。
+症状：`pwsh` 无法识别，或脚本提示要求 PowerShell 7。
 
 修复：安装 PowerShell 7+，并用 `pwsh -NoProfile -File <script>` 显式调用脚本。验证：
 

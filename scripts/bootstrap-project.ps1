@@ -1,3 +1,4 @@
+#requires -Version 7.0
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $false)]
@@ -83,7 +84,7 @@ $devWork = Join-Path $gitRoot ".dev-work"
 $lockPath = Join-Path $devWork "coordinator-lock.json"
 $lockLiveness = "none"
 if (Test-Path $lockPath) {
-  $existing = Get-Content $lockPath -Raw | ConvertFrom-Json
+  $existing = Get-Content -Encoding utf8 $lockPath -Raw | ConvertFrom-Json
   $existingStatus = if ($existing.PSObject.Properties["status"]) { "$($existing.status)" } else { "" }
   if ($existingStatus -eq "released") {
     # A released lock is a deliberate handover (references/coordinator-lock.md, Release step 4),
@@ -208,7 +209,7 @@ if (-not (Test-Path $excludeDir)) {
 if (-not (Test-Path $excludePath)) {
   New-Item -ItemType File -Path $excludePath | Out-Null
 }
-$excludeLines = Get-Content $excludePath -ErrorAction SilentlyContinue
+$excludeLines = Get-Content -Encoding utf8 $excludePath -ErrorAction SilentlyContinue
 foreach ($line in @("/AGENTS.md", "/.dev-work/", "/.env")) {
   if ($excludeLines -notcontains $line) {
     Add-Content -Path $excludePath -Value $line -Encoding UTF8

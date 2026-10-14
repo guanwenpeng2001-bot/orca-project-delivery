@@ -1,3 +1,4 @@
+#requires -Version 7.0
 # Shared helpers for coordinator project lifecycle scripts.
 # The evidence validator intentionally owns its separate read-only Git policy.
 function Invoke-Git {
