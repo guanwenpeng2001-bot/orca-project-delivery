@@ -9,17 +9,17 @@
   "runtime": {
     "requested": {
       "agent": "claude",
-      "model": "claude-haiku-4-5",
-      "effort": "medium"
+      "model": "<requested-model>",
+      "effort": "<requested-effort>"
     },
     "effective": {
-      "agent": "claude",
-      "model": "haiku",
+      "agent": null,
+      "model": null,
       "effort": null
     },
     "verification": {
-      "status": "mismatch",
-      "evidence": "首次 worker-start 回执 launch.effective.model=haiku、无 effort 字段；按 §4.4 回退规则改用别名且不指定 effort"
+      "status": "<status>",
+      "evidence": "<evidence>; for fallback handling see references/failure-taxonomy.md#access-and-configuration"
     }
   },
   "branch": {
@@ -43,5 +43,5 @@
     "dispatchId": null
   },
   "status": "planned",
-  "fallbackReason": "haiku 首次回执与请求不符，回退别名且不指定 effort"
+  "fallbackReason": null
 }

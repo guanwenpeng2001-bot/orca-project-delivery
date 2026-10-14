@@ -68,10 +68,11 @@ if (-not (Test-Path (Join-Path $devWork "manifest.json"))) {
 }
 
 $activePath = Join-Path $devWork "active-run.json"
-if ((Test-Path $activePath) -and -not $Force) {
-  $active = Get-Content $activePath -Raw | ConvertFrom-Json
-  if ($active.run) {
-    throw "An active run already exists: $($active.run). Close it or use -Force only after reconciliation."
+$previousActive = $null
+if (Test-Path $activePath) {
+  $previousActive = Get-Content $activePath -Raw | ConvertFrom-Json
+  if ($previousActive.run -and -not $Force) {
+    throw "An active run already exists: $($previousActive.run). Close it or use -Force only after reconciliation."
   }
 }
 
@@ -97,6 +98,14 @@ $resolvedRunDir = [System.IO.Path]::GetFullPath($runDir)
 if (-not $resolvedRunDir.StartsWith($runsRootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
   throw "Refusing to create a run outside '$runsRoot': -RunSlug '$RunSlug' resolves to '$resolvedRunDir'."
 }
+$lockPath = Join-Path $devWork "coordinator-lock.json"
+if (Test-Path $lockPath) {
+  $lock = Get-Content $lockPath -Raw | ConvertFrom-Json
+  if ($lock.coordinatorTerminalHandle -and $env:ORCA_TERMINAL_HANDLE -and $lock.coordinatorTerminalHandle -ne $env:ORCA_TERMINAL_HANDLE) {
+    Write-Warning "Coordinator lock belongs to '$($lock.coordinatorTerminalHandle)', but caller is '$env:ORCA_TERMINAL_HANDLE'; run state will be updated."
+  }
+}
+
 $runDirCreated = $false
 $archivedState = $null
 
@@ -182,6 +191,13 @@ try {
     runDirectory = "runs/$RunSlug"
     orcaRunId = $(if ($OrcaRunId) { $OrcaRunId } else { $null })
     updatedAt = $now
+  }
+  if ($Force -and $previousActive.run -and $previousActive.run -ne $RunSlug) {
+    $archiveDir = Join-Path $devWork "archive"
+    New-Item -ItemType Directory -Path $archiveDir -Force | Out-Null
+    $archiveName = "active-run-{0}.json" -f ([DateTimeOffset]::UtcNow.ToString("yyyyMMdd-HHmmssfffffff"))
+    Copy-Item $activePath (Join-Path $archiveDir $archiveName)
+    Write-Warning "Replacing active run '$($previousActive.run)' with '$RunSlug'; the previous active-run pointer was archived under $archiveDir and the old run remains on disk."
   }
   Write-JsonFile $activePath $active -Depth 30
 

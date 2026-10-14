@@ -46,6 +46,12 @@ foreach ($line in ($worktreeText -split "`n")) {
   if ($line -match '^branch refs/heads/(.+?)\s*$') { $registeredWorktreeBranches += $Matches[1] }
 }
 
+function Test-AssignmentArtifact([string]$Path) {
+  if (-not $Path) { return $false }
+  if (-not [System.IO.Path]::IsPathRooted($Path)) { $Path = Join-Path $devWork $Path }
+  return Test-Path -LiteralPath $Path
+}
+
 $rows = @()
 if (Test-Path $assignmentsDir) {
   foreach ($file in Get-ChildItem $assignmentsDir -Filter *.json) {
@@ -63,7 +69,8 @@ if (Test-Path $assignmentsDir) {
         recordedWorktree = $worktreePath
         worktreeExists = $(if ($worktreePath) { Test-Path $worktreePath } else { $false })
         worktreeRegistered = $(if ($workBranch) { $registeredWorktreeBranches -contains $workBranch } else { $false })
-        reportExists = $(if ($assignment.artifacts.reportPath) { Test-Path $assignment.artifacts.reportPath } else { $false })
+        reportExists = Test-AssignmentArtifact $assignment.artifacts.reportPath
+        evidenceExists = Test-AssignmentArtifact $assignment.artifacts.evidencePath
         orcaRunId = $assignment.orca.runId
         orcaTaskId = $assignment.orca.taskId
         dispatchId = $assignment.orca.dispatchId
