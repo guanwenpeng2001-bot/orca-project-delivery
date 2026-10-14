@@ -163,9 +163,9 @@ Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json
 
 | 状态 | 判定 | 引导行为 |
 | --- | --- | --- |
-| `live` | 终端探测返回 ok | 拒绝：一个存活的协调者拥有此工作树 |
-| `dead` | 记录了句柄且探测失败 | 警告，归档旧锁，接管 |
-| `unknown` | 没有句柄、PATH 上没有运行时，或响应无法解析 | 拒绝 — 缺席不是持有者已死的证明 |
+| `live` | 终端探测成功并返回 ok | 拒绝：一个存活的协调者拥有此工作树 |
+| `dead` | 探测可解析，且以明确的未找到错误码 `terminal_handle_stale` 回答不是 ok | 警告，归档旧锁，接管 |
+| `unknown` | 没有句柄、PATH 上没有运行时、输出为空或无法解析，或没有该明确未找到信号的任何其他探测失败 | 无 `-ForceLock` 时拒绝 — 仅探测失败并不证明持有者已死 |
 
 释放使用 `scripts/release-coordinator.ps1 -ConfirmRunClosed`：它报告可回收的工作者（不可验证的结果如实报告，绝不当作失败），归档活动运行和锁文件，把锁标为 `released` 并带时间戳而不是删除它，然后删除 `active-run.json`。之后的引导看到 `released` 的持有者，将其归档并有意识地接管。绝不为了绕过释放而删除锁文件，也绝不用全局编排重置来清理一次运行。
 

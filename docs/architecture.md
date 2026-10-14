@@ -230,9 +230,9 @@ Liveness has three states, probed through the recorded terminal handle:
 
 | State | Test | Bootstrap behavior |
 | --- | --- | --- |
-| `live` | The terminal probe returns ok | Refuse: a live coordinator owns this worktree |
-| `dead` | A handle is recorded and the probe fails | Warn, archive the old lock, take over |
-| `unknown` | No handle, no runtime on PATH, or an unparsable response | Refuse — absence is not proof of the holder's death |
+| `live` | The terminal probe succeeds and returns ok | Refuse: a live coordinator owns this worktree |
+| `dead` | The probe parses and answers not ok with the positive not-found error code `terminal_handle_stale` | Warn, archive the old lock, take over |
+| `unknown` | No handle, no runtime on PATH, empty or unparsable output, or any other probe failure without the positive not-found signal | Refuse without `-ForceLock` — a failed probe alone is not proof of the holder's death |
 
 Release uses `scripts/release-coordinator.ps1 -ConfirmRunClosed`: it reports
 reclaimable workers (an unverifiable result is reported as such, never
