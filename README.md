@@ -4,19 +4,19 @@
 
 A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
-![Version](https://img.shields.io/badge/version-2.9.1-blue)
+![Version](https://img.shields.io/badge/version-3.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-These guides describe the **2.9.1 package: 46 Skills, 16 Roles, and 4 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
+These guides describe the **3.0.0 package: 46 Skills, 16 Roles, and 4 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
 
-New in 2.9.1: a remediation release fixing the eleven findings of the 2026-10-13 quality review. Coordinator lock liveness is fail-closed — only the runtime's explicit stale-handle error proves a dead predecessor, every other probe outcome refuses takeover, and the lock is acquired under a named mutex before any project write; release now clears the active-run pointer. Dispatch ledger writes are atomic and exit nonzero on validation failure, evidence phases are normalized before the case-sensitive gates, and the final gate fails closed when no run-final evidence exists. All entry scripts declare PowerShell 7 with explicit UTF-8 reads, closing the silent GBK misread on 5.1. The entry point is trimmed to 18,621 characters with execution mechanics in `references/execution-loop.md`, and five behavioral test files (98 cases) pin the lock, ledger, gate and state-script lifecycles. Bundled counts remain 46 Skills, 16 Roles, and 4 workflows; [installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
+New in 3.0.0: the delivery flow is reduced to its load-bearing stages. The six-phase Git-evidence validator, its schema and templates, the dispatch-wave ledger, the brief digest and the bundled-Skill hash table are removed; integration safety rests where it actually came from — task isolation, one writer per branch, an independent reviewer who is not the implementer, a clean-tree/approved-commit check the coordinator runs directly before merging, and a full verification suite at the integrated HEAD and again at the latest delivery before closure. Machine-readable assignments, model-routing receipts, the coordinator lock and the writer-replacement gate remain. Bundled counts stay 46 Skills, 16 Roles, and 4 workflows; [installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
 
 Orca Project Delivery is a coordinator-only Skill that runs a complete software
 delivery pipeline with Claude Code worker agents. It solves the problem of
 supervising many autonomous agents on one repository without losing branch
-discipline, independent review, or verifiable evidence. It is written for the
+discipline, independent review, or a verified result. It is written for the
 person who acts as coordinator: you already have Orca (a multi-agent IDE) and
 Claude Code, and you want large changes produced, reviewed, integrated, and
 final-verified by isolated workers under explicit contracts.
@@ -47,14 +47,14 @@ from intake to final verification:
 6. **Independent review** — reviewers never edit source; findings become fix
    Tasks followed by re-review.
 7. **Integration** — the coordinator merges approved branches serially into
-   the one `delivery_branch`, recording commit evidence at every gate.
+   the one `delivery_branch`, verifying the approved commit and clean trees
+   first and running the full suite at the integrated HEAD.
 8. **Final verification** — a clean, independent worktree from the latest
    delivery branch; the run is not closed until it passes or is explicitly
    marked unverifiable.
 
 Everything the coordinator asserts is backed by a written record: model
-routing (requested vs. effective), Git evidence (source registration, review,
-pre-merge admission, merge result, run-final coverage), degradation events,
+routing (requested vs. effective), per-Task assignments, degradation events,
 and user decisions.
 
 ## What this is not
@@ -92,7 +92,6 @@ and user decisions.
 | Offline acceptance | Full synthetic package suite; require exit 0 and `FAIL=0` | `scripts/verify-package.ps1` |
 | Native extensions | Register Roles and Skills, declare optional CLI/env/API requirements | [Extension guide](docs/extending.md) |
 | Professional capabilities | 8 new Skills and 6 enhancement groups in 2.4.0; 16 Roles and 4 workflows retained | [Capability guide](docs/professional-capabilities.md) |
-| Git evidence | 6 validation phases: sourceRegistered, review, preMerge, postMerge, final, audit | `scripts/validate-git-evidence.ps1` |
 
 ## Quick start
 
@@ -124,7 +123,7 @@ integrate, and close. The walkthrough lives in
 orca-project-delivery/
 ├── SKILL.md                  # Coordinator entry point (17 sections, <= 250 lines)
 ├── LICENSE                   # MIT
-├── VERSION                   # 2.9.1
+├── VERSION                   # 3.0.0
 ├── PACKAGE-MANIFEST.json     # Package metadata and deliverable counts
 ├── CHANGELOG.md
 ├── README.md                 # English (default)
@@ -132,19 +131,19 @@ orca-project-delivery/
 ├── docs/
 │   ├── installation.md       # Install, verify, upgrade, uninstall, troubleshooting
 │   ├── usage.md              # End-to-end coordinator walkthrough
-│   ├── architecture.md       # Design: planes, roles, workflows, evidence, invariants
+│   ├── architecture.md       # Design: planes, roles, workflows, invariants
 │   ├── extending.md          # Native Role/Skill extensions and execution configuration
 │   ├── professional-skills.md
 │   ├── professional-capabilities.md
 │   ├── professional-capability-tutorial.md
 │   ├── faq.md                # FAQ and troubleshooting
 │   └── zh-CN/                # Simplified Chinese translations of the guides above
-├── references/               # 11 deep-dive references (runtime, branch model, evidence, ...)
+├── references/               # 10 deep-dive references (runtime, branch model, handoff, ...)
 ├── roles/                    # 16 role contracts + catalog.json
 ├── routing/                  # Model, role, skill, and workflow routing tables
 ├── skills/                   # 46 maintained professional Skills + LICENSE + README
 ├── workflows/                # 4 workflow definitions
-├── schemas/                  # State, evidence, requirements and configuration schemas
+├── schemas/                  # State, requirements and configuration schemas
 ├── scripts/                  # Delivery and configuration PowerShell helpers
 └── templates/                # AGENTS.md, task/review/report templates, .dev-work seeds
 ```
@@ -158,8 +157,8 @@ orca-project-delivery/
 | [Professional capabilities](docs/professional-capabilities.md) | All 30 later methods and 6 enhancement groups: scope, evidence, licenses |
 | [Capability tutorial](docs/professional-capability-tutorial.md) | Offline checks, local-tool examples and dependency helpers; no provider calls |
 | [Extending and configuration](docs/extending.md) | Native Role/Skill recipes, dependency declarations, literal configuration, offline child-execution walkthrough |
-| [Usage](docs/usage.md) | Starting a delivery from the coordinator entry, the full stage sequence, role/model routing, branch and worktree rules, evidence and reports, worker receipts, Q&A |
-| [Architecture](docs/architecture.md) | Control vs. delivery plane, authority sources, role/workflow/skill tables, evidence model, coordinator lock, the 12 invariants |
+| [Usage](docs/usage.md) | Starting a delivery from the coordinator entry, the full stage sequence, role/model routing, branch and worktree rules, records and reports, worker receipts, Q&A |
+| [Architecture](docs/architecture.md) | Control vs. delivery plane, authority sources, role/workflow/skill tables, coordinator lock, the 12 invariants |
 | [FAQ](docs/faq.md) | Common questions and failure-mode troubleshooting |
 | [简体中文](README.zh-CN.md) | Chinese README, with links to the Chinese guides under `docs/zh-CN/` |
 | [Changelog](CHANGELOG.md) | Release history |

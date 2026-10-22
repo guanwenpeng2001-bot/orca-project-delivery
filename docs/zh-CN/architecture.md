@@ -2,7 +2,7 @@
 
 [English](../architecture.md) | **简体中文**
 
-本文说明 `orca-project-delivery` 的设计：它分离的两个平面、它从不复制的权威、它路由到的角色、工作流和 Skill、它的 Git 证据模型、它的协调者锁，以及把这一切约束在一起的不变量。
+本文说明 `orca-project-delivery` 的设计：它分离的两个平面、它从不复制的权威、它路由到的角色、工作流和 Skill、它的协调者锁，以及把这一切约束在一起的不变量。
 
 ## 控制平面与交付平面
 
@@ -24,7 +24,7 @@
 | --- | --- |
 | **Git** | 源码、分支、提交、集成真相。 |
 | **Orca Runtime** | Run、Task、Dispatch、Worker、Message、Gate、生命周期真相。 |
-| **`.dev-work/`**（仅控制树） | 业务阶段、映射、方案、报告、决策、证据 — 绝不是第二套生命周期数据库。 |
+| **`.dev-work/`**（仅控制树） | 业务阶段、映射、方案、报告、决策 — 绝不是第二套生命周期数据库。 |
 | **本 Skill** | 工作流、角色 / Skill / 模型路由、降级规则、输入组装。 |
 
 在任何编排动词之前，协调者加载已安装的全局 `orchestration` Skill，并用当前 `--help` 确认语法；本包把业务动作映射到运行时概念；命令示例必须对照已安装的合同检查。只有协调者编辑全局过程状态；工作者只写分配给自己的报告路径。
@@ -73,7 +73,7 @@ high-risk 深度依次为：并行侦察 / 审计 → 设计（条件阶段；�
 
 ## 46 个专业 Skill
 
-Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `SKILL.md` 绝对路径）交付给工作者；作为回退，也可以用 `inline-extract`，并记录来源路径和哈希。单独一个 Skill 名称绝不是加载证据，Skill 只提供方法 — 它不能扩大任务范围，也不能授予编排控制。
+Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `SKILL.md` 绝对路径）交付给工作者；作为回退，也可以用 `inline-extract`，并记录来源路径。单独一个 Skill 名称不能证明已交付，Skill 只提供方法 — 它不能扩大任务范围，也不能授予编排控制。
 
 | Skill | 用途 |
 | --- | --- |
@@ -128,32 +128,20 @@ Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `
 
 ## 原生扩展与执行配置
 
-Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由、清单数量及当前 Skill 哈希。数量由目录驱动。原有十六个 Skill 是 MIT 改编版，其后三十个为引用公开资料的原创方法。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。显式版本 2 项目配置另支持已安装外部 Skill 和混合 Role 绑定，无需编辑这些目录，见[外部 Skill](external-skills.md)。不支持目录可执行 hook 或通用路由覆盖。
+Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由和清单数量。数量由目录驱动。原有十六个 Skill 是 MIT 改编版，其后三十个为引用公开资料的原创方法。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。显式版本 2 项目配置另支持已安装外部 Skill 和混合 Role 绑定，无需编辑这些目录，见[外部 Skill](external-skills.md)。不支持目录可执行 hook 或通用路由覆盖。
 
 可选 `requires` 元数据声明 CLI、env 和 API 依赖名称。组装标出必需与条件集合，不新增顶层合同段。在实际执行主机上，辅助脚本使用显式选择器和 ProjectRoot。配置优先级为继承进程值（包括空值）、根 `.env`、显式非秘密 JSON。只有所选声明的文件变量补入子进程；已有变量继承，父进程不变。API 检查仅判断存在性。配置路径留在根内，授权可执行文件可以在外；直接批处理启动不保证兼容。注册与可运行示例见[扩展](extending.md)。
 
-## 证据模型
+## 派发记录与集成检查
 
-`scripts/validate-git-evidence.ps1` 是一个**只读**校验器，校验协调者根据观察写出的 JSON 证据文档。协调者先收集并书写，再校验，并且只在相关范围得到 `PASS` 之后才行动。校验器从不写 JSON、不跑测试、不合并，也不查询运行时。PASS 不能认证一条工作者消息，也不能证明记录的测试命令真的跑过；协调者必须核验 Runtime 归属并收集实际命令结果。一条结论为 CHANGES_REQUIRED 或 UNVERIFIABLE 的有效审查记录仍可以通过 `review` 阶段，所以校验 PASS 本身不是审查批准。
+协调者用 `scripts/dispatch-task.ps1` 依据捕获的 `worker-start` 回执写每次指派；脚本拒绝控制树落点和同一任务的重复在途派发，写盘前先按 `schemas/assignment.schema.json` 校验指派。
 
-每任务证据位于 `runs/<run>/evidence/git/<task-key>.json`；一次运行恰好有一份终态记录，位于 `runs/<run>/evidence/git/run-final-verification.json`。任务证据状态是 `source-registered` → `reviewed` → `integrated`；合并前是 `reviewed` 之内的一个检查点，终态属于运行记录，从不属于每任务文件。
+集成安全来自流程本身，由协调者在行动那一刻直接核对：
 
-协调者用 `scripts/dispatch-task.ps1` 依据捕获的 `worker-start` 回执写每次指派；脚本拒绝控制树落点和同一任务的重复在途派发，写盘前先按 `schemas/assignment.schema.json` 校验指派。状态在 11 值生命周期枚举之外的指派会校验失败，而不是静默跳过其证据义务。
-
-六个校验阶段：
-
-| 阶段 | 门 | 检查什么 |
-| --- | --- | --- |
-| `sourceRegistered` | 匹配且活动的 `worker_done` 之后 | Schema、运行 / 路径 / 指派范围、记录的提交是否存在 |
-| `review` | 独立审查被记录之后 | 审查者独立性（Task 与 Dispatch 都不同于源码工作者的）、目标 / 基线绑定、基线是目标的祖先、APPROVED 的目标是干净的 |
-| `preMerge` | 最新 APPROVED 审查之后，且仍为 `reviewed` | 准入绑定批准的 SHA；活动源码 HEAD 等于它；源码与交付工作树干净；交付 HEAD 等于记录的基线 |
-| `postMerge` | 实际合并加上在 `headAfter` 的新鲜检查之后 | 集成结果、合并证据（对已审查分支的一次 `git merge`，带消息旗标，退出码 0，无冲突）、祖先关系、绑定到 `headAfter` 的验证检查 |
-| `final` | 所有预定集成之后，来自干净的独立验证工作树 | 唯一的运行终态记录、verified + READY、对已集成任务的完整精确覆盖、检查位于当前交付 HEAD |
-| `audit` | 任何时候，针对历史运行 | Schema / 提交加上与状态相符的检查，**没有**活动 HEAD 相等或干净树的要求 |
-
-**时刻等式与时间不变关系。** 活动阶段断言的是*在校验那一刻*必须成立的相等 — 源码分支 HEAD 等于批准的 SHA，交付 HEAD 等于记录的基线，树是干净的。`audit` 阶段检查历史绑定、记录的检查、提交存在性和祖先关系，不把它们与活动分支 HEAD 或工作树干净程度比较。历史任务记录在 `final` 下也使用历史检查；单独选择一个任务并不能确立运行完成。相对地，运行范围的 `final`（或规范的运行终态选择器）要求运行终态目标等于当前交付 HEAD。因此历史运行终态在交付推进之后可以合法地 FAIL `final`，同时仍通过 `audit`。历史 `headAfter` 仍是后来终态目标的祖先；它不必等于该目标。
-
-校验器的退出语义：`PASS` 只对所选范围以 0 退出；`NOT_APPLICABLE` 也以 0 退出，且不是验收；`FAIL` 以 1 退出，在证据重建之前阻止合并或 READY 声明。
+- **独立审查** — 审查者不是实施者，检查实际分支并报告 `APPROVED`、`CHANGES_REQUIRED` 或 `UNVERIFIABLE`；只有 APPROVED 的分支可以合并。
+- **合并前核对** — 合并前一刻，协调者确认活动源码 HEAD 仍等于已批准的提交，且源码与交付工作树都干净；漂移需要重新审查。
+- **合并后验证** — 完整包套件在集成后的 HEAD 上运行，通过之后源码依赖才算结算。
+- **最终验证** — 所有预定集成之后，发布验证者在来自最新 `delivery_branch` 的干净独立工作树中运行；只有它通过才授权 READY。
 
 ## 协调者锁与释放
 
@@ -203,4 +191,4 @@ Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json
 11. 控制分支既不是开发来源也不是集成来源；它的 HEAD 可以落后，且不是当前交付证据。
 12. 审查实际的实现基线；最终验证使用来自最新 `delivery_branch` 的干净工作树，并明确标记不可验证的证据。
 
-离线验收套件（`scripts/verify-package.ps1`）强制本设计的结构侧面 — 路由链单调性、角色 / Skill 路径存在性、17 节入口大纲、仅 Claude 的内容、编码，以及负面证据变异 — 因此本包可以在没有运行时的情况下被验证。
+离线验收套件（`scripts/verify-package.ps1`）强制本设计的结构侧面 — 路由链单调性、角色 / Skill 路径存在性、17 节入口大纲、仅 Claude 的内容和编码 — 因此本包可以在没有运行时的情况下被验证。

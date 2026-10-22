@@ -4,7 +4,7 @@
 
 版本 2 项目注册、混合绑定、解析后的依赖选择及原位置同级资源，见[已安装外部 Skill 演练](external-skills.md)。包内 Skill 不需要单独安装。
 
-Orca Project Delivery 协调的工作者会加载**专业 Skill** — 提供专业方法的说明包（`SKILL.md`），覆盖侦察、产品工作、架构、实施、审查和验证，以及软件交付、本地资产、图像和音视频、文档的方法。2.9.1 版本中，全部四十六个 Skill **随本包**放在 `skills/<skill-id>/SKILL.md`。部分方法还附带本地脚本或提供方连接器；执行证据与加载说明分开。安装完整且匹配的版本，并按[教程](professional-capability-tutorial.md)核对版本和目录。版本不匹配就不是本版本。
+Orca Project Delivery 协调的工作者会加载**专业 Skill** — 提供专业方法的说明包（`SKILL.md`），覆盖侦察、产品工作、架构、实施、审查和验证，以及软件交付、本地资产、图像和音视频、文档的方法。3.0.0 版本中，全部四十六个 Skill **随本包**放在 `skills/<skill-id>/SKILL.md`。部分方法还附带本地脚本或提供方连接器；执行证据与加载说明分开。安装完整且匹配的版本，并按[教程](professional-capability-tutorial.md)核对版本和目录。版本不匹配就不是本版本。
 
 ## 上游来源
 
@@ -101,9 +101,8 @@ Orca Project Delivery 协调的工作者会加载**专业 Skill** — 提供专�
 
 | 症状 | 可能原因 | 检查什么 |
 | --- | --- | --- |
-| `verify-package.ps1` 的 Skill 路径 FAIL | 随包文件缺失或损坏 | `Test-Path <package>/skills/<skill-id>/SKILL.md`；对照 `skills/README.md` 中的哈希 |
+| `verify-package.ps1` 的 Skill 路径 FAIL | 随包文件缺失或损坏 | `Test-Path <package>/skills/<skill-id>/SKILL.md` |
 | 工作者读不到分配的 Skill | 任务中的路径错误，或沙箱限制 | 任务的 `explicit-path` 指向一个实际存在的随包 `SKILL.md` |
-| 目录列出了 Skill 但文件不在 | 检出不完整或本地删除 | 从 Git 恢复；重跑完整性检查 |
-| 手工编辑后哈希不匹配 | 当前正文与完整性表不一致 | 审阅有意改编，重新计算 SHA256 并更新表；意外修改从包 Git 恢复 |
+| 目录列出了 Skill 但文件不在 | 检出不完整或本地删除 | 从 Git 恢复；重跑套件 |
 
-协调者行为与证据路径见 [usage.md](usage.md) 和 `references/evidence-binding.md`。
+协调者行为与记录路径见 [usage.md](usage.md)。

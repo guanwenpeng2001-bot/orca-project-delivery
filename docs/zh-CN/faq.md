@@ -5,7 +5,7 @@
 ## 总览
 
 **这个包到底给我什么？**
-一个协调者 Skill（`SKILL.md`），加上用 Claude Code 工作者跑软件交付所需的路由表、角色合同、schema、模板和 PowerShell 脚本：受理、动态侦察、规划、任务图、隔离实施、独立审查、以证据为门的集成到一条交付分支，以及最终验证。
+一个协调者 Skill（`SKILL.md`），加上用 Claude Code 工作者跑软件交付所需的路由表、角色合同、schema、模板和 PowerShell 脚本：受理、动态侦察、规划、任务图、隔离实施、独立审查、由协调者核对后集成到一条交付分支，以及最终验证。
 
 **我需要 Orca 和 Claude Code，还是只要 Claude Code？**
 两者都要。工作者是 Claude Code 智能体，Orca Runtime 拥有 Run / Task / Dispatch / Worker 生命周期。本包在其上提供交付工作流；它不是独立的编排器。
@@ -21,14 +21,14 @@
 
 ## 专业能力
 
-**2.9.1 会生成图像、视频、语音或文档吗？**
+**3.0.0 会生成图像、视频、语音或文档吗？**
 它附带本地 PNG、字幕、manifest、Markdown 和 Office/PDF 工具，以及方法和有门控的提供方连接器。Windows 上运行过有界的 Chromium 与 FFmpeg 检查，但不声称真实提供方调用、HyperFrames 渲染或 Office 视觉审查通过。证据和限制见[能力指南](professional-capabilities.md)；仅加载 Skill 不会执行命令。
 
 **OpenAI、Pexo 和 ElevenLabs 是选定的提供方吗？**
 不是。它们是示例连接器，点名是为了让配置的形状具体。选择提供方、预算和上传范围是按任务做出的用户决定。安装本包并不授权一次调用。
 
 **为什么包声称 46 个 Skill，而我的目录显示 16 个？**
-完整的 2.9.1 安装包含 46 个 Skill 和 16 个角色。显示 16 个 Skill 的目录属于与本版本不匹配的版本，即使旁边已有新文档也一样。请安装完整且匹配的版本；[教程](professional-capability-tutorial.md)在运行新命令前核对版本、目录计数和清单。
+完整的 3.0.0 安装包含 46 个 Skill 和 16 个角色。显示 16 个 Skill 的目录属于与本版本不匹配的版本，即使旁边已有新文档也一样。请安装完整且匹配的版本；[教程](professional-capability-tutorial.md)在运行新命令前核对版本、目录计数和清单。
 
 **可以把 Anthropic 的文档 Skill 或 OpenMontage 复制进来吗？**
 不可以。docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内。OpenMontage 是 AGPL-3.0，不包含在内。`document-production` 和 `media-transcoding` 是独立编写的。见[许可证一节](professional-capabilities.md#许可证与来源)。
@@ -36,7 +36,7 @@
 ## 扩展与配置
 
 **可以新增 Skill/Role，或修改随包方法吗？**
-可以。使用原生目录、匹配文件、当前哈希与清单数量；新 Role 还需要模型路由。原有十六个是维护中的 MIT 改编版，其后三十个是引用公开资料的原创方法。按[扩展指南](extending.md)操作，并运行元数据及完整验证。
+可以。使用原生目录、匹配文件与清单数量；新 Role 还需要模型路由。原有十六个是维护中的 MIT 改编版，其后三十个是引用公开资料的原创方法。按[扩展指南](extending.md)操作，并运行元数据及完整验证。
 
 **为什么已配置的 API 仍不可用，或之后失败？**
 `configured` 仅描述文件存在性。空进程值覆盖非空文件值并阻止子进程。API 检查从不验证认证或访问网络；通过存在性检查不代表真实服务会成功响应。
@@ -58,9 +58,6 @@
 **`worker-list` 在释放之后把某个终端显示为 `retained` 或 `user_owned`。这是泄漏吗？**
 不是。工作者释放是结算后的清理，不是取消。在新标签模式就是终端的宿主上，运行时可以合法地回答 `retained` / `user_takeover` / `user_owned` 并保持终端存活。当可回收列表为空时，完成记账仍然成立。在复用、保留和关闭之间明确决定 — 并且在移除工作树时显式关闭终端，否则会留下一个死面板。
 
-**一次历史运行现在 `-Phase final` 失败了，但它被记录时是通过的。为什么？**
-活动阶段断言的是时刻等式 — 交付 HEAD 等于记录的目标、树是干净的 — 这些只在校验那一刻成立。一旦交付分支推进，旧的运行终态目标就不再等于它的当前 HEAD，所以运行范围的 `final` 可以合法地 FAIL，而这并不意味着原来的集成是错的。对历史证据使用 `-Phase audit`。当前验收需要新鲜验证，以及位于当前目标的规范运行终态记录。单独以 `final` 选择的任务使用历史任务检查，不能确立运行完成；仅凭分支推进不会使该任务的历史证据失效。
-
 **一次审查返回了 `UNVERIFIABLE`。这是一次失败的审查吗？**
 它既不是批准也不是失败 — 它是审查者无法核验某件事的明确陈述。保持证据的未澄清标记；重跑、收集缺失的证据，或把验收标为不可验证。绝不要把不可验证的验收描述成 READY。
 
@@ -68,7 +65,7 @@
 不自动降。记录 `mismatch`，不要推断配额或模型不可用，并应用 `routing/model-routing.json` 的模型档位规则 — 或者，如果用户锁定了选择，挂起该任务并提问。请求值从不被当作生效值。
 
 **工作者报告它读不到 Skill 路径。**
-这是 `skill_unavailable` 条件：修复路径，或切换到有记录的 `inline-extract`（包含所需章节，并记录来源路径和哈希）。单独一个 Skill 名称不是加载证据。
+这是 `skill_unavailable` 条件：修复路径，或切换到有记录的 `inline-extract`（包含所需章节，并记录来源路径）。单独一个 Skill 名称不能证明已加载。
 
 **同一工作树里可能有两个协调者在跑。我该做什么？**
 读取 `.dev-work/coordinator-lock.json` 并探测记录的句柄。`live` 意味着拒绝；`dead` 意味着归档并接管；`unknown` 意味着拒绝 — 缺席不是持有者已离开的证明。绝不删除锁文件，也绝不用全局编排重置来消解一个工作树的不确定性。
@@ -77,4 +74,4 @@
 不可以。中止合并，创建一个隔离的解决任务（merge-resolver 角色），独立审查其结果，把审查 / 准入更新到该结果，然后重试该门。未经审查的变更绝不在交付分支上直接修补。
 
 **`verify-package.ps1` 在我刚克隆的副本上打印 FAIL 行。**
-读第一行 FAIL：缺少随包 Skill 指向 `metadata/skill-paths` 或 `metadata/bundled-skill-integrity`；编码失败指出无效的 UTF-8、BOM 或 CR 字节；内容失败指出不被允许的引用。一行 FAIL 可能反映缺失的依赖、环境问题或包缺陷，它本身并不能证明检出被修改过 — 见 [installation.md](installation.md#安装失败排障)。
+读第一行 FAIL：缺少随包 Skill 指向 `metadata/skill-paths`；编码失败指出无效的 UTF-8、BOM 或 CR 字节；内容失败指出不被允许的引用。一行 FAIL 可能反映缺失的依赖、环境问题或包缺陷，它本身并不能证明检出被修改过 — 见 [installation.md](installation.md#安装失败排障)。

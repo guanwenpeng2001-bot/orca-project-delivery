@@ -9,7 +9,7 @@ method instruction packs (`SKILL.md`) for reconnaissance, product work,
 architecture, implementation, review, and verification, plus methods for
 software delivery, local assets, images, and audio, video, and documents.
 All forty-six Skills ship **inside this package** under
-`skills/<skill-id>/SKILL.md` in the 2.9.1 release. Some methods also
+`skills/<skill-id>/SKILL.md` in the 3.0.0 release. Some methods also
 ship local scripts or provider connectors; execution evidence is separate from
 loading their instructions. Install the complete matching release, and check
 its version and catalogs using the [tutorial](professional-capability-tutorial.md).
@@ -132,10 +132,8 @@ deepens Skills already listed above. Scope and limits are in
 
 | Symptom | Likely cause | What to check |
 | --- | --- | --- |
-| `verify-package.ps1` skill-path FAIL | Bundled file missing or corrupt | `Test-Path <package>/skills/<skill-id>/SKILL.md`; compare hashes in `skills/README.md` |
+| `verify-package.ps1` skill-path FAIL | Bundled file missing or corrupt | `Test-Path <package>/skills/<skill-id>/SKILL.md` |
 | Worker cannot read assigned Skill | Wrong path in Task or sandbox | Task `explicit-path` matches an existing bundled `SKILL.md` |
-| Catalog lists Skill but file missing | Incomplete checkout or local deletion | Restore from Git; re-run integrity check |
-| Hash mismatch after manual edit | Current body and integrity table disagree | Review intentional adaptations, recompute SHA256 and update the table; restore accidental changes from package Git |
+| Catalog lists Skill but file missing | Incomplete checkout or local deletion | Restore from Git; re-run the suite |
 
-For coordinator behavior and evidence paths, see [usage.md](usage.md) and
-`references/evidence-binding.md`.
+For coordinator behavior and record paths, see [usage.md](usage.md).

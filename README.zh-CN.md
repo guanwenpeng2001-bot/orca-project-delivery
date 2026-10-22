@@ -4,16 +4,16 @@
 
 面向 Orca 与 Claude Code 用户的**仅协调者** Skill，把软件目标变成隔离、独立审查、集成并验证过的变更。
 
-![Version](https://img.shields.io/badge/version-2.9.1-blue)
+![Version](https://img.shields.io/badge/version-3.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-这些指南描述**2.9.1 包：46 个 Skill、16 个角色、4 个工作流**。安装完整且匹配的版本，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。版本不匹配就不是本版本。
+这些指南描述**3.0.0 包：46 个 Skill、16 个角色、4 个工作流**。安装完整且匹配的版本，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。版本不匹配就不是本版本。
 
-2.9.1 新增：质量修复版本，修复 2026-10-13 质量审查的十一项发现。协调者锁存活判断改为 fail-closed——只有运行时明确的句柄失效错误才能证明前任协调者已死，其余探测结果一律拒绝接管，且先在命名互斥锁下取锁再写任何项目文件；release 现在会清掉活跃 run 指针。派发台账原子写入，校验失败时以非零退出码返回；证据阶段先归一化大小写再进入大小写敏感分支；不存在 run-final 证据时 final 闸门 fail-closed。全部入口脚本声明 PowerShell 7 并显式按 UTF-8 读取，堵住 5.1 上的 GBK 静默乱码。入口文件精简到 18,621 字符，执行机制移入 `references/execution-loop.md`；新增五组行为测试（98 例）锁定锁、台账、闸门与状态脚本的生命周期。包内计数仍为 46 个 Skill、16 个角色、4 个工作流；继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
+3.0.0 新增：交付流程收敛为真正承重的环节。六阶段 Git 证据校验器及其 schema 与模板、dispatch-wave 台账、brief 摘要哈希、包内 Skill 哈希表全部移除；集成安全回到它真正的来源——任务隔离、单分支单写者、不同于实施者的独立审查者、协调者在合并前直接执行的干净树/已批准提交核对，以及在集成后 HEAD 与最新交付上各跑一遍的完整验证套件。机器可读 assignment、模型路由回执、协调者锁与写者更换门禁保留。包内计数仍为 46 个 Skill、16 个角色、4 个工作流；继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
 
-Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 工作者智能体跑完整条软件交付流水线。它解决的问题是：在同一个仓库里监督许多自主智能体，同时不丢掉分支纪律、独立审查和可核验的证据。它写给担任协调者的人：你已经有 Orca（多代理 IDE）和 Claude Code，希望由隔离的工作者在明确合同下产出、审查、集成并做最终验证大型变更。
+Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 工作者智能体跑完整条软件交付流水线。它解决的问题是：在同一个仓库里监督许多自主智能体，同时不丢掉分支纪律、独立审查和可核验的结果。它写给担任协调者的人：你已经有 Orca（多代理 IDE）和 Claude Code，希望由隔离的工作者在明确合同下产出、审查、集成并做最终验证大型变更。
 
 - [这是什么](#这是什么)
 - [这不是什么](#这不是什么)
@@ -33,10 +33,10 @@ Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 
 4. **任务图** — 自包含的任务，写明角色、Skill、分支、范围、验收条件和报告路径。
 5. **派发与滚动执行** — 每个任务有自己的分支和工作树；真实依赖一结算，就绪任务就派发。
 6. **独立审查** — 审查者不改源码；发现项变成修复任务，再重新审查。
-7. **集成** — 协调者把已批准的分支串行合并进唯一的 `delivery_branch`，每个门都记录提交证据。
+7. **集成** — 协调者把已批准的分支串行合并进唯一的 `delivery_branch`，先核对已批准提交与干净工作树，再在集成后的 HEAD 跑完整套件。
 8. **最终验证** — 从最新交付分支拉出干净、独立的工作树；通过或被明确标为不可验证之前，运行不得关闭。
 
-协调者的每一项断言都有书面记录：模型路由（请求值与生效值）、Git 证据（源码登记、审查、合并前准入、合并结果、运行终态覆盖）、降级事件，以及用户决策。
+协调者的每一项断言都有书面记录：模型路由（请求值与生效值）、逐任务 assignment、降级事件，以及用户决策。
 
 ## 这不是什么
 
@@ -61,7 +61,6 @@ Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 
 | 离线验收 | 完整合成包套件；要求退出 0 且 `FAIL=0` | `scripts/verify-package.ps1` |
 | 原生扩展 | 注册 Role 和 Skill，声明可选 CLI/env/API 依赖 | [扩展指南](docs/zh-CN/extending.md) |
 | 专业能力 | 2.4.0 新增 8 个 Skill、增强 6 组能力，保持 16 个角色与 4 个工作流 | [能力指南](docs/zh-CN/professional-capabilities.md) |
-| Git 证据 | 6 个校验阶段：sourceRegistered、review、preMerge、postMerge、final、audit | `scripts/validate-git-evidence.ps1` |
 
 ## 快速开始
 
@@ -83,7 +82,7 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 orca-project-delivery/
 ├── SKILL.md                  # 协调者入口（17 节，不超过 250 行）
 ├── LICENSE                   # MIT
-├── VERSION                   # 2.9.1
+├── VERSION                   # 3.0.0
 ├── PACKAGE-MANIFEST.json     # 包元数据与交付物计数
 ├── CHANGELOG.md
 ├── README.md                 # 英文（默认）
@@ -91,19 +90,19 @@ orca-project-delivery/
 ├── docs/
 │   ├── installation.md       # 安装、校验、升级、卸载、排障（英文）
 │   ├── usage.md              # 端到端协调者走读（英文）
-│   ├── architecture.md       # 设计：平面、角色、工作流、证据、不变量（英文）
+│   ├── architecture.md       # 设计：平面、角色、工作流、不变量（英文）
 │   ├── extending.md          # 原生 Role/Skill 扩展与执行配置（英文）
 │   ├── professional-skills.md
 │   ├── professional-capabilities.md
 │   ├── professional-capability-tutorial.md
 │   ├── faq.md                # 常见问题与排障（英文）
 │   └── zh-CN/                # 上述指南的简体中文译本
-├── references/               # 11 篇深入参考（运行时、分支模型、证据等）
+├── references/               # 10 篇深入参考（运行时、分支模型、交接等）
 ├── roles/                    # 16 份角色合同 + catalog.json
 ├── routing/                  # 模型、角色、Skill、工作流路由表
 ├── skills/                   # 46 个随包专业 Skill + LICENSE + README
 ├── workflows/                # 4 个工作流定义
-├── schemas/                  # 状态、证据、依赖与配置的 JSON schema
+├── schemas/                  # 状态、依赖与配置的 JSON schema
 ├── scripts/                  # 交付与配置的 PowerShell 辅助脚本
 └── templates/                # AGENTS.md、任务/审查/报告模板、.dev-work 种子
 ```
@@ -117,8 +116,8 @@ orca-project-delivery/
 | [专业能力](docs/zh-CN/professional-capabilities.md) | 后续 30 个方法与 6 组增强：范围、证据标签、许可证 |
 | [能力教程](docs/zh-CN/professional-capability-tutorial.md) | 离线检查、本地工具实例与依赖辅助脚本；不调用提供方 |
 | [扩展与配置](docs/zh-CN/extending.md) | 原生 Role/Skill 编写、依赖声明、字面配置及离线子进程执行走读 |
-| [使用](docs/zh-CN/usage.md) | 从协调者入口开始一次交付、完整阶段顺序、角色/模型路由、分支与工作树规则、证据与报告、工作者回执、问答 |
-| [架构](docs/zh-CN/architecture.md) | 控制平面与交付平面、权威来源、角色/工作流/Skill 表、证据模型、协调者锁、12 条不变量 |
+| [使用](docs/zh-CN/usage.md) | 从协调者入口开始一次交付、完整阶段顺序、角色/模型路由、分支与工作树规则、记录与报告、工作者回执、问答 |
+| [架构](docs/zh-CN/architecture.md) | 控制平面与交付平面、权威来源、角色/工作流/Skill 表、协调者锁、12 条不变量 |
 | [常见问题](docs/zh-CN/faq.md) | 常见问题与失败模式排障 |
 | [变更日志](CHANGELOG.md) | 发布历史（英文） |
 | [English](README.md) | English README |

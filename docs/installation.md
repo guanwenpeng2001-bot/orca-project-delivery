@@ -9,7 +9,7 @@ Code coordinator session can load it from your control worktree. The package
 is a plain directory of files — there is no installer, no package registry,
 and no build step.
 
-This guide describes the 2.9.1 package (46 Skills / 16 Roles / 4 workflows). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
+This guide describes the 3.0.0 package (46 Skills / 16 Roles / 4 workflows). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ This guide describes the 2.9.1 package (46 Skills / 16 Roles / 4 workflows). Ins
 | --- | --- |
 | Windows | All scripts have only been exercised on Windows. Other platforms are untested. |
 | PowerShell 7+ (`pwsh`) | Windows PowerShell 5.1 is not sufficient. Check with `pwsh -NoProfile -Command '$PSVersionTable.PSVersion'`. |
-| Git | On `PATH`; used for branches, worktrees, merges, and evidence validation. |
+| Git | On `PATH`; used for branches, worktrees, and merges. |
 | Claude Code | Installed, on `PATH`, and authenticated. All workers are Claude Code agents. |
 | Orca Runtime | The `orca` CLI plus the installed global `orchestration`, `orca-cli`, and `orca-per-workspace-env` Skills. They own Run/Task/Dispatch/Worker lifecycle; this package never replaces them. |
 | Professional Skills | **Bundled** — all 46 professional Skills ship inside this package under `skills/<skill-id>/SKILL.md`. No separate install step. The original sixteen trace to [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills); the original sixteen’s upstream baseline and the later original methods’ public references are in `skills/README.md`. |
@@ -70,7 +70,7 @@ each *project* you deliver, not in this package directory.
 For worker delivery, use `explicit-path`: the coordinator names the selected
 Skill's exact readable `SKILL.md` path in the Task and requires the worker to
 read it. If the path is inaccessible, `inline-extract` includes the required
-sections with their source path, hash/version, included headings, and omitted
+sections with their source path, included headings, and omitted
 sections recorded. Naming a Skill alone is not proof that it was loaded.
 
 ## Installation steps
@@ -105,8 +105,8 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 Expected shape of the output on a healthy install:
 
 - many `PASS <check>` lines (parse, encoding, routing, metadata, runtime
-  fixtures, evidence fixtures, ...);
-- a `skills: N/N resolved (... package-bundled)` summary line, where N is the Skill count of the revision you installed (46 for the 2.9.1 capability release);
+  fixtures, ...);
+- a `skills: N/N resolved (... package-bundled)` summary line, where N is the Skill count of the revision you installed (46 for the 3.0.0 release);
 - a final line of the form `SUMMARY PASS=<n> FAIL=0`;
 - process exit code 0.
 
@@ -118,14 +118,9 @@ are created under a temporary directory (`orca-package-verification-*`) and
 removed at the end. The verdict is the `SUMMARY` line and the exit code; any
 `FAIL` line means the installation is not accepted.
 
-A note on the sibling evidence validator: when you use
-`scripts/validate-git-evidence.ps1` separately at runtime, read the JSON
-`status` field it prints, not only the exit code — both `PASS` and
-`NOT_APPLICABLE` exit 0, and `NOT_APPLICABLE` is not acceptance.
-
 ## Extensions and local execution configuration
 
-For new methods or responsibilities, use the native catalog recipe in [Extending](extending.md), including current-content hashes, manifest counts and model routes. The original sixteen are maintained MIT adaptations and the later thirty are original methods; this project's original work is MIT, third-party Skills keep their own license, and intentional edits are reviewed before hashes change. `verify-package.ps1 -MetadataOnly` is a quick structural check, not a substitute for the full suite. The summary above describes the revision you installed; success requires no failures, not a permanently fixed count.
+For new methods or responsibilities, use the native catalog recipe in [Extending](extending.md), including manifest counts and model routes. The original sixteen are maintained MIT adaptations and the later thirty are original methods; this project's original work is MIT, third-party Skills keep their own license, and intentional edits are reviewed before they merge. `verify-package.ps1 -MetadataOnly` is a quick structural check, not a substitute for the full suite. The summary above describes the revision you installed; success requires no failures, not a permanently fixed count.
 
 The capability release adds methods for software, local assets, images, and
 audio, video, and documents. Installing it does not run any of them. The
@@ -133,7 +128,7 @@ audio, video, and documents. Installing it does not run any of them. The
 and bounded local tools and dependency helpers; it makes no provider call, and a passing
 package suite is not evidence about generated output.
 
-Bootstrap creates `.env.example` and `project-config.example.json` only when missing, preserving existing files. It adds `/.env` to local Git `info/exclude`, shared by this clone's worktrees. Keep populated `.env` untracked on the actual execution host. Workers must supply their own explicit `ProjectRoot`; helpers neither copy coordinator config nor create worker `.dev-work/` state. The original sixteen declare no credential requirements. A 2.9.1 Skill declares a credential only when it names one, and an online connector named in the docs is an example, not a provider you have selected. No real key belongs in the repository.
+Bootstrap creates `.env.example` and `project-config.example.json` only when missing, preserving existing files. It adds `/.env` to local Git `info/exclude`, shared by this clone's worktrees. Keep populated `.env` untracked on the actual execution host. Workers must supply their own explicit `ProjectRoot`; helpers neither copy coordinator config nor create worker `.dev-work/` state. The original sixteen declare no credential requirements. A 3.0.0 Skill declares a credential only when it names one, and an online connector named in the docs is an example, not a provider you have selected. No real key belongs in the repository.
 
 ## Upgrade
 
@@ -151,11 +146,8 @@ not overwrite a customized installation. For a copy-based installation,
 back up the old directory before replacing package files. Project-local state
 is unaffected.
 
-Old runs remain readable, but an unfinished source merge must have its
-evidence rebuilt to meet the current gates. Validate project state with
-`scripts/validate-run.ps1` and validate Git evidence separately with
-`scripts/validate-git-evidence.ps1`; an upgrade does not migrate evidence
-automatically.
+Old runs remain readable as local history; an upgrade does not migrate run
+records. Validate project state with `scripts/validate-run.ps1`.
 
 ## Uninstall
 
@@ -181,12 +173,10 @@ Symptom: the verification suite prints
 FAIL metadata/skill-paths: skill file missing: <...>\skills\code-review\SKILL.md
 ```
 
-or a hash failure under `metadata/bundled-skill-integrity`.
-
-Cause: a bundled `skills/<skill-id>/SKILL.md` is missing, was deleted locally,
-or no longer matches the current SHA256 table in `skills/README.md`. Inspect and
+Cause: a bundled `skills/<skill-id>/SKILL.md` is missing or was deleted locally.
+Inspect and
 preserve local changes first. Restore accidental damage from package Git; for an
-intentional adaptation, review the body and update its hash as described in
+intentional adaptation, register the change as described in
 [Extending](extending.md), then re-run the suite.
 
 ### PowerShell 7 not found

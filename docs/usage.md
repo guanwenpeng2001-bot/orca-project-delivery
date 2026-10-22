@@ -9,7 +9,7 @@ summarizes the workflow defined in `SKILL.md` and its references; the Skill
 itself is the authority at runtime, and the installed global `orchestration`
 Skill plus current `--help` output are the authority for every Orca command.
 
-This guide targets 2.9.1: **46 Skills, 16 Roles, 4 workflows**. Select
+This guide targets 3.0.0: **46 Skills, 16 Roles, 4 workflows**. Select
 only the methods needed by the Task: shared tokens use `design-system`, domain
 invariants use `domain-modeling`, upgrades use `migration-upgrade`, and tool
 protocols use `mcp-server-development`. Diagrams, localization, Skill evaluation
@@ -133,9 +133,8 @@ External Skills require explicit registration in version 2 project config; see
 [External Skills](external-skills.md). Assembly delivers resolved paths (`explicit-path`)
 or inlines the same bodies (`inline-extract`). A missing bundled file fails at assembly
 without silently falling back to sibling installations under `~/.agents/skills`.
-Bundled provenance and SHA256 checks are documented in
-`skills/README.md` and enforced offline by `metadata/bundled-skill-integrity` in
-`scripts/verify-package.ps1`. See [professional-skills.md](professional-skills.md),
+Bundled provenance is documented in
+`skills/README.md`. See [professional-skills.md](professional-skills.md),
 [professional-capabilities.md](professional-capabilities.md), and
 [installation.md](installation.md). A walkthrough that checks the install and runs
 local tools and dependency helpers without calling a provider is in
@@ -181,34 +180,28 @@ settle, re-evaluate readiness and dispatch newly ready Tasks. After three
 consecutive empty waits, enumerate workers and act on the projected next
 action, using bounded worker reads where needed.
 
-For a source Task whose `worker_done` is confirmed: register `source.*` in
-its `source-registered` evidence, then run
-`scripts/validate-git-evidence.ps1 -EvidencePath <evidence-json> -Phase
-sourceRegistered` with the control tree as `-ProjectRoot`, where
-`<evidence-json>` is the Git evidence file at
-`runs/<run>/evidence/git/<task-key>.json`.
+For a source Task whose `worker_done` is confirmed, record the reported commit
+and report path in the Task's assignment record, then move the Task to review.
 
 ### 7. Review
 
-On PASS of source registration, dispatch an independent review of the actual
+After a confirmed source `worker_done`, dispatch an independent review of the actual
 implementation branch in an isolated worktree, in parallel with other
 implementation. Reviewers report `APPROVED`, `CHANGES_REQUIRED`, or
 `UNVERIFIABLE`, never edit source, and record target/baseline SHAs. Record
-completed reviews in `reviews[]`, set the state to `reviewed`, and validate
-with `-Phase review`. Accepted findings become fix Tasks followed by
-re-review. A validation FAIL is `UNVERIFIABLE`, never approval.
+completed reviews in `reviews[]`. Accepted findings become fix Tasks followed by
+re-review.
 
 ### 8. Integration
 
-After each approval, record the admission/baseline and pass `-Phase
-preMerge`, then merge serially in the worktree that has `delivery_branch`
+After each approval, merge serially in the worktree that has `delivery_branch`
 checked out (the runtime has no merge primitive — this is your `git merge`).
-Capture the merge and fresh checks at `headAfter`, write complete
-`integrated` evidence, and pass `-Phase postMerge` before treating the source
-dependency as integrated. The live source HEAD must still equal the latest
-approved SHA and both trees must be clean; drift requires re-review. On
+Immediately before merging, confirm the live source HEAD still equals the
+approved commit and both source and delivery worktrees are clean; drift
+requires re-review. Run the full verification suite at the integrated HEAD
+before treating the source dependency as settled. On
 conflict: abort, create an isolated resolution Task, review it independently,
-and renew admission.
+and merge it under the same conditions.
 
 Base Tasks created afterwards on the updated delivery branch, then reclaim
 eligible worktrees.
@@ -216,13 +209,13 @@ eligible worktrees.
 ### 9. Final verification
 
 After **all** intended changes integrate, dispatch a release-verifier Task
-against the latest delivery branch in a clean, independent worktree. Write
-the unique run-final evidence and validate with `-Run <run> -Phase final`.
+against the latest delivery branch in a clean, independent worktree. Only its
+passing result authorizes READY.
 This barrier never moves earlier and is never skipped.
 
 ### 10. Close
 
-Write the final report linked to the run-final evidence, plus a separate
+Write the final report linked to the final-verification report, plus a separate
 user-decision report for anything pending. Settle workers, ensure no
 reclaimable resources remain, recheck that process artifacts never entered
 the delivery branch, then release with
@@ -284,7 +277,7 @@ mismatched. A user-pinned choice forbids every automatic change.
 - Source merges happen only in the delivery worktree, serially, in
   dependency order, performed by the coordinator.
 
-## Evidence and report locations
+## Record and report locations
 
 Everything process-side lives under the control worktree's `.dev-work/`:
 
@@ -294,14 +287,13 @@ Everything process-side lives under the control worktree's `.dev-work/`:
 | Machine-readable assignments | `runs/<run>/assignments/<task>.json` |
 | Worker reports | `runs/<run>/worker-reports/<task>.md` |
 | Review reports | `runs/<run>/reviews/` |
-| Git evidence per Task | `runs/<run>/evidence/git/<task-key>.json` |
-| Run-final evidence | `runs/<run>/evidence/git/run-final-verification.json` |
+| Final verification report | `runs/<run>/verification/` |
 | Handoffs | `runs/<run>/handoffs/` |
 | Capability probe | `runtime/claude-capabilities.json` |
 | Degradation events | `runs/<run>/degradation-events.json` |
 | Final report | `runs/<run>/final-report.md` |
 
-Workers write only their own assigned report/evidence path; the coordinator
+Workers write only their own assigned report path; the coordinator
 writes everything else.
 
 ## Reading worker receipts
@@ -340,10 +332,10 @@ mode, Skill delivery mode, Task/Dispatch ids, branch/worktree/report paths,
 and any fallback reason — even when an assembled Markdown brief exists.
 
 **When may I merge a reviewed branch?**
-After the latest review is `APPROVED`, the preMerge admission passes, the
+After the latest review is `APPROVED`, the
 source HEAD still equals the approved SHA, and both source and delivery trees
-are clean. Merge serially, in the delivery worktree, and validate postMerge
-evidence afterwards.
+are clean. Merge serially, in the delivery worktree, and run the full
+verification suite at the integrated HEAD.
 
 **What if a review returns CHANGES_REQUIRED?**
 Convert accepted findings into fix Tasks (new branches, new writers), re-review
@@ -359,7 +351,7 @@ No. Ready-Task dispatch requires disjoint write scopes; conflicting needs are
 sequenced through real dependencies instead.
 
 **How do I finish?**
-Final verification on a clean worktree from the latest delivery branch,
-run-final evidence passing `-Phase final`, reports written, workers settled,
+Final verification passing on a clean worktree from the latest delivery branch,
+reports written, workers settled,
 process artifacts confirmed absent from the delivery branch, then
 `scripts/release-coordinator.ps1 -ConfirmRunClosed`.

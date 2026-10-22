@@ -8,7 +8,7 @@
 A coordinator Skill (`SKILL.md`) plus the routing tables, role contracts,
 schemas, templates, and PowerShell scripts needed to run software delivery
 with Claude Code workers: intake, dynamic reconnaissance, planning, a task
-graph, isolated implementation, independent review, evidence-gated
+graph, isolated implementation, independent review, coordinator-checked
 integration into one delivery branch, and final verification.
 
 **Do I need Orca and Claude Code, or just Claude Code?**
@@ -32,7 +32,7 @@ schema-validated, and old runs stay readable.
 
 ## Professional capabilities
 
-**Does 2.9.1 generate images, video, speech, or documents?**
+**Does 3.0.0 generate images, video, speech, or documents?**
 It ships local PNG, subtitle, manifest, Markdown, and Office/PDF tools as well
 as methods and gated provider connectors. Bounded local Chromium and FFmpeg
 checks ran on Windows. No real provider call, HyperFrames render, or Office
@@ -45,7 +45,7 @@ Selecting a provider, a budget, and an upload scope is a per-task user
 decision. Installing the package does not authorize a call.
 
 **Why does the package claim 46 Skills when my catalog shows 16?**
-A complete 2.9.1 install contains 46 Skills and 16 Roles. A catalog showing
+A complete 3.0.0 install contains 46 Skills and 16 Roles. A catalog showing
 16 Skills belongs to a version that does not match this release, even if newer
 documentation is present. Install the complete matching release; the
 [tutorial](professional-capability-tutorial.md) checks the version, catalog
@@ -60,7 +60,7 @@ OpenMontage is AGPL-3.0 and is not included. `document-production` and
 ## Extensions and configuration
 
 **Can I add a Skill or Role, or edit a bundled method?**
-Yes. Use native catalogs, matching files, current hashes and manifest counts; a new Role also needs a model route. The original sixteen are maintained MIT adaptations; the later thirty are original methods with public references. Follow [Extending](extending.md) and run both metadata and full verification.
+Yes. Use native catalogs, matching files and manifest counts; a new Role also needs a model route. The original sixteen are maintained MIT adaptations; the later thirty are original methods with public references. Follow [Extending](extending.md) and run both metadata and full verification.
 
 **Why does a configured API still show unavailable, or fail later?**
 `configured` only describes file presence. An empty process value overrides a nonempty file value and blocks the child. API checks never authenticate or access the network; a passing presence check says nothing about a real service's response.
@@ -100,18 +100,6 @@ completion accounting still holds when the reclaimable list is empty. Decide
 explicitly between reuse, retain, and close — and close a terminal explicitly
 when you remove its worktree, or you leave a dead pane behind.
 
-**A historical run fails `-Phase final` now, but it passed when it was
-recorded. Why?**
-The live phases assert moment equations — the delivery HEAD equals the
-recorded target, the trees are clean — that hold only at validation time.
-Once the delivery branch advances, the old run-final target no longer equals
-its current HEAD, so run-scoped `final` legitimately FAILs without implying
-the original integration was wrong. Use `-Phase audit` for historical
-evidence. Current acceptance requires fresh verification and the canonical
-run-final record at the current target. A Task selected alone with `final`
-uses historical Task checks and cannot establish run completion; branch
-advancement alone does not invalidate that Task's historical evidence.
-
 **A review returned `UNVERIFIABLE`. Is that a failed review?**
 It is neither approval nor failure — it is an explicit statement that the
 reviewer could not verify something. Keep the evidence unclear-marked;
@@ -128,7 +116,7 @@ Task and ask. Requested values are never treated as effective.
 **A worker reports it cannot read its Skill path.**
 That is a `skill_unavailable` condition: repair the path, or switch to a
 recorded `inline-extract` (include the required sections and record the
-source path and hash). A Skill name alone is not loading evidence.
+source path). A Skill name alone never proves loading.
 
 **Two coordinators might be running in the same worktree. What do I do?**
 Read `.dev-work/coordinator-lock.json` and probe the recorded handle. `live`
@@ -146,7 +134,7 @@ in the delivery branch.
 
 **`verify-package.ps1` prints FAIL lines on my fresh clone.**
 Read the first FAIL line: a missing bundled Skill points at
-`metadata/skill-paths` or `metadata/bundled-skill-integrity`; encoding failures identify invalid UTF-8, a BOM, or CR
+`metadata/skill-paths`; encoding failures identify invalid UTF-8, a BOM, or CR
 bytes; content failures identify a disallowed reference. A FAIL can reflect
 a missing dependency, environment problem, or package defect, and does not
 by itself prove the checkout was modified — see

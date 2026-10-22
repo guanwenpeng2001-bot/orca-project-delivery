@@ -4,6 +4,13 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 3.0.0 — 2026-10-23
+
+- Breaking process simplification: the six-phase Git-evidence validator (`scripts/validate-git-evidence.ps1`), `schemas/evidence.schema.json`, the evidence templates and `references/evidence-binding.md` are removed, together with the dispatch-wave ledger (`schemas/dispatch-wave.schema.json` and the `dispatch-waves/` run directory), the per-brief SHA256 digest in dispatch records, and the bundled-Skill SHA256 table with its offline integrity check. Bundled counts remain 46 Skills, 16 Roles and 4 workflows.
+- Integration safety now rests where it actually came from: task isolation, one writer per branch, an independent reviewer who is not the implementer, a clean-tree/approved-commit check the coordinator runs directly before merging, and the full verification suite at the integrated HEAD and again at the latest delivery before closure. Machine-readable assignments, raw dispatch receipts, model-routing records, the coordinator lock and the writer-replacement gate are unchanged.
+- Assignment records drop `artifacts.briefSha256` and the `evidence.gitEvidencePath` block; the `supersededBy`/`supersedes` fields are removed, and a source Task always requires a non-empty `branch.mergeTarget`. Read-only Tasks still declare `branch.mergeTarget: null`.
+- `scripts/verify-package.ps1` runs four suites (package structure, package runtime, package contracts, project lifecycle); the mutation suites and their skip switch are removed. English and Chinese guidance, the capability-tutorial release guard and the release fixture move to 3.0.0 together; historical release entries remain unchanged.
+
 ## 2.9.1 — 2026-10-14
 
 - Quality-remediation release fixing the eleven findings of the 2026-10-13 review; bundled counts remain 46 Skills, 16 Roles and 4 workflows. Updated current-version metadata, tutorial guards and English/Chinese public guidance together; historical release entries remain unchanged.

@@ -1,10 +1,10 @@
 {
   "name": "orca-project-delivery",
-  "version": "2.9.1",
+  "version": "3.0.0",
   "generatedAt": "2026-10-02",
-  "revisedAt": "2026-10-14",
-  "releasedAt": "2026-10-14",
-  "revisionNote": "Remediate the eleven findings of the 2026-10-13 quality review: fail-closed coordinator lock liveness with pre-write acquisition, atomic dispatch ledger writes with honest exit codes, case-normalized evidence phases with a fail-closed final gate, PowerShell 7 and UTF-8 declarations on every entry script, .dev-work-relative artifact resolution, archived run pointers on forced reuse, a trimmed entry point, and behavioral lifecycle tests. Preserve 46 bundled Skills, 16 Roles and 4 workflows; synchronize English and Chinese release guidance.",
+  "revisedAt": "2026-10-23",
+  "releasedAt": "2026-10-23",
+  "revisionNote": "Remove the redundant evidence and hash apparatus: the six-phase Git-evidence validator, its schema and templates, the dispatch-wave ledger, the per-brief SHA256 digest and the bundled-Skill hash table are gone. Integration safety rests on task isolation, one writer per branch, independent review, a clean-tree/approved-commit pre-merge check run directly by the coordinator, and the full verification suite at the integrated HEAD and at the latest delivery before closure. Machine-readable assignments, raw dispatch receipts, model routing, the coordinator lock and the writer-replacement gate remain. Bundled counts stay 46 Skills, 16 Roles and 4 workflows; English and Chinese guidance move together.",
   "deliverables": {
     "roles": 16,
     "professionalSkills": 46,

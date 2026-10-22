@@ -18,13 +18,12 @@
 
 ## 原生注册
 
-在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。2.9.1 的包随附 46 个 Skill 和 16 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
+在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。3.0.0 的包随附 46 个 Skill 和 16 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
 
 | 文件 | 新增或更新内容 |
 | --- | --- |
 | `skills/<id>/SKILL.md` | 自包含的方法、判断标准、示例、失败信号、评估与证据 |
 | `routing/skill-catalog.json` → `skills` | Skill ID、名称、描述、精确的包相对路径、可选 `requires` |
-| `skills/README.md` | 每个目录 Skill 的当前 SHA256 行，以及原有 `LICENSE` 行 |
 | `roles/<category>/<id>.md` | Role 合同及匹配的 front matter |
 | `roles/catalog.json` → `roles` | ID、名称、类别、路径、`defaultSkills`、`optionalSkills`、可选 `requires` |
 | `routing/model-routing.json` → `roles` | 每个目录 Role 的链、默认索引和最低索引 |
@@ -80,7 +79,7 @@ Return checks, observed results, and unverified items. This method grants no sou
 }
 ```
 
-核心方法留在 `SKILL.md`：必需 Skill 同时支持路径交付和全文内联。原有十六个 Skill 是固定上游的 MIT 改编版，其后三十个为引用公开资料的原创方法。保留 `skills/LICENSE` 中的上游声明及未来导入所需声明；当前没有 Skill 附带 `LICENSE.txt`。每次有意修改正文后重算当前内容哈希。示例用于展示推理，不是测得的生产结果。参见[专业 Skill](professional-skills.md)。
+核心方法留在 `SKILL.md`：必需 Skill 同时支持路径交付和全文内联。原有十六个 Skill 是固定上游的 MIT 改编版，其后三十个为引用公开资料的原创方法。保留 `skills/LICENSE` 中的上游声明及未来导入所需声明；当前没有 Skill 附带 `LICENSE.txt`。示例用于展示推理，不是测得的生产结果。参见[专业 Skill](professional-skills.md)。
 
 ## 编写 Role
 
@@ -174,7 +173,7 @@ Role 条目也支持同样的可选结构。[requirements.schema.json](../../sch
 
 ## 校验扩展
 
-添加示例后，从编辑后的目录推导清单计数。把 `deliverables.roles` 和 `deliverables.professionalSkills` 分别设为下面打印的对应值，不要照抄其他修订的计数。完整的 2.9.1 包起始为 16 个 Role / 46 个 Skill，因此添加这两个示例后为 17 / 47。保留原有的 `VERSION` 及与之相同的清单 `version`；扩展旧检出不会使它升级到 2.9.1。工作流数量也要保持正确。
+添加示例后，从编辑后的目录推导清单计数。把 `deliverables.roles` 和 `deliverables.professionalSkills` 分别设为下面打印的对应值，不要照抄其他修订的计数。完整的 3.0.0 包起始为 16 个 Role / 46 个 Skill，因此添加这两个示例后为 17 / 47。保留原有的 `VERSION` 及与之相同的清单 `version`；扩展旧检出不会使它升级到 3.0.0。工作流数量也要保持正确。
 
 ```powershell
 (Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
@@ -182,16 +181,13 @@ Role 条目也支持同样的可选结构。[requirements.schema.json](../../sch
 (Get-Content -Raw ./VERSION).Trim()
 ```
 
-从编辑后的包副本目录运行这些命令。旧的 12 角色 / 16 Skill 检出添加后应为 13 / 17，且保留原版本；它仍然缺少 2.9.1 的能力。
+从编辑后的包副本目录运行这些命令。旧的 12 角色 / 16 Skill 检出添加后应为 13 / 17，且保留原版本；它仍然缺少 3.0.0 的能力。维护正式扩展时，也更新 `skills/README.md` 介绍中的数量。
 
-在 PowerShell 7 会话中，将 `$package` 指向已编辑的包副本并计算哈希：
+在 PowerShell 7 会话中，将 `$package` 指向已编辑的包副本：
 
 ```powershell
 $package = (Resolve-Path 'C:/work/orca-project-delivery-copy').Path
-(Get-FileHash -LiteralPath "$package/skills/export-contract-check/SKILL.md" -Algorithm SHA256).Hash
 ```
-
-向 `skills/README.md` 添加 ``| `export-contract-check/SKILL.md` | HASH |``，把 `HASH` 换为命令输出的大写结果。表必须**精确覆盖**所有目录 Skill 加 `LICENSE`，没有重复或过时行；表内路径相对于 `skills/`。维护正式扩展时，也更新介绍中的数量。哈希证明与当前表一致，不代表内容已获独立批准。
 
 ```powershell
 & "$package/scripts/verify-package.ps1" -MetadataOnly
@@ -200,7 +196,7 @@ $metadataExit = $LASTEXITCODE
 $packageExit = $LASTEXITCODE
 ```
 
-两者都必须退出 0，且 `FAIL=0`。`-MetadataOnly` 检查解析、编码、路由、入口大纲、目录、清单数量/版本和当前哈希；它跳过运行时夹具，不是完整验收门。完整套件离线运行合成的运行时与扩展夹具。文档测试针对固定的发行夹具运行官方 2.9.1 数量断言及能力教程的发行版本门禁；编辑后包的验收比较其实际目录、文件、清单与哈希，不要求固定为 16 / 46。数量不匹配、缺路由、无效路径或过时哈希必须失败。修正后再运行完整套件，检查 Git diff 和 `git diff --check`，然后走正常交付流程取得独立审查。
+两者都必须退出 0，且 `FAIL=0`。`-MetadataOnly` 检查解析、编码、路由、入口大纲、目录、清单数量/版本；它跳过运行时夹具，不是完整验收门。完整套件离线运行合成的运行时与扩展夹具。文档测试针对固定的发行夹具运行官方 3.0.0 数量断言及能力教程的发行版本门禁；编辑后包的验收比较其实际目录、文件与清单，不要求固定为 16 / 46。数量不匹配、缺路由或无效路径必须失败。修正后再运行完整套件，检查 Git diff 和 `git diff --check`，然后走正常交付流程取得独立审查。
 
 ## 选择与交付方法
 
@@ -208,7 +204,7 @@ $packageExit = $LASTEXITCODE
 
 示例 Task 选择 `role: "export-reviewer"`、`skills.required: ["export-contract-check"]`，仅在相关时设置 `skills.conditional: ["integration-verification"]`。完整 Task 结构见 [task-definition.json](../../templates/task-definition.json)。`assemble-task.ps1` 校验 ID，把 Role 加必需 Skill 的依赖标为必需，在 Inputs and Dependencies 内的 `### Declared Requirements` 下单独标出条件依赖。输出名称和用途，不含值。条件依赖出现在简报里不等于已激活；激活后，把对应 ID 加入并重新运行两个辅助脚本。
 
-既有十段输入顺序保持不变：目标；Role；必需/条件 Skill；输入/依赖；范围；分支/工作树；报告合同；验收/测试；Worker Contract；最后为适用 `AGENTS.md`。`explicit-path` 提供精确的可读路径；`inline-extract` 内联必需 Skill 正文，条件 Skill 仍是路径引用。保留来源/哈希证据，要求读取或应用方法的证明。工作者执行自己的 Task，绝不运行完整协调者 Skill。
+既有十段输入顺序保持不变：目标；Role；必需/条件 Skill；输入/依赖；范围；分支/工作树；报告合同；验收/测试；Worker Contract；最后为适用 `AGENTS.md`。`explicit-path` 提供精确的可读路径；`inline-extract` 内联必需 Skill 正文，条件 Skill 仍是路径引用。记录来源路径，要求读取或应用方法的证明。工作者执行自己的 Task，绝不运行完整协调者 Skill。
 
 ## 配置执行主机
 
@@ -307,7 +303,7 @@ foreach ($name in $demoNames) {
 | 症状 | 下一步检查 |
 | --- | --- |
 | 未知 Role/Skill 或无效路径 | 检查原生目录 ID 或显式外部注册及执行 ProjectRoot；不支持链接和路径穿越，但外部绝对路径可在根目录之外 |
-| 哈希/数量/路由失败 | 重新计算已审阅当前内容的哈希，对齐清单数量，注册新 Role 的路由 |
+| 数量/路由失败 | 对齐清单数量，注册新 Role 的路由 |
 | `configured: true`、`availableForChild: false` | 查找空进程覆盖，不打印它的值 |
 | 文件只在协调者工作树 | 在显式执行主机根目录准备目标文件；不存在自动复制 |
 | API 存在性检查通过但真实操作失败 | 存在性不等于认证或网络验证；使用另行授权的诊断 |

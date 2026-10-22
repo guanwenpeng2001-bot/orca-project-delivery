@@ -6,7 +6,7 @@
 
 本走读从协调者的位置演示一次完整交付。它概括 `SKILL.md` 及其参考所定义的工作流；运行时以该 Skill 本身为权威，每一条 Orca 命令则以已安装的全局 `orchestration` Skill 加上当前 `--help` 输出为权威。
 
-本指南面向2.9.1：**46 个 Skill、16 个角色、4 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。新增 Skill 不新增角色，也不扩大权限。
+本指南面向3.0.0：**46 个 Skill、16 个角色、4 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。新增 Skill 不新增角色，也不扩大权限。
 
 ## 开始一次交付（协调者入口）
 
@@ -72,7 +72,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 组装会对照包内真实脚本及其声明参数逐条校验验收与测试命令，命令不可执行时组装失败、不写简报。审查简报可带 `reviewInput.deltaPaths` 并按 delta 缩放重验范围；标准简报点名最小相关套件，全量门禁留在合并后与终态验证。点名套件用 `scripts/verify-package.ps1 -Suites '<name>'` 运行，前置套件会自动补齐。`-SuiteTimeoutSeconds` 只为 package runtime 套件的子进程计时，其余检查沿用每子进程 60 秒的默认预算。
 
-随包专业 Skill 从本包的 `skills/<skill-id>/SKILL.md` 解析。外部 Skill 必须在版本 2 项目配置中显式注册，见[外部 Skill](external-skills.md)。组装交付解析后的路径（`explicit-path`），或内联同一正文（`inline-extract`）。随包文件缺失时组装失败，不会静默回退到 `~/.agents/skills` 下的同级安装。随包 Skill 的出处与 SHA256 检查写在 `skills/README.md`，并由 `scripts/verify-package.ps1` 中的 `metadata/bundled-skill-integrity` 离线强制。见 [professional-skills.md](professional-skills.md)、[professional-capabilities.md](professional-capabilities.md) 和 [installation.md](installation.md)。检查安装、运行本地工具和依赖辅助脚本而不调用提供方的走读在 [professional-capability-tutorial.md](professional-capability-tutorial.md)。
+随包专业 Skill 从本包的 `skills/<skill-id>/SKILL.md` 解析。外部 Skill 必须在版本 2 项目配置中显式注册，见[外部 Skill](external-skills.md)。组装交付解析后的路径（`explicit-path`），或内联同一正文（`inline-extract`）。随包文件缺失时组装失败，不会静默回退到 `~/.agents/skills` 下的同级安装。随包 Skill 的出处写在 `skills/README.md`。见 [professional-skills.md](professional-skills.md)、[professional-capabilities.md](professional-capabilities.md) 和 [installation.md](installation.md)。检查安装、运行本地工具和依赖辅助脚本而不调用提供方的走读在 [professional-capability-tutorial.md](professional-capability-tutorial.md)。
 
 组装把目录 `requires` 的名称/用途放在 Inputs and Dependencies 内，区分 Role 加必需 Skill 的依赖与条件 Skill。条件依赖仅在 Task 要求时激活。在执行主机上，以显式 `-ProjectRoot`、`-Role` 和会话内 `-Skills @(...)` 所选 ID 数组运行 `check-requirements.ps1`。辅助脚本不会代选 Role 默认 Skill。文件配置不代表当前 shell 已有这些值；授权子进程可以通过 `invoke-with-requirements.ps1` 接收所选文件变量，父进程环境保持不变。精确接口及离线走读见[扩展与配置](extending.md)。十段 Task 顺序及适用 `AGENTS.md` 最后保持不变。
 
@@ -90,25 +90,25 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 在运行时的 check 动词上等待；处理每一个问题和升级。确认每个 `worker_done` 属于活动 Dispatch 后再确认它，并决定每个终端的下一任所有者。每次确认结算之后，重新评估就绪状态并派发新就绪的任务。连续三次空等待之后，枚举工作者并按投影的下一步行动处理，必要时做有界的工作者读取。
 
-对 `worker_done` 已确认的源码任务：在其 `source-registered` 证据中登记 `source.*`，然后以控制树为 `-ProjectRoot` 运行 `scripts/validate-git-evidence.ps1 -EvidencePath <evidence-json> -Phase sourceRegistered`，其中 `<evidence-json>` 是位于 `runs/<run>/evidence/git/<task-key>.json` 的 Git 证据文件。
+对 `worker_done` 已确认的源码任务：把它报告的提交和报告路径记入该任务的指派记录，然后把任务推进到审查。
 
 ### 7. 审查
 
-源码登记 PASS 之后，在隔离工作树中对实际实现分支做独立审查，与其他实施并行。审查者报告 `APPROVED`、`CHANGES_REQUIRED` 或 `UNVERIFIABLE`，从不编辑源码，并记录目标 / 基线 SHA。把已完成的审查记入 `reviews[]`，状态设为 `reviewed`，并用 `-Phase review` 校验。被接受的发现项变成修复任务，随后重新审查。校验 FAIL 是 `UNVERIFIABLE`，绝不是批准。
+源码任务 `worker_done` 确认之后，在隔离工作树中对实际实现分支做独立审查，与其他实施并行。审查者报告 `APPROVED`、`CHANGES_REQUIRED` 或 `UNVERIFIABLE`，从不编辑源码，并记录目标 / 基线 SHA。把已完成的审查记入 `reviews[]`。被接受的发现项变成修复任务，随后重新审查。
 
 ### 8. 集成
 
-每次批准之后，记录准入 / 基线并通过 `-Phase preMerge`，然后在检出了 `delivery_branch` 的工作树中串行合并（运行时没有合并原语 — 这是你自己的 `git merge`）。在 `headAfter` 捕获合并结果和新鲜检查，写完整的 `integrated` 证据，并在把源码依赖视为已集成之前通过 `-Phase postMerge`。活动源码 HEAD 必须仍等于最新批准的 SHA，两棵树都必须干净；漂移需要重新审查。冲突时：中止，创建隔离的解决任务，独立审查它，并更新准入。
+每次批准之后，在检出了 `delivery_branch` 的工作树中串行合并（运行时没有合并原语 — 这是你自己的 `git merge`）。合并前一刻确认活动源码 HEAD 仍等于已批准的提交，且源码与交付工作树都干净；漂移需要重新审查。在集成后的 HEAD 运行完整验证套件，通过后才把源码依赖视为已结算。冲突时：中止，创建隔离的解决任务，独立审查它，并在同样条件下合并。
 
 此后创建的任务以更新后的交付分支为基线，然后回收符合条件的工作树。
 
 ### 9. 最终验证
 
-在**所有**预定变更都集成之后，针对最新交付分支，在干净、独立的工作树中派发发布验证者任务。写唯一的运行终态证据，并用 `-Run <run> -Phase final` 校验。这个屏障从不提前，也从不跳过。
+在**所有**预定变更都集成之后，针对最新交付分支，在干净、独立的工作树中派发发布验证者任务。只有它通过才授权 READY。这个屏障从不提前，也从不跳过。
 
 ### 10. 关闭
 
-写链接到运行终态证据的最终报告，以及一份单独的用户决策报告，列出仍待决的事项。结算工作者，确认没有可回收资源残留，复查过程产物从未进入交付分支，然后用 `scripts/release-coordinator.ps1 -ConfirmRunClosed` 释放。把 `.dev-work/runs/<run>/` 留作本地历史。
+写链接到最终验证报告的最终报告，以及一份单独的用户决策报告，列出仍待决的事项。结算工作者，确认没有可回收资源残留，复查过程产物从未进入交付分支，然后用 `scripts/release-coordinator.ps1 -ConfirmRunClosed` 释放。把 `.dev-work/runs/<run>/` 留作本地历史。
 
 ## 选择角色与模型路由
 
@@ -147,7 +147,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 - 只读任务在指派中声明 `branch.mergeTarget: null`。
 - 源码合并只发生在交付工作树中，串行，按依赖顺序，由协调者执行。
 
-## 证据与报告位置
+## 记录与报告位置
 
 过程侧的一切都在控制工作树的 `.dev-work/` 下：
 
@@ -157,14 +157,13 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 | 机器可读指派 | `runs/<run>/assignments/<task>.json` |
 | 工作者报告 | `runs/<run>/worker-reports/<task>.md` |
 | 审查报告 | `runs/<run>/reviews/` |
-| 每任务 Git 证据 | `runs/<run>/evidence/git/<task-key>.json` |
-| 运行终态证据 | `runs/<run>/evidence/git/run-final-verification.json` |
+| 最终验证报告 | `runs/<run>/verification/` |
 | 交接 | `runs/<run>/handoffs/` |
 | 能力探测 | `runtime/claude-capabilities.json` |
 | 降级事件 | `runs/<run>/degradation-events.json` |
 | 最终报告 | `runs/<run>/final-report.md` |
 
-工作者只写分配给自己的报告 / 证据路径；其余一切由协调者写。
+工作者只写分配给自己的报告路径；其余一切由协调者写。
 
 ## 阅读工作者回执
 
@@ -188,7 +187,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 指派 JSON：请求的和生效的运行时值、权限模式、Skill 交付方式、Task / Dispatch id、分支 / 工作树 / 报告路径，以及任何回退原因 — 即使已有组装好的 Markdown 简报。
 
 **何时可以合并已审查的分支？**
-最新审查为 `APPROVED`、preMerge 准入通过、源码 HEAD 仍等于批准的 SHA，且源码树与交付树都干净之后。在交付工作树中串行合并，之后校验 postMerge 证据。
+最新审查为 `APPROVED`、源码 HEAD 仍等于批准的 SHA，且源码树与交付树都干净之后。在交付工作树中串行合并，并在集成后的 HEAD 运行完整验证套件。
 
 **审查返回 CHANGES_REQUIRED 怎么办？**
 把被接受的发现项转成修复任务（新分支、新写者），重新审查修复，并更新准入。审查者从不自己改源码。
@@ -200,4 +199,4 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 不可以。就绪任务的派发要求写入范围不相交；冲突的需求通过真实依赖排序，而不是并行。
 
 **如何收尾？**
-在来自最新交付分支的干净工作树上做最终验证，运行终态证据通过 `-Phase final`，报告已写，工作者已结算，确认过程产物不在交付分支上，然后执行 `scripts/release-coordinator.ps1 -ConfirmRunClosed`。
+在来自最新交付分支的干净工作树上做最终验证并通过，报告已写，工作者已结算，确认过程产物不在交付分支上，然后执行 `scripts/release-coordinator.ps1 -ConfirmRunClosed`。

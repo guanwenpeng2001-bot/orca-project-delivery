@@ -18,13 +18,12 @@ Extend the package's native catalogs when a reusable method or a distinct delive
 
 ## Native registration
 
-Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 2.9.1 package ships 46 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
+Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 3.0.0 package ships 46 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
 
 | File | What to add or update |
 | --- | --- |
 | `skills/<id>/SKILL.md` | Self-contained method, decision criteria, example, failure signals, evaluation and evidence |
 | `routing/skill-catalog.json` → `skills` | Skill ID, name, description, exact package-relative path, optional `requires` |
-| `skills/README.md` | Current SHA256 row for each catalog Skill, plus the existing `LICENSE` row |
 | `roles/<category>/<id>.md` | Role contract and matching front matter |
 | `roles/catalog.json` → `roles` | ID, name, category, path, `defaultSkills`, `optionalSkills`, optional `requires` |
 | `routing/model-routing.json` → `roles` | A chain, default index and floor index for every catalog Role |
@@ -80,7 +79,7 @@ Append this object to `routing/skill-catalog.json`'s existing `skills` array:
 }
 ```
 
-Keep essential method content in `SKILL.md`: required Skills work with both path delivery and full-body inline delivery. The original sixteen bundled Skills are maintained MIT adaptations of their pinned baseline; the later thirty are original methods with public references. Preserve the original upstream notice in `skills/LICENSE` and any notices required for future imports; no current Skill ships a `LICENSE.txt`. Recompute the current-content hash after every intentional body edit. Examples demonstrate reasoning, not measured production outcomes. See [Professional Skills](professional-skills.md).
+Keep essential method content in `SKILL.md`: required Skills work with both path delivery and full-body inline delivery. The original sixteen bundled Skills are maintained MIT adaptations of their pinned baseline; the later thirty are original methods with public references. Preserve the original upstream notice in `skills/LICENSE` and any notices required for future imports; no current Skill ships a `LICENSE.txt`. Examples demonstrate reasoning, not measured production outcomes. See [Professional Skills](professional-skills.md).
 
 ## Author a Role
 
@@ -174,7 +173,7 @@ Duplicate declarations within an entry fail. Across selected entries, identical 
 
 ## Validate the extension
 
-After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 2.9.1 package starts at 16 Roles / 46 Skills, so these illustrative additions yield 17 / 47. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 2.9.1. Keep workflow counts correct.
+After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 3.0.0 package starts at 16 Roles / 46 Skills, so these illustrative additions yield 17 / 47. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 3.0.0. Keep workflow counts correct.
 
 ```powershell
 (Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
@@ -182,16 +181,13 @@ After adding the example, derive the manifest counts from the edited catalogs. S
 (Get-Content -Raw ./VERSION).Trim()
 ```
 
-Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 2.9.1 capabilities.
+Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 3.0.0 capabilities. When maintaining a real extension, also update the introductory counts in `skills/README.md`.
 
-In a PowerShell 7 session, set `$package` to your edited package copy and compute the hash:
+In a PowerShell 7 session, set `$package` to your edited package copy:
 
 ```powershell
 $package = (Resolve-Path 'C:/work/orca-project-delivery-copy').Path
-(Get-FileHash -LiteralPath "$package/skills/export-contract-check/SKILL.md" -Algorithm SHA256).Hash
 ```
-
-Add ``| `export-contract-check/SKILL.md` | HASH |`` to `skills/README.md`, replacing `HASH` with that command's uppercase result. The table must cover **exactly** every catalog Skill plus `LICENSE`, with no duplicate or obsolete rows; paths there are relative to `skills/`. Update introductory counts when maintaining a real extension. Hashes establish integrity against the current table, not independent approval of content.
 
 ```powershell
 & "$package/scripts/verify-package.ps1" -MetadataOnly
@@ -200,7 +196,7 @@ $metadataExit = $LASTEXITCODE
 $packageExit = $LASTEXITCODE
 ```
 
-Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs, manifest counts/version and current hashes; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. Documentation tests run the official 2.9.1 count assertions and the capability tutorial's release guard against a fixed release fixture; acceptance of the edited package compares its actual catalogs, files, manifest and hashes without requiring 16 / 46. A mismatched count, missing route, invalid path or stale hash must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
+Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs and manifest counts/version; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. Documentation tests run the official 3.0.0 count assertions and the capability tutorial's release guard against a fixed release fixture; acceptance of the edited package compares its actual catalogs, files and manifest without requiring 16 / 46. A mismatched count, missing route or invalid path must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
 
 ## Select and deliver methods
 
@@ -208,7 +204,7 @@ Coordinator selection follows `routing/skill-selection.json`: include Role defau
 
 For the example Task, select `role: "export-reviewer"`, `skills.required: ["export-contract-check"]`, and `skills.conditional: ["integration-verification"]` only if relevant. Use [task-definition.json](../templates/task-definition.json) for the complete Task shape. `assemble-task.ps1` validates IDs, includes Role plus required-Skill dependencies as required, and labels conditional dependencies separately under `### Declared Requirements` inside Inputs and Dependencies. It includes names and purposes, not values. Conditional requirements are not active merely because they appear in a brief; once activated, include their IDs when rerunning both helpers.
 
-The existing ten-part input order remains: objective; Role; required/conditional Skills; inputs/dependencies; scope; branch/worktree; report contract; acceptance/tests; Worker Contract; applicable `AGENTS.md` last. `explicit-path` gives exact readable paths; `inline-extract` embeds required Skill bodies, while conditional Skills remain path references. Preserve source/hash evidence and require proof of reading or applying the method. Workers follow their Task, never the full coordinator Skill.
+The existing ten-part input order remains: objective; Role; required/conditional Skills; inputs/dependencies; scope; branch/worktree; report contract; acceptance/tests; Worker Contract; applicable `AGENTS.md` last. `explicit-path` gives exact readable paths; `inline-extract` embeds required Skill bodies, while conditional Skills remain path references. Record the source path and require proof of reading or applying the method. Workers follow their Task, never the full coordinator Skill.
 
 ## Configure the execution host
 
@@ -307,7 +303,7 @@ The shared helper parameters are mandatory `-ProjectRoot <string>` and `-Role <i
 | Symptom | Next check |
 | --- | --- |
 | Unknown Role/Skill or invalid path | Check native catalog IDs or explicit external registrations and the execution ProjectRoot; links/traversal are unsupported, but absolute external paths may be outside the root |
-| Hash/count/routing failure | Recompute reviewed current hashes, align manifest counts, and register the new Role's route |
+| Count/routing failure | Align manifest counts and register the new Role's route |
 | `configured: true`, `availableForChild: false` | Look for an empty process override; do not print its value |
 | File exists only in coordinator worktree | Provision the intended file at the explicit execution-host root; no automatic copying occurs |
 | API presence passes but a real operation fails | Presence is not authentication or network verification; use separately authorized diagnostics |

@@ -4,7 +4,7 @@
 
 This document explains how `orca-project-delivery` is designed: the two
 planes it separates, the authorities it never duplicates, the roles,
-workflows, and Skills it routes to, its Git evidence model, its coordinator
+workflows, and Skills it routes to, its coordinator
 lock, and the invariants that bind all of it together.
 
 ## Control plane vs. delivery plane
@@ -33,7 +33,7 @@ Four authorities, each owning exactly one kind of truth:
 | --- | --- |
 | **Git** | Source, branches, commits, integration truth. |
 | **Orca Runtime** | Run, Task, Dispatch, Worker, Message, Gate, lifecycle truth. |
-| **`.dev-work/`** (control tree only) | Business stages, mappings, plans, reports, decisions, evidence — never a second lifecycle database. |
+| **`.dev-work/`** (control tree only) | Business stages, mappings, plans, reports, decisions — never a second lifecycle database. |
 | **This Skill** | The workflow, role/Skill/model routing, degradation rules, input assembly. |
 
 Before any orchestration verb, the coordinator loads the installed global
@@ -101,8 +101,8 @@ Design trigger rules live in `routing/design-triggers.json`.
 
 Skills are bundled under the package `skills/` directory and are delivered to
 workers by `explicit-path` (the absolute `SKILL.md` path named in the Task)
-or, as a fallback, by `inline-extract` with the source path and hash
-recorded. A Skill name alone is never loading evidence, and a Skill supplies
+or, as a fallback, by `inline-extract` with the source path
+recorded. A Skill name alone never proves delivery, and a Skill supplies
 method — it cannot expand Task scope or grant orchestration control.
 
 | Skill | Purpose |
@@ -161,62 +161,31 @@ this release has not verified.
 
 ## Native extension and execution configuration
 
-Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes, manifest counts and current Skill hashes. Counts are catalog-driven. The original sixteen Skill bodies are maintained MIT adaptations; the other thirty are original methods with public references. This project's original work is MIT; third-party Skills keep the license they arrived with, recorded per Skill in `skills/README.md`. Explicit version 2 project configuration additionally registers installed external Skills and mixed Role bindings without editing these catalogs; see [external Skills](external-skills.md). No executable catalog hooks or generic routing overlays are supported.
+Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes and manifest counts. Counts are catalog-driven. The original sixteen Skill bodies are maintained MIT adaptations; the other thirty are original methods with public references. This project's original work is MIT; third-party Skills keep the license they arrived with, recorded per Skill in `skills/README.md`. Explicit version 2 project configuration additionally registers installed external Skills and mixed Role bindings without editing these catalogs; see [external Skills](external-skills.md). No executable catalog hooks or generic routing overlays are supported.
 
 Optional `requires` metadata names CLI, env and API dependencies. Assembly labels required and conditional sets without adding a new top-level contract section. On the actual execution host, helpers use explicit selectors and ProjectRoot. Configuration precedence is inherited process values (even empty), root `.env`, then explicit non-secret JSON. Only selected declared file variables are added to the child; inherited variables remain and the parent is unchanged. API checks are presence-only. Config paths stay inside the root, while an authorized executable may be outside; direct batch-launch compatibility is not guaranteed. See [Extending](extending.md) for registration and runnable examples.
 
-## The evidence model
-
-`scripts/validate-git-evidence.ps1` is a **read-only** validator over
-JSON evidence documents written by the coordinator from observations. The
-coordinator gathers and writes first, validates second, and acts only on
-`PASS` for the relevant scope. The validator never writes JSON, runs tests,
-merges, or queries the runtime. PASS cannot authenticate a worker message or
-prove that a recorded test command ran; the coordinator must verify Runtime
-ownership and collect actual command results. A valid review record with a
-CHANGES_REQUIRED or UNVERIFIABLE verdict can pass the `review` phase, so
-validation PASS is not itself review approval.
-
-Per-Task evidence lives at `runs/<run>/evidence/git/<task-key>.json`; the run
-has exactly one final record at `runs/<run>/evidence/git/run-final-verification.json`.
-Task evidence states are `source-registered` → `reviewed` → `integrated`;
-pre-merge is a checkpoint within `reviewed`, and final belongs to the run
-record, never to per-Task files.
+## Dispatch records and integration checks
 
 The coordinator writes each assignment with `scripts/dispatch-task.ps1` from
 the captured `worker-start` receipt; the script refuses a control-worktree
 placement and a duplicate live dispatch for one Task, and validates the
-assignment against `schemas/assignment.schema.json` before writing. An
-assignment whose status is outside the 11-value lifecycle enum fails
-validation instead of silently skipping its evidence obligation.
+assignment against `schemas/assignment.schema.json` before writing.
 
-Six validation phases:
+Integration safety comes from the process itself, checked directly by the
+coordinator at the moment it acts:
 
-| Phase | Gate | What is checked |
-| --- | --- | --- |
-| `sourceRegistered` | After a matched, active `worker_done` | Schema, run/path/assignment scope, recorded commit existence |
-| `review` | After independent review is recorded | Reviewer independence (Task and Dispatch both differ from the source worker's), target/baseline binding, baseline is an ancestor of target, APPROVED target is clean |
-| `preMerge` | After the latest APPROVED review, while still `reviewed` | Admission binds the approved SHA; live source HEAD equals it; source and delivery worktrees are clean; delivery HEAD equals the recorded baseline |
-| `postMerge` | After the actual merge plus fresh checks at `headAfter` | Integration result, merge evidence (one `git merge` of the reviewed branch carrying a message flag, exit 0, conflict-free), ancestry, verification checks bound to `headAfter` |
-| `final` | After all intended integrations, from a clean independent verification worktree | Unique run-final record, verified + READY, complete exact coverage of integrated Tasks, checks at the current delivery HEAD |
-| `audit` | Any time, for historical runs | Schema/commits plus state-appropriate checks, with **no** live HEAD-equality or clean-tree requirements |
-
-**Moment equations vs. time-invariant relations.** The live phases assert
-equalities that must hold *at the moment of validation* — the source branch
-HEAD equals the approved SHA, the delivery HEAD equals the recorded baseline,
-the trees are clean. The `audit` phase checks historical bindings, recorded checks, commit
-existence, and ancestry without comparing them to live branch HEADs or
-worktree cleanliness. Historical Task records also use historical checks
-under `final`; selecting a Task alone does not establish run completion.
-By contrast, run-scoped `final` (or the canonical run-final selector)
-requires the run-final target to equal the current delivery HEAD. A historical
-run-final can therefore legitimately FAIL `final` after delivery advances,
-while still passing `audit`. Historical `headAfter` remains an ancestor of a
-later final target; it need not equal that target.
-
-The validator's exit semantics: `PASS` exits 0 for the selected scope only;
-`NOT_APPLICABLE` also exits 0 and is not acceptance; `FAIL` exits 1 and blocks
-merging or READY claims until the evidence is rebuilt.
+- **Independent review** — a reviewer who is not the implementer inspects the
+  actual branch and reports `APPROVED`, `CHANGES_REQUIRED`, or
+  `UNVERIFIABLE`; only APPROVED branches merge.
+- **Pre-merge check** — immediately before merging, the coordinator confirms
+  the live source HEAD still equals the approved commit and both source and
+  delivery worktrees are clean; drift requires re-review.
+- **Post-merge verification** — the full package suite runs at the integrated
+  HEAD before the source dependency counts as settled.
+- **Final verification** — after all intended integrations, a release-verifier
+  runs in a clean, independent worktree from the latest `delivery_branch`;
+  only its passing result authorizes READY.
 
 ## Coordinator lock and release
 
@@ -264,6 +233,6 @@ them.
 
 The offline acceptance suite (`scripts/verify-package.ps1`) enforces the
 structural side of this design — routing chain monotonicity, role/skill path
-existence, the 17-section entry outline, Claude-only content, encoding, and
-negative evidence mutations — so the package can be verified without a
+existence, the 17-section entry outline, Claude-only content, and
+encoding — so the package can be verified without a
 runtime.
