@@ -25,7 +25,7 @@ First-session checklist: known editor version, saved scene, visible interaction,
 
 ## 3. Export matrix
 
-Snapshot: Cocos Creator 3.8, accessed 2026-10-23. Supported means listed in the scout's official platform index; not listed is treated as unsupported for selection, not physically impossible.
+Snapshot: Cocos Creator 3.8, accessed 2026-10-23. Supported means listed by the official export documentation; not listed is treated as unsupported for selection, not physically impossible.
 
 | Engine | WeChat mini-games | Douyin mini-games | Android | iOS | HarmonyOS/OpenHarmony | Windows/macOS/Linux | Web |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -33,7 +33,7 @@ Snapshot: Cocos Creator 3.8, accessed 2026-10-23. Supported means listed in the 
 
 Official source: [Publishing overview](https://docs.cocos.com/creator/3.8/manual/en/editor/publish/index.html), accessed 2026-10-23. Additional listed mini-game routes include Facebook Instant Games, OPPO, vivo, Honor, and Huawei Quick Games. Native entries include iOS, Android, Huawei AppGallery Connect, Huawei HarmonyOS, Google Play, macOS, and Windows; Web includes mobile H5 and desktop Web.
 
-Read the grouped cells as an index, not interchangeable platform implementations. HarmonyOS and AppGallery Connect are separate publishing paths; the grouping does not establish every OpenHarmony variant. The scout's grouped desktop cell is retained, but its detailed native list names macOS and Windows, not Linux. Native Linux export is not established by that list; evaluate desktop Web separately and verify the exact requested target before promising support.
+Read the grouped cells as an index, not interchangeable platform implementations. HarmonyOS and AppGallery Connect are separate publishing paths; the grouping does not establish every OpenHarmony variant. The grouped desktop cell is retained, but the official publishing overview's detailed native list names macOS and Windows, not Linux. Native Linux export is not established by that list; evaluate desktop Web separately and verify the exact requested target before promising support.
 
 ## 4. Project-side docs boundary
 
@@ -56,9 +56,9 @@ Detect the editor version, installed `cocos-cli`, its reported version/help, and
 
 When compatible tooling is present and local editor automation is intended, start that official entry against the actual project and inspect its exposed capabilities before invoking them. Confirm that it targets the expected editor/project rather than treating a running endpoint as sufficient evidence. Keep the selected CLI version and invocation in project documentation.
 
-If the official entry is unavailable or incompatible, continue through project-file editing, editor preview, and the documented build route. Record the missing automation capability; do not treat it as a reason to invent tool names or install a third-party replacement by default.
+If the official entry is unavailable or incompatible, fall back to project-file editing, editor preview, and the documented build route. Record the missing automation capability; do not treat it as a reason to invent tool names or install a third-party replacement by default.
 
-[1] Unofficial only: Cocos Store also lists third-party MCP integrations. They are not the first-party CLI entry, their versions were not verified in the scout, and none is recommended here.
+[1] Unofficial only: Cocos Store also lists third-party MCP integrations. They are not the first-party CLI entry, their versions were not verified as of 2026-10-23, and none is recommended here.
 
 ## 7. License snapshot
 
@@ -66,7 +66,7 @@ The editor is proprietary, with a royalty-free license for developing games/appl
 
 The [official free-use FAQ](https://www.cocos.com/en/post/de646eafb46fad3dd363e893401c2db9), accessed 2026-10-23, states free use with no royalty fees. The relevant cost snapshot is therefore no game-development royalty; do not invent a revenue threshold. Open engine source and a closed editor have different redistribution boundaries: source availability does not grant unrestricted redistribution of the engine/editor itself. Check the actual grant before redistributing any covered component.
 
-The license source is tagged v3.8.9 while the scout's observed stable release was 3.8.8; the tag is a pinned terms source, not an instruction to upgrade or proof of the installed version's license. Verify-current-policy: terms change. Before adoption and release, re-read the linked terms and those shipped with the selected editor and dependencies, confirm applicability, and record the check date. Channel SDKs, assets, and services require their own license checks.
+The license source is tagged v3.8.9 while the [official releases list](https://github.com/cocos/cocos-engine/releases), accessed 2026-10-23, listed 3.8.8 as the latest stable release; the tag is a pinned terms source, not an instruction to upgrade or proof of the installed version's license. Verify-current-policy: terms change. Before adoption and release, re-read the linked terms and those shipped with the selected editor and dependencies, confirm applicability, and record the check date. Channel SDKs, assets, and services require their own license checks.
 
 ## 8. Common structural traps
 

@@ -25,11 +25,11 @@ First-session checklist: a served page, visible content, working input, and a re
 
 ## 3. Export matrix
 
-Snapshot: Phaser 4 / native Canvas, accessed 2026-10-23. Supported means the scout's official route is listed; conditional means additional packaging or adaptation is required. Not listed is treated as unsupported for selection, not physically impossible.
+Snapshot: Phaser 4 / native Canvas, accessed 2026-10-23. Supported means listed by the official export documentation; conditional means additional packaging or adaptation is required. Not listed is treated as unsupported for selection, not physically impossible.
 
 | Engine | WeChat mini-games | Douyin mini-games | Android | iOS | HarmonyOS/OpenHarmony | Windows/macOS/Linux | Web |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Web Canvas (Phaser 4 / native Canvas) | Conditional: adaptation layer [1] | Conditional: same [1] | Conditional: Capacitor wrapper | Conditional: Capacitor wrapper | Not listed | Supported: browser is the platform | Supported: first-class |
+| Web Canvas (Phaser 4 / native Canvas) | Conditional: adaptation layer [1] | Conditional: adaptation layer [1] | Conditional: Capacitor wrapper | Conditional: Capacitor wrapper | Not listed | Supported: browser is the platform | Supported: first-class |
 
 Official sources, all accessed 2026-10-23: [Phaser documentation](https://docs.phaser.io/), [Capacitor mobile packaging tutorial](https://phaser.io/tutorials/bring-your-phaser-game-to-ios-and-android-with-capacitor), and [Phaser Game Agent export announcement](https://phaser.io/news/2026/07/phaser-game-agent-export). The mobile tutorial establishes the Phaser wrapper route; native Canvas wrapper compatibility must be checked in its own project. The desktop cell means browser delivery. The separate commercial Game Agent service advertises Web ZIP and Windows/Linux/macOS exports; it is not a local engine export guarantee.
 
@@ -58,7 +58,7 @@ If that service is unavailable or the project chooses the local open-source rout
 
 ## 7. License snapshot
 
-Phaser engine: MIT, with no engine royalty or revenue threshold under that license. Source: [Phaser LICENSE.md](https://github.com/phaserjs/phaser/blob/master/LICENSE.md), accessed 2026-10-23; the scout pairs this with package `phaser@4.2.1`. The observed copyright is 2026 Richard Davey, Phaser Studio Inc. Retain the copyright and permission notice when redistributing covered software.
+Phaser engine: MIT, with no engine royalty or revenue threshold under that license. Source: [Phaser LICENSE.md](https://github.com/phaserjs/phaser/blob/master/LICENSE.md), accessed 2026-10-23; paired with npm package `phaser@4.2.1` on that date. The observed copyright is 2026 Richard Davey, Phaser Studio Inc. Retain the copyright and permission notice when redistributing covered software.
 
 This is a Phaser engine snapshot, not a blanket license for native Canvas dependencies, game assets, wrappers, or commercial services. Game Agent and Editor subscriptions have separate terms and costs; their engine-independent prices are not pinned here. The source URL follows a moving branch, so retain the installed package's actual license in the project.
 

@@ -31,11 +31,11 @@ Snapshot: Godot 4.7, accessed 2026-10-23. Supported means listed by the official
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Godot 4.7 | Not listed [1] | Not listed [1] | Supported | Supported | Not listed [2] | Supported | Supported |
 
-Official sources, both accessed 2026-10-23: [Exporting projects](https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html) and [Godot FAQ](https://docs.godotengine.org/en/stable/about/faq.html). The detailed list includes Windows, macOS, Linux/*BSD, Android, iOS, and Web. This engine-level matrix is not a guarantee for every language, renderer, host OS, or engine version; verify the chosen combination before committing to it.
+Official sources, both accessed 2026-10-23: [Exporting projects](https://docs.godotengine.org/en/4.7/tutorials/export/exporting_projects.html) and [Godot FAQ](https://docs.godotengine.org/en/4.7/about/faq.html). The detailed list includes Windows, macOS, Linux/*BSD, Android, iOS, and Web. This engine-level matrix is not a guarantee for every language, renderer, host OS, or engine version; verify the chosen combination before committing to it.
 
 [1] Unofficial community mini-game adaptations exist; the [mini-game discussion](https://github.com/godotengine/godot-proposals/discussions/10947), accessed 2026-10-23, does not establish official export support. No community adapter is recommended here.
 
-[2] Unofficial community work only: [HarmonyOS PR #108553](https://github.com/godotengine/godot/pull/108553) was unmerged in the 2026-10-23 scout snapshot. It is not an official export capability.
+[2] Unofficial community work only: [HarmonyOS PR #108553](https://github.com/godotengine/godot/pull/108553) was unmerged as of 2026-10-23. It is not an official export capability.
 
 ## 4. Project-side docs boundary
 
