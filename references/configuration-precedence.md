@@ -15,9 +15,9 @@ Highest to lowest:
 Under `skills/`, the original 16 Skills are package-maintained adaptations of the MIT-licensed baseline; the 30 methods added in versions 2.3.0 and 2.4.0 are original package content. `skills/README.md` records provenance and current hashes. See [Extending](../docs/extending.md) for native authoring/registration and metadata/full verification.
 
 - `explicit-path` is the default: give the absolute `SKILL.md` path in the Task and require reading it.
-- `inline-extract` is the fallback: embed required Skill bodies as a snapshot and record source path and hash.
+- `inline-extract` is the fallback: embed required Skill bodies as a snapshot and record source path.
 
-A Skill name alone is not loading evidence. Skills supply method and cannot expand Task scope or grant orchestration control.
+A Skill name alone never proves loading. Skills supply method and cannot expand Task scope or grant orchestration control.
 
 The list above is instruction precedence. Version 2 project config has a narrow explicit
 `externalSkills` / `roleBindings` resolver through `-ConfigPath`; it does not merge

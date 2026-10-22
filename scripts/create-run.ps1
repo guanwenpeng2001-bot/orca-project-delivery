@@ -123,7 +123,6 @@ try {
     "assignments",
     "attempts",
     "dispatch-receipts",
-    "dispatch-waves",
     "handoffs",
     "reconnaissance",
     "audits",
@@ -133,8 +132,7 @@ try {
     "worker-reports",
     "reviews",
     "verification",
-    "evidence",
-    "evidence/git"
+    "evidence"
   )
   foreach ($dir in $subdirs) {
     New-Item -ItemType Directory -Path (Join-Path $runDir $dir) -Force | Out-Null

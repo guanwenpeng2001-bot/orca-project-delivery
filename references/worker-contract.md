@@ -12,8 +12,8 @@
 - Write only the assigned `.dev-work` report/evidence path. Never modify run-global state.
 - Follow `templates/worker-report.md`'s quotation-fidelity rule: quote archived errors verbatim with their log path, preserving language and encoding; note omitted ANSI styling, and label any restatement as paraphrase without quotation marks.
 - Run the verification this Task names before reporting, and never present an unfinished check as
-  verified. Full package gates at post-merge and final belong to the coordinator; do not park them
-  as "verification pending".
+  verified. The full package suite at post-merge integration and final verification belongs to the
+  coordinator; do not park them as "verification pending".
 - Source/deliverable Tasks: commit your work within the authorized scope on your task branch before
   reporting; the coordinator reviews and merges the committed deliverable.
 - Read-only Tasks: produce no commits and write only the assigned report path.
@@ -58,7 +58,7 @@ orca orchestration ask --from <worker_handle> --question "<question>" --options 
 orca orchestration ask --from <worker_handle> --resume <message_id> --timeout-ms 600000
 ```
 
-The changed-file list of record is the task branch's committed diff (`git show --stat` / `git diff --stat <base>..<work>`); `--files-modified` is a hint that must agree with it. The coordinator reconciles both at source-evidence registration and records disagreements in `decisions.md`.
+The changed-file list of record is the task branch's committed diff (`git show --stat` / `git diff --stat <base>..<work>`); `--files-modified` is a hint that must agree with it. The coordinator reconciles both when registering the source result and records disagreements in `decisions.md`.
 
 | Your verdict | What to send | What else to do |
 | --- | --- | --- |

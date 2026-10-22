@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { existsSync, linkSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -48,7 +47,7 @@ function createProject(t) {
   const devWork = path.join(project, '.dev-work');
   const runDir = path.join(devWork, 'runs', 'fixture-run');
   mkdirSync(path.join(runDir, 'assignments'), { recursive: true });
-  mkdirSync(path.join(runDir, 'evidence', 'git'), { recursive: true });
+  mkdirSync(path.join(runDir, 'evidence'), { recursive: true });
   writeJson(path.join(devWork, 'manifest.json'), {
     schemaVersion: 1, managedBy: 'orca-project-delivery', createdAt: '2026-01-01T00:00:00Z', projectRoot: project,
   });
@@ -132,23 +131,19 @@ function runDispatch(project, paths, args = ['-SkipPostValidation']) {
   return result;
 }
 
-test('binds the recorded brief bytes and refreshes the digest on redispatch', (t) => {
+test('records the resolved brief path and refreshes it on redispatch', (t) => {
   const { project, runDir } = createProject(t);
   const paths = writeInputs(t, project);
-  let previousHash;
   for (const brief of [Buffer.from('﻿# Brief 中文\r\n'), Buffer.from('# Edited brief\n')]) {
     writeFileSync(paths.briefPath, brief);
     const result = runDispatch(project, paths);
     assert.equal(result.status, 0, result.stdout + result.stderr);
     const output = parseOutput(result);
     const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
-    const hash = createHash('sha256').update(readFileSync(paths.briefPath)).digest('hex');
     assert.equal(assignment.artifacts.briefPath, paths.briefPath);
-    assert.equal(assignment.artifacts.briefSha256, hash);
+    assert.equal(assignment.artifacts.briefSha256, undefined);
     assert.equal(output.briefPath, paths.briefPath);
-    assert.equal(output.briefSha256, hash);
-    assert.notEqual(hash, previousHash);
-    previousHash = hash;
+    assert.equal(output.briefSha256, undefined);
   }
 });
 
@@ -176,7 +171,7 @@ for (const [name, launch, status, note] of [
   });
 }
 
-test('records a successful dispatch receipt as the run ledger', (t) => {
+test('records a successful dispatch receipt as the run record', (t) => {
   const { project, runDir } = createProject(t);
   const paths = writeInputs(t, project);
   const result = runDispatch(project, paths, []);
@@ -202,7 +197,7 @@ test('records a successful dispatch receipt as the run ledger', (t) => {
   assert.equal(assignment.runtime.surface, 'visible');
   assert.equal(assignment.runtime.terminalHandle, 'term_fixture');
   assert.equal(assignment.branch.worktree, normalized(paths.worktree));
-  assert.equal(assignment.evidence.gitEvidencePath, 'runs/fixture-run/evidence/git/fixture-task.json');
+  assert.equal(assignment.evidence, undefined);
   assert.equal(assignment.fallbackReason, null);
   assert.equal(assignment.runtime.previousDispatches, undefined);
 
@@ -222,45 +217,28 @@ test('records a successful dispatch receipt as the run ledger', (t) => {
   assert.notEqual(lock.updatedAt, '2026-01-01T00:00:00Z');
 });
 
-for (const [name, taskKind, mergeTarget, supersededBy, patterns] of [
-  ['source null target', 'source', null, undefined, [/taskKind/, /mergeTarget/]],
-  ['default source null target', undefined, null, undefined, [/taskKind/, /mergeTarget/]],
-  ['source empty target', 'source', '', undefined, [/taskKind/, /mergeTarget/]],
-  ['read-only source target', 'read-only', 'main', undefined, [/taskKind/, /mergeTarget/]],
-  ['unknown successor', 'source', null, 'missing-task', [/supersededBy/, /missing-task/]],
+for (const [name, taskKind, mergeTarget, patterns] of [
+  ['source null target', 'source', null, [/taskKind/, /mergeTarget/]],
+  ['default source null target', undefined, null, [/taskKind/, /mergeTarget/]],
+  ['source empty target', 'source', '', [/taskKind/, /mergeTarget/]],
+  ['read-only source target', 'read-only', 'main', [/taskKind/, /mergeTarget/]],
 ]) {
-  test(`rejects ${name} without writing the ledger`, (t) => {
+  test(`rejects ${name} without writing the run records`, (t) => {
     const { project, runDir, devWork } = createProject(t);
     const paths = writeInputs(t, project);
     const definition = readJson(paths.definitionPath);
-    Object.assign(definition, { taskKind, supersededBy });
+    Object.assign(definition, { taskKind });
     definition.branch.mergeTarget = mergeTarget;
     writeJson(paths.definitionPath, definition);
-    const ledgerPaths = [path.join(runDir, 'task-map.json'), path.join(runDir, 'branch-map.json'), path.join(runDir, 'run-state.json'), path.join(devWork, 'coordinator-lock.json')];
-    const before = ledgerPaths.map((file) => readFileSync(file, 'utf8'));
+    const statePaths = [path.join(runDir, 'task-map.json'), path.join(runDir, 'branch-map.json'), path.join(runDir, 'run-state.json'), path.join(devWork, 'coordinator-lock.json')];
+    const before = statePaths.map((file) => readFileSync(file, 'utf8'));
     const result = runDispatch(project, paths);
     assert.equal(result.status, 1, result.stdout + result.stderr);
     for (const pattern of patterns) assert.match(clean(result.stdout + result.stderr), pattern);
     assert.equal(existsSync(path.join(runDir, 'assignments', 'fixture-task.json')), false);
-    assert.deepEqual(ledgerPaths.map((file) => readFileSync(file, 'utf8')), before);
+    assert.deepEqual(statePaths.map((file) => readFileSync(file, 'utf8')), before);
   });
 }
-
-test('accepts a folded source task and records its existing successor', (t) => {
-  const { project, runDir } = createProject(t);
-  const paths = writeInputs(t, project);
-  const definition = readJson(paths.definitionPath);
-  definition.taskKind = 'source';
-  definition.branch.mergeTarget = null;
-  definition.supersededBy = 'successor';
-  writeJson(paths.definitionPath, definition);
-  writeJson(path.join(runDir, 'task-map.json'), { schemaVersion: 1, tasks: { successor: { taskId: 'task_successor123456', assignment: 'assignments/successor.json' } } });
-  const result = runDispatch(project, paths);
-  assert.equal(result.status, 0, result.stdout + result.stderr);
-  const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
-  assert.equal(assignment.supersededBy, 'successor');
-  assert.equal(assignment.branch.mergeTarget, null);
-});
 
 test('refuses placements the run contract does not allow', (t) => {
   const { project, runDir } = createProject(t);
@@ -368,10 +346,10 @@ test('warns about task-map drift and keeps unfamiliar top-level keys intact', (t
   assert.equal(taskMap.tasks['fixture-task'].taskId, 'task_abcdef123456');
 });
 
-test('a post-validation failure reports ok=false and exits non-zero with the ledger written', (t) => {
+test('a post-validation failure reports ok=false and exits non-zero with the records written', (t) => {
   const { project, runDir, devWork } = createProject(t);
   const paths = writeInputs(t, project);
-  // Break a ledger input validate-run.ps1 checks: an invalid run-state schema.
+  // Break a state input validate-run.ps1 checks: an invalid run-state schema.
   writeJson(path.join(runDir, 'run-state.json'), {
     schemaVersion: 1, runSlug: 'fixture-run', objective: 'dispatch fixture', workflow: 'no-such-workflow',
     status: 'active', stage: 'task-graph', deliveryBranch: 'main', deliveryBranchSource: 'user',
@@ -387,13 +365,13 @@ test('a post-validation failure reports ok=false and exits non-zero with the led
   assert.equal(output.postValidation.ok, false);
   assert.equal(output.postValidation.exitCode, 1);
   assert.ok(output.warnings.some((warning) => /validate-run\.ps1 reports problems/.test(warning)), result.stdout);
-  // The dispatch itself completed: the ledger was written and stays valid JSON.
+  // The dispatch itself completed: the records were written and stay valid JSON.
   const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
   assert.equal(assignment.taskKey, 'fixture-task');
   assert.equal(readJson(path.join(devWork, 'coordinator-lock.json')).activeRun, 'fixture-run');
 });
 
-test('all five ledger files are replaced without modifying their previous file objects', (t) => {
+test('all five state files are replaced without modifying their previous file objects', (t) => {
   const { project, runDir, devWork } = createProject(t);
   const paths = writeInputs(t, project);
   assert.equal(runDispatch(project, paths).status, 0);
@@ -415,7 +393,7 @@ test('all five ledger files are replaced without modifying their previous file o
   for (const file of files) assert.doesNotThrow(() => readJson(file));
 });
 
-test('an interrupted ledger write exits non-zero and leaves every written file valid JSON', (t) => {
+test('an interrupted state write exits non-zero and leaves every written file valid JSON', (t) => {
   const { project, runDir, devWork } = createProject(t);
   const paths = writeInputs(t, project);
   const stateBefore = readFileSync(path.join(runDir, 'run-state.json'), 'utf8');
@@ -437,7 +415,7 @@ $null = Set-PSBreakpoint -Script $env:DISPATCH_SCRIPT -Line $line -Action {
   });
   assert.ifError(result.error);
   assert.notEqual(result.status, 0, result.stdout + result.stderr);
-  assert.match(clean(result.stdout + result.stderr), /Ledger write failed for/);
+  assert.match(clean(result.stdout + result.stderr), /Atomic write failed for/);
   assert.match(clean(result.stdout + result.stderr), /branch-map/);
   assert.equal(readJson(path.join(runDir, 'assignments', 'fixture-task.json')).orca.dispatchId, 'ctx_abcdef123456');
   assert.equal(readJson(path.join(runDir, 'task-map.json')).tasks['fixture-task'].taskId, 'task_abcdef123456');

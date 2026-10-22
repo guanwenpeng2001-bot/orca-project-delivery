@@ -89,14 +89,6 @@
         "unverifiable"
       ]
     },
-    "supersededBy": {
-      "type": "string",
-      "minLength": 1
-    },
-    "supersedes": {
-      "type": "string",
-      "minLength": 1
-    },
     "fallbackReason": {
       "type": [
         "string",

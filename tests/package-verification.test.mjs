@@ -160,11 +160,10 @@ test('MetadataOnly rejects every missing required script and parses discovered e
   const required = [
     'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'dispatch-task.ps1',
     'probe-claude-capabilities.ps1', 'query-routing.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
-    'validate-run.ps1', 'validate-git-evidence.ps1', 'verify-package.ps1',
+    'validate-run.ps1', 'verify-package.ps1',
     'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',
     'verify-requirements.ps1', 'project-common.ps1', 'verification-common.ps1',
     'verification-structure.ps1', 'verification-runtime.ps1', 'verification-lifecycle.ps1',
-    'verification-evidence-fixtures.ps1', 'verification-evidence.ps1', 'verification-mutations.ps1',
   ];
   const verify = () => {
     const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', entrypoint, '-PackageRoot', copy, '-MetadataOnly'], {
@@ -202,16 +201,15 @@ $definitions = @($ast.FindAll({ param($node) $node -is [Management.Automation.La
 if ($definitions.Count -ne 1) { throw 'Expected exactly one Resolve-SuiteSelection definition' }
 . ([scriptblock]::Create($definitions[0].Extent.Text))
 $requested = @($env:PACKAGE_TEST_REQUESTED -split '\n' | Where-Object { $_ -ne '' })
-$result = Resolve-SuiteSelection -Requested $requested -MetadataOnly:($env:PACKAGE_TEST_METADATA_ONLY -eq '1') -SkipMutationTests:($env:PACKAGE_TEST_SKIP -eq '1')
+$result = Resolve-SuiteSelection -Requested $requested -MetadataOnly:($env:PACKAGE_TEST_METADATA_ONLY -eq '1')
 [ordered]@{ requested = @($result.Requested); running = @($result.Running); explicit = [bool]$result.Explicit } | ConvertTo-Json -Compress
 `;
 
-function runResolver(requested, { metadataOnly = false, skipMutationTests = false } = {}) {
+function runResolver(requested, { metadataOnly = false } = {}) {
   const environment = { ...process.env,
     PACKAGE_TEST_RESOLVER_SOURCE: helpers,
     PACKAGE_TEST_REQUESTED: requested.join('\n'),
     PACKAGE_TEST_METADATA_ONLY: metadataOnly ? '1' : '0',
-    PACKAGE_TEST_SKIP: skipMutationTests ? '1' : '0',
   };
   delete environment.NODE_TEST_CONTEXT;
   const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', resolverHarness], {
@@ -220,41 +218,6 @@ function runResolver(requested, { metadataOnly = false, skipMutationTests = fals
   assert.ifError(result.error);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   return JSON.parse(result.stdout.trim());
-}
-
-const skipNoticeHarness = String.raw`
-$ErrorActionPreference = 'Stop'
-$tokens = $null
-$errors = $null
-$ast = [Management.Automation.Language.Parser]::ParseFile($env:PACKAGE_TEST_RESOLVER_SOURCE, [ref]$tokens, [ref]$errors)
-if ($errors.Count) { throw ($errors | Out-String) }
-$definitions = @($ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-MutationSuiteSkipNotice' }, $true))
-if ($definitions.Count -ne 1) { throw 'Expected exactly one Test-MutationSuiteSkipNotice definition' }
-. ([scriptblock]::Create($definitions[0].Extent.Text))
-$selection = $env:PACKAGE_TEST_SELECTION | ConvertFrom-Json
-Test-MutationSuiteSkipNotice -SuiteSelection $selection -MetadataOnly:($env:PACKAGE_TEST_METADATA_ONLY -eq '1') -SkipMutationTests:($env:PACKAGE_TEST_SKIP -eq '1') | ConvertTo-Json -Compress
-`;
-
-for (const { name, selection, metadataOnly = false, skipMutationTests = true, expected } of [
-  { name: 'mutations requested', selection: { Explicit: true, Requested: ['evidence source mutations'] }, expected: true },
-  { name: 'mutations not requested', selection: { Explicit: true, Requested: ['package contracts'] }, expected: false },
-  { name: 'default full selection', selection: { Explicit: false, Requested: [] }, expected: true },
-  { name: 'metadata only', selection: { Explicit: false, Requested: [] }, metadataOnly: true, expected: false },
-  { name: 'skip switch absent', selection: { Explicit: true, Requested: ['evidence source mutations'] }, skipMutationTests: false, expected: false },
-]) {
-  test(`Test-MutationSuiteSkipNotice: ${name}`, () => {
-    const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', skipNoticeHarness], {
-      encoding: 'utf8', timeout: 20000, env: { ...process.env,
-        PACKAGE_TEST_RESOLVER_SOURCE: helpers,
-        PACKAGE_TEST_SELECTION: JSON.stringify(selection),
-        PACKAGE_TEST_METADATA_ONLY: metadataOnly ? '1' : '0',
-        PACKAGE_TEST_SKIP: skipMutationTests ? '1' : '0',
-      },
-    });
-    assert.ifError(result.error);
-    assert.equal(result.status, 0, result.stdout + result.stderr);
-    assert.equal(JSON.parse(result.stdout.trim()), expected);
-  });
 }
 
 test('suite selection rejects an unknown suite name', (t) => {
@@ -270,7 +233,7 @@ test('suite selection rejects an unknown suite name', (t) => {
   assert.equal(JSON.parse(jsonLines[0]).failed, 1);
   assert.match(lines.at(-1), /SUMMARY PASS=0 FAIL=1$/);
   assert.match(result.stdout, /FAIL harness\/setup: Unknown suite 'no-such-suite'/);
-  assert.ok(result.stdout.includes('git evidence'), result.stdout);
+  assert.ok(result.stdout.includes('package contracts'), result.stdout);
 });
 
 test('suite selection rejects an empty suite name', (t) => {
@@ -310,24 +273,11 @@ test('Resolve-SuiteSelection normalizes case and whitespace and deduplicates', (
   assert.equal(result.explicit, true);
 });
 
-test('Resolve-SuiteSelection expands evidence source mutations with git evidence', () => {
-  const result = runResolver(['evidence source mutations']);
-  assert.deepEqual(result.requested, ['evidence source mutations']);
-  assert.deepEqual(result.running, ['package structure', 'git evidence', 'evidence source mutations']);
-  assert.equal(result.explicit, true);
-});
-
 test('Resolve-SuiteSelection treats an empty selection as the full gate', () => {
   const result = runResolver([]);
   assert.deepEqual(result.requested, []);
-  assert.deepEqual(result.running, ['package structure', 'package runtime', 'package contracts', 'project lifecycle', 'git evidence', 'evidence source mutations']);
+  assert.deepEqual(result.running, ['package structure', 'package runtime', 'package contracts', 'project lifecycle']);
   assert.equal(result.explicit, false);
-});
-
-test('Resolve-SuiteSelection applies SkipMutationTests after expansion', () => {
-  const result = runResolver(['evidence source mutations'], { skipMutationTests: true });
-  assert.deepEqual(result.running, ['package structure', 'git evidence']);
-  assert.equal(result.explicit, true);
 });
 
 test('subset run prints SUITES lines and keeps the summary contract', (t) => {
@@ -366,16 +316,6 @@ function spawnSubsetRun(t, tempPrefix, ...selectionArguments) {
   return result;
 }
 
-test('SkipMutationTests does not announce a mutation suite absent from the selection', (t) => {
-  const result = spawnSubsetRun(t, 'package-suite-skip-notice-', '-Suites', 'package contracts', '-SkipMutationTests');
-  const output = result.stdout + result.stderr;
-  assert.equal(result.status, 0, output);
-  assert.ok(result.stdout.includes('SUITES requested: package contracts'), output);
-  assert.ok(result.stdout.includes('SUITES running: package structure, package contracts'), output);
-  assert.doesNotMatch(output, /SKIP evidence source mutations/);
-  assert.match(result.stdout.trim().split(/\r?\n/).at(-1), /^SUMMARY PASS=\d+ FAIL=0$/);
-});
-
 test('comma-joined multi-suite selection runs both suites', (t) => {
   const result = spawnSubsetRun(t, 'package-suite-comma-', '-Suites', 'package structure,package contracts');
   assert.equal(result.status, 0, result.stdout + result.stderr);
@@ -391,7 +331,7 @@ test('comma-joined multi-suite selection runs both suites', (t) => {
 });
 
 test('a straggler token fails loudly instead of narrowing silently', (t) => {
-  const result = spawnSubsetRun(t, 'package-suite-straggler-', '-Suites', 'package contracts', 'git evidence');
+  const result = spawnSubsetRun(t, 'package-suite-straggler-', '-Suites', 'package contracts', 'project lifecycle');
   assert.notEqual(result.status, 0, result.stdout + result.stderr);
   assert.ok(!result.stdout.includes('SUMMARY PASS='), result.stdout);
   assert.ok(!result.stdout.includes('SUITES requested:'), result.stdout);

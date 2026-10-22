@@ -30,12 +30,8 @@
   },
   "artifacts": {
     "briefPath": "<absolute-assembled-brief-path>",
-    "briefSha256": "<lowercase-sha256-of-brief-bytes>",
     "reportPath": "<absolute-path>",
     "evidencePath": "<absolute-path>"
-  },
-  "evidence": {
-    "gitEvidencePath": "runs/<run>/evidence/git/<task-key>.json"
   },
   "orca": {
     "runId": null,

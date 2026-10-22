@@ -27,21 +27,15 @@
 | --- | --- | --- |
 |  |  |  |
 
-## Run-final Evidence
+## Final Verification
 
-- Canonical record: `evidence/git/run-final-verification.json` (relative to this run; coordinator-owned, unique)
-- `target.branch` / `target.commitSha`: <must match Delivery Branch above and latest delivery at final validation>
-- Independent verification `worktree` and clean HEAD/status observations:
-- `status`: <planned / in_progress / verified / blocked>
-- `coverage.integratedTaskKeys`: <all integrated Task keys exactly once; nonempty for acceptance>
-- `coverage.uncoveredTaskKeys`: <must be empty for acceptance>
-- `inputs.integratedEvidencePaths`: <all integrated evidence paths exactly once, relative to this run; nonempty>
-- `checks[]`: <actual commands, exit codes, observed summaries, UTC times and commitSha; verification at target.commitSha>
-- `recordedAt` / `verdict`: <from canonical record>
-- Validator command: `pwsh -NoProfile -File <package>/scripts/validate-git-evidence.ps1 -ProjectRoot <control-worktree> -Run <run> -Phase final`
-- Validator exit code / JSON status / errors / reason:
+- Verifier Task and report: <release-verifier Task key and report path>
+- Delivery branch / commit verified: <must match Delivery Branch above and the current delivery HEAD>
+- Independent verification worktree and clean status:
+- Commands run and results: <full suite and any additional checks, with exit codes>
+- Verdict: <READY / NOT_READY / UNVERIFIABLE>
 
-Write observations and evidence before validation. READY requires verified + READY in the record, complete intended coverage and final-scope PASS; exit 0 with NOT_APPLICABLE is not acceptance. A single Task's final-phase result is insufficient. Historical integration headAfter values need only be ancestors of the final target, not equal to it. Link existing Task evidence; do not create per-task final records. If no integration lifecycle applies, explain NOT_APPLICABLE and the actual verification scope without manufacturing empty READY evidence.
+Final verification is the global barrier after all intended integrations; it never moves earlier and is never skipped. Unverifiable acceptance must not be described as READY.
 
 ## Runtime and Fallback Events
 

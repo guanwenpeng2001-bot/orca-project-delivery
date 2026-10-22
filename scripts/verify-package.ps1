@@ -5,7 +5,7 @@ Skills bundled under skills/ in this package. The package under
 test is read-only; all runtime fixtures and copies use temporary directories.
 ##>
 [CmdletBinding(PositionalBinding = $false)]
-param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly, [string]$DocumentPython = '', [switch]$SkipMutationTests, [ValidateRange(1, 86400)][int]$SuiteTimeoutSeconds = 600, [string[]]$Suites = @())
+param([string]$PackageRoot = (Split-Path -Parent $PSScriptRoot), [switch]$MetadataOnly, [string]$DocumentPython = '', [ValidateRange(1, 86400)][int]$SuiteTimeoutSeconds = 600, [string[]]$Suites = @())
 
 # Unicode code points include whitespace. Hard limit 22000; warning at 19800 (90%).
 # Keep the shipped entry under the warning threshold; raise both constants together if it ever must grow.
@@ -18,13 +18,12 @@ $failed = 0
 $temporaryRoot = $null
 $utf8 = [Text.UTF8Encoding]::new($false, $true)
 
-$mutationFixtures = @{}
-foreach ($helper in @('common', 'structure', 'runtime', 'lifecycle', 'evidence-fixtures', 'evidence', 'mutations')) {
+foreach ($helper in @('common', 'structure', 'runtime', 'lifecycle')) {
   . (Join-Path $PSScriptRoot "verification-$helper.ps1")
 }
 
 try {
-  $suiteSelection = Resolve-SuiteSelection -Requested $Suites -MetadataOnly:$MetadataOnly -SkipMutationTests:$SkipMutationTests
+  $suiteSelection = Resolve-SuiteSelection -Requested $Suites -MetadataOnly:$MetadataOnly
   $root = (Resolve-Path -LiteralPath $PackageRoot).Path
   Assert-Condition (Test-Path -LiteralPath $root -PathType Container) "Not a package directory: $root"
   Write-Host "PACKAGE $root"
@@ -68,14 +67,6 @@ try {
   }
   if (-not $MetadataOnly -and ($runningSuites -ccontains 'project lifecycle')) {
     Invoke-Suite 'project lifecycle' { Test-ProjectLifecycle }
-  }
-  if (-not $MetadataOnly -and ($runningSuites -ccontains 'git evidence')) {
-    Invoke-Suite 'git evidence' { Test-GitEvidence }
-  }
-  if (Test-MutationSuiteSkipNotice -SuiteSelection $suiteSelection -MetadataOnly:$MetadataOnly -SkipMutationTests:$SkipMutationTests) {
-    Write-Host 'SKIP evidence source mutations: -SkipMutationTests was explicitly requested'
-  } elseif (-not $MetadataOnly -and ($runningSuites -ccontains 'evidence source mutations')) {
-    Invoke-Suite 'evidence source mutations' { Test-EvidenceMutations }
   }
 } catch {
   $failed++

@@ -97,14 +97,14 @@ The sole routing authority is `routing/model-routing.json`: select the role's `c
 Dispatch fresh sessions through `worker-start` with `--agent claude` and the selected `--model` / `--effort`; reused terminals keep their session route and omit those launch flags. Obtain exact syntax from installed help.
 Use the tier's request shape. Haiku prefers `claude-haiku-4-5` plus effort; on parameter rejection or first receipt mismatch, use alias `haiku` without effort and record the degradation, unless the user pinned the choice.
 A pinned model or effort forbids automatic changes, including the haiku fallback: suspend the affected Task and ask the user if rejected or mismatched.
-On every dispatch, apply **Effective receipt** and record [Dispatch assignment evidence](references/evidence-binding.md#dispatch-assignment-evidence), even with an assembled brief; reconcile mismatches before declaring a verified route.
+On every dispatch, apply **Effective receipt** and record the assignment with `scripts/dispatch-task.ps1`, even when an assembled brief exists; reconcile mismatches before declaring a verified route.
 The coordinator model is outside routing: do not choose, probe or validate it. Only record a user-reported value in `run-state.coordinatorModelReported`.
 Upgrade, downgrade, suspension, trivial read-only adjustment and user-pinned behavior follow this file's `policies`; do not recreate route tables in workflow or role files.
 `worker-start` has no permission flag; permission comes from actual Claude configuration and user Orca settings, which must be recorded rather than invented.
 
 ## Skill delivery
 
-Read [Skill configuration and delivery](references/configuration-precedence.md#skill-configuration-and-delivery) before selecting delivery mode, registering external Skills, or assembling bindings; read [Execution configuration](references/configuration-precedence.md#execution-configuration) before checking or invoking dependencies on the execution host. `explicit-path` is the default and `inline-extract` the recorded fallback; a Skill name alone is not loading evidence, and Skills cannot expand Task scope or grant orchestration control.
+Read [Skill configuration and delivery](references/configuration-precedence.md#skill-configuration-and-delivery) before selecting delivery mode, registering external Skills, or assembling bindings; read [Execution configuration](references/configuration-precedence.md#execution-configuration) before checking or invoking dependencies on the execution host. `explicit-path` is the default and `inline-extract` the recorded fallback; a Skill name alone never proves loading, and Skills cannot expand Task scope or grant orchestration control.
 
 ## Task and branch creation
 
@@ -113,7 +113,7 @@ Every Task, including scout, audit, review and verification, receives its own br
 Override only for an explicit user base, a review of another branch, a true unintegrated prerequisite, or historical reproduction; record the reason.
 Prefer reviewing and merging prerequisites before creating dependent implementation Tasks. Encode only true dependencies; use parallel waves and avoid chains deeper than 3–4 steps.
 Workers commit authorized source changes on their task branches before reporting and never merge their own branches.
-Before recording assignments or entering a validation gate, read [Evidence Binding](references/evidence-binding.md): Storage and ownership covers read-only declarations, source evidence paths and superseded repair rounds; Phase obligations defines the write-before-validate sequence. Only JSON `PASS` authorizes the applicable gate.
+Record every dispatch as a machine-readable assignment; read-only Tasks declare `branch.mergeTarget: null`, source Tasks name the delivery branch.
 
 ## Worker input order
 
@@ -137,19 +137,19 @@ Use `taskKind` (`source` or `read-only`, default `source`), `briefProfile` (`sta
 3. Design: after reconnaissance closes, evaluate `routing/design-triggers.json`; record `required`/`skipped`, reason and evidence in run-state `stageDecisions`. If required, dispatch read-only design Tasks by deliverable key via `routing/role-selection.json`; if skipped, proceed to planning.
 4. Plan: use solution-planner, multiple plans plus plan-adjudicator when needed; resolve real product ambiguity with requirements-analyst first.
 5. Task graph: write task-definition and assemble input; record machine-readable assignments, true dependencies and parallel waves.
-6. Dispatch: launch all independent ready Tasks in parallel; verify the first effective receipt. Follow [dispatch mechanics](references/execution-loop.md#dispatch-wait-and-evidence-gates).
-7. Wait and settle: process active-Dispatch messages, resolve terminal ownership and acknowledge; immediately dispatch newly ready work. Follow [wait mechanics](references/execution-loop.md#dispatch-wait-and-evidence-gates).
-8. Empty waits: after three consecutive empty waits, inspect the fleet and its projected next action. Follow [inspection mechanics](references/execution-loop.md#dispatch-wait-and-evidence-gates).
-9. Register source: match completion to the active Task/Dispatch, pass `sourceRegistered`, then immediately dispatch independent review alongside other implementation. Follow [registration mechanics](references/execution-loop.md#dispatch-wait-and-evidence-gates).
-10. Review: record verdicts and pass `review`; route fixes and re-review through the original sessions. Validation failure is UNVERIFIABLE, never approval. Follow [review mechanics](references/execution-loop.md#review-and-integration).
-11. Integrate: after approval pass `preMerge`, integrate serially, run full verification at integrated HEAD and pass `postMerge` before satisfying source dependencies. Follow [integration mechanics](references/execution-loop.md#review-and-integration).
-12. Final verification: at the **Current verification** barrier, dispatch release-verifier on latest delivery, write unique run-final evidence and pass run-scoped `final`; report and close. Follow [final mechanics](references/execution-loop.md#dispatch-wait-and-evidence-gates).
+6. Dispatch: launch all independent ready Tasks in parallel and record each assignment from its receipt; verify the first effective receipt. Follow [dispatch mechanics](references/execution-loop.md#dispatch-and-wait).
+7. Wait and settle: process active-Dispatch messages, resolve terminal ownership and acknowledge; immediately dispatch newly ready work. Follow [wait mechanics](references/execution-loop.md#dispatch-and-wait).
+8. Empty waits: after three consecutive empty waits, inspect the fleet and its projected next action. Follow [inspection mechanics](references/execution-loop.md#dispatch-and-wait).
+9. Register source: match completion to the active Task/Dispatch and mark the assignment source-registered; for a source Task, immediately dispatch independent review alongside other implementation.
+10. Review: record verdicts in the run records; route fixes and re-review through the original sessions. Follow [review mechanics](references/execution-loop.md#review-and-integration).
+11. Integrate: after approval, verify the source HEAD still equals the approved commit and both worktrees are clean, then merge serially in dependency order and run the full verification suite at the integrated HEAD before satisfying source dependencies. Follow [integration mechanics](references/execution-loop.md#review-and-integration).
+12. Final verification: at the **Current verification** barrier, dispatch release-verifier on latest delivery in a clean independent worktree; only its passing result authorizes READY. Report and close.
 
-Before executing steps 6–12, read [Execution Loop](references/execution-loop.md), including its mandatory [settlement and recovery boundaries](references/execution-loop.md#settlement-and-recovery-boundaries) and evidence-recording obligations. Rolling dispatch preserves every stage and gate.
+Before executing steps 6–12, read [Execution Loop](references/execution-loop.md), including its mandatory [settlement and recovery boundaries](references/execution-loop.md#settlement-and-recovery-boundaries). Rolling dispatch preserves every stage.
 
 ## Review and integration
 
-Apply **Independent review**, **Control separation**, and **Current verification**. Verdicts are `APPROVED`, `CHANGES_REQUIRED`, or `UNVERIFIABLE`; fixes require re-review. Read [Review and integration mechanics](references/execution-loop.md#review-and-integration) before preparing review input, retaining or reusing sessions, selecting verification coverage, admitting a merge, resolving conflicts or reclaiming worktrees. It defines the unchanged SHA/clean-tree admission, serial integration, full post-merge/final verification and terminal-ownership requirements.
+Apply **Independent review**, **Control separation**, and **Current verification**. Verdicts are `APPROVED`, `CHANGES_REQUIRED`, or `UNVERIFIABLE`; fixes require re-review. Read [Review and integration mechanics](references/execution-loop.md#review-and-integration) before preparing review input, retaining or reusing sessions, selecting verification coverage, admitting a merge, resolving conflicts or reclaiming worktrees. It defines the approved-commit/clean-tree merge conditions, serial integration, full post-merge/final verification and terminal-ownership requirements.
 
 ## Degradation and handoff
 
@@ -165,8 +165,8 @@ For read-only retries, preserve each attempt under a unique report path; the coo
 
 Close only after required Tasks settle, accepted source enters delivery, final verification completes or is explicitly marked unverifiable, and reports/decisions are stored.
 Ensure the fleet has zero reclaimable resources; `retained`/`user_owned` terminals require recorded ownership decisions and are not leaks.
-Write `final-report.md` linked to the unique `evidence/git/run-final-verification.json`, plus a separate user-decision report: what needs deciding, consequence of deferral, options and recommendation.
-Before closure, read [Final coverage and exit semantics](references/evidence-binding.md#final-coverage-and-exit-semantics) and [Selector and coverage semantics](references/evidence-binding.md#selector-and-coverage-semantics) for complete coverage, current-SHA checks, audit/final scope, legacy runs and validator exit handling. `NOT_APPLICABLE` is not acceptance; keep `validate-run.ps1` as a separate gate.
+Write `final-report.md` linked to the final-verification report and the delivery commit it verified, plus a separate user-decision report: what needs deciding, consequence of deferral, options and recommendation.
+Before closure, confirm every intended Task is accounted for in the run records and final verification ran at the current delivery HEAD; run `scripts/validate-run.ps1` as the structural check.
 Recheck status/diff for process-artifact exclusion, then use `scripts/release-coordinator.ps1 -ConfirmRunClosed`; it archives active state and marks the lock released.
 Keep `.dev-work/runs/<run>/` as local history. Unverifiable acceptance must not be described as READY.
 

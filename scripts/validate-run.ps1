@@ -125,12 +125,6 @@ if (Test-Path $activePath) {
         Test-Document $file.FullName (Join-Path $schemaRoot "assignment.schema.json") "assignments/$($file.Name)" $errors
       }
     }
-    $wavesDir = Join-Path $runDir 'dispatch-waves'
-    if (Test-Path -LiteralPath $wavesDir -PathType Container) {
-      foreach ($file in Get-ChildItem -LiteralPath $wavesDir -Filter *.json -File) {
-        Test-Document $file.FullName (Join-Path $schemaRoot 'dispatch-wave.schema.json') "dispatch-waves/$($file.Name)" $errors
-      }
-    }
     $checks["activeRun"] = $active.run
   }
 } else {

@@ -29,7 +29,7 @@ Name required evidence. This Skill does not authorize broader scope or orchestra
 
 - Save as skills/example-skill/SKILL.md after replacing the example name and content.
 - Register its ID, name, description, and exact skills/<id>/SKILL.md path in routing/skill-catalog.json.
-- Add the current SHA256 row to skills/README.md, retaining provenance and license notices.
+- Retain the provenance and license notices in skills/README.md.
 - Add optional requires metadata only to the catalog using schemas/requirements.schema.json; no values or executable hooks.
 - Update PACKAGE-MANIFEST.json professionalSkills count; optionally reference the Skill in a Role; run scripts/verify-package.ps1.
 - Keep essential methods in this file so both explicit-path and inline-extract deliver them.

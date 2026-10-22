@@ -104,11 +104,10 @@ function Test-PackageStructure {
   $requiredScripts = @(
     'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'dispatch-task.ps1',
     'probe-claude-capabilities.ps1', 'query-routing.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
-    'validate-run.ps1', 'validate-git-evidence.ps1', 'verify-package.ps1',
+    'validate-run.ps1', 'verify-package.ps1',
     'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',
     'verify-requirements.ps1', 'project-common.ps1', 'verification-common.ps1',
-    'verification-structure.ps1', 'verification-runtime.ps1', 'verification-lifecycle.ps1',
-    'verification-evidence-fixtures.ps1', 'verification-evidence.ps1', 'verification-mutations.ps1'
+    'verification-structure.ps1', 'verification-runtime.ps1', 'verification-lifecycle.ps1'
   )
   Invoke-Check 'package/required-scripts' {
     foreach ($name in $requiredScripts) {
@@ -201,23 +200,6 @@ function Test-PackageStructure {
       Write-Host "SKILL $($skill.id): $($resolved.Origin) $($resolved.Path)"
     }
     Assert-Condition ($missing.Count -eq 0) ($missing -join '; ')
-  }
-  Invoke-Check 'metadata/bundled-skill-integrity' {
-    $readmePath = Join-Path $root 'skills/README.md'
-    Assert-Condition (Test-Path -LiteralPath $readmePath -PathType Leaf) 'skills/README.md missing'
-    $readme = [IO.File]::ReadAllText($readmePath, $utf8)
-    $rows = [regex]::Matches($readme, '\|\s*`([^`]+)`\s*\|\s*([A-F0-9]{64})\s*\|')
-    $expectedRows = @('LICENSE') + @((Read-PackageJson 'routing/skill-catalog.json').skills | ForEach-Object { "$($_.id)/SKILL.md" })
-    $actualRows = @($rows | ForEach-Object { $_.Groups[1].Value })
-    Assert-Condition ($actualRows.Count -eq $expectedRows.Count -and -not (Compare-Object ($actualRows | Sort-Object -Unique) ($expectedRows | Sort-Object) -CaseSensitive)) 'SHA256 table must cover exactly the catalog Skills and LICENSE'
-    foreach ($match in $rows) {
-      $relative = $match.Groups[1].Value
-      $expectedHash = $match.Groups[2].Value
-      $filePath = Join-Path $root (Join-Path 'skills' ($relative.Replace('/', '\')))
-      Assert-Condition (Test-Path -LiteralPath $filePath -PathType Leaf) "Bundled file missing for integrity check: $relative"
-      $actualHash = (Get-FileHash -LiteralPath $filePath -Algorithm SHA256).Hash
-      Assert-Condition ($actualHash -ceq $expectedHash) "Hash mismatch for $relative"
-    }
   }
   Invoke-Check 'metadata/manifest-counts-and-version' {
     $manifest = Read-PackageJson 'PACKAGE-MANIFEST.json'

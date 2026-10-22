@@ -50,7 +50,7 @@ function Write-AtomicJsonFile {
     Write-JsonFile -Path $tempPath -Value $Value -Depth $Depth
     [System.IO.File]::Move($tempPath, $Path, $true)
   } catch {
-    throw "Ledger write failed for '$Path': $($_.Exception.Message)"
+    throw "Atomic write failed for '$Path': $($_.Exception.Message)"
   } finally {
     if ([System.IO.File]::Exists($tempPath)) { [System.IO.File]::Delete($tempPath) }
   }
@@ -58,9 +58,9 @@ function Write-AtomicJsonFile {
 
 # The coordinator still runs worker-start itself: command lines for the orchestration runtime
 # belong to the installed runtime's own documentation, not to this package. This script records
-# the receipt that call returned as the run's ledger: one assignment file, one task-map entry,
-# one branch-map entry, a refreshed run-state and a refreshed coordinator lock. Refusals happen
-# before any write, so a rejected dispatch never leaves a half-recorded run behind.
+# the receipt that call returned as the run's dispatch record: one assignment file, one task-map
+# entry, one branch-map entry, a refreshed run-state and a refreshed coordinator lock. Refusals
+# happen before any write, so a rejected dispatch never leaves a half-recorded run behind.
 
 $warnings = @()
 
@@ -182,14 +182,9 @@ if ($missing.Count) {
   throw "Task definition $TaskDefinitionPath is incomplete: $($missing -join ', '). Complete it (templates/task-definition.json) and run scripts/assemble-task.ps1 before dispatching."
 }
 $taskKind = if ($definition.taskKind) { "$($definition.taskKind)" } else { 'source' }
-$supersededBy = Get-TextOrNull $definition.supersededBy
 if (($taskKind -ceq 'read-only' -and $definition.branch.mergeTarget) -or
-    ($taskKind -ceq 'source' -and -not $definition.branch.mergeTarget -and -not $supersededBy)) {
-  throw "Task definition taskKind '$taskKind' conflicts with branch.mergeTarget: read-only tasks require null; source tasks require a non-empty mergeTarget or supersededBy."
-}
-if ($definition.PSObject.Properties['supersededBy'] -and
-    (-not $supersededBy -or -not $taskMap.tasks.PSObject.Properties[$supersededBy])) {
-  throw "Task definition supersededBy '$supersededBy' must name an existing task-map entry."
+    ($taskKind -ceq 'source' -and -not $definition.branch.mergeTarget)) {
+  throw "Task definition taskKind '$taskKind' conflicts with branch.mergeTarget: read-only tasks require null; source tasks require a non-empty mergeTarget."
 }
 $taskKey = "$($definition.taskKey)"
 
@@ -198,7 +193,6 @@ if (-not (Test-Path -LiteralPath $BriefPath -PathType Leaf)) {
 }
 
 $recordedBriefPath = (Resolve-Path -LiteralPath $BriefPath).Path
-$briefSha256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([IO.File]::ReadAllBytes($recordedBriefPath))).ToLowerInvariant()
 
 # ---------------------------------------------------------- dispatch receipt
 $receipt = Read-JsonDocument -Path $ReceiptPath -Label 'dispatch receipt'
@@ -369,12 +363,8 @@ $assignment = [ordered]@{
   }
   artifacts = [ordered]@{
     briefPath = $recordedBriefPath
-    briefSha256 = $briefSha256
     reportPath = "$($definition.artifacts.reportPath)"
     evidencePath = "$($definition.artifacts.evidencePath)"
-  }
-  evidence = [ordered]@{
-    gitEvidencePath = "runs/$runSlug/evidence/git/$taskKey.json"
   }
   orca = [ordered]@{
     runId = $orcaRunId
@@ -384,7 +374,6 @@ $assignment = [ordered]@{
   status = $Status
   fallbackReason = $fallbackReason
 }
-if ($supersededBy) { $assignment['supersededBy'] = $supersededBy }
 if ($previousDispatches.Count) { $assignment['runtime']['previousDispatches'] = @($previousDispatches) }
 
 # Schema gate before any write: a document the state consumers cannot parse must never
@@ -466,7 +455,6 @@ $output = [ordered]@{
   runtimeVerification = $verificationStatus
   assignmentPath = $assignmentPath
   briefPath = $recordedBriefPath
-  briefSha256 = $briefSha256
   postValidation = $postValidation
   warnings = @($warnings)
 }

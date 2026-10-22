@@ -13,7 +13,7 @@ function Test-ProjectLifecycle {
     $exclude = Invoke-FixtureGit @('-C', $healthyRepository, 'check-ignore', '.env')
     Assert-Condition ($exclude -eq '.env') 'Bootstrap did not exclude local dotenv'
     Assert-OkResult (Invoke-PackageScript 'create-run.ps1' @('-ProjectRoot', $healthyRepository, '-Objective', 'Offline package verification', '-RunSlug', 'package-verification'))
-    foreach ($directory in @('assignments', 'attempts', 'dispatch-receipts', 'dispatch-waves', 'handoffs', 'reconnaissance', 'audits', 'plans', 'task-briefs', 'worker-reports', 'reviews', 'verification', 'evidence', 'evidence/git')) {
+    foreach ($directory in @('assignments', 'attempts', 'dispatch-receipts', 'handoffs', 'reconnaissance', 'audits', 'designs', 'plans', 'task-briefs', 'worker-reports', 'reviews', 'verification', 'evidence')) {
       Assert-Condition (Test-Path -LiteralPath (Join-Path $healthyRepository ".dev-work/runs/package-verification/$directory") -PathType Container) "Run directory missing: $directory"
       Write-Host "DIRECTORY PASS $directory"
     }

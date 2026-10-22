@@ -45,7 +45,7 @@ function assemble(data, extra = {}, config = null, sourceRoot = packageRoot) {
 
 test('legacy bundled briefs retain their exact normalized bytes in both modes', (context) => {
   const data = fixture(context);
-  for (const [mode, expected] of Object.entries({ 'explicit-path': 'f94e39a1f65fd40469f9f58d07140c15f28e63fc0a607ef0ae6981c7d978e708', 'inline-extract': '02056f0a92b62fd54d5db745e5d835b9e84ae1aa6ba0a08f8479add355f52640' })) {
+  for (const [mode, expected] of Object.entries({ 'explicit-path': '22c80922843a30168d379bbffcd68e9e21c8d733beb88eebf8a426d014417bdf', 'inline-extract': '6d20df6c988a6607493390d958cb2b1afb2a7c5837b02423750f1c9b520a2904' })) {
     const result = assemble(data, { skills: { required: ['test-driven-development', 'test-driven-development'], conditional: ['integration-verification'] }, skillDeliveryMode: mode });
     assert.equal(result.code, 0, result.diagnostics);
     let normalized = result.brief.replaceAll('\\', '/');
@@ -175,8 +175,6 @@ test('schema rejects malformed new fields and review briefs without concrete dif
     assert.equal(result.code, 1, `must reject ${JSON.stringify(extra)}`);
     assert.match(result.diagnostics, /schema/);
   }
-  const folded = assemble(data, { taskKind: 'source', branch: { ...data.task.branch, mergeTarget: null }, supersededBy: 'successor' });
-  assert.equal(folded.code, 0, folded.diagnostics);
   const validReviewInput = { baseSha: 'a'.repeat(40), branch: 'topic', diffCommand: 'git diff' };
   for (const extra of [{ taskKind: 'readonly' }, { briefProfile: 'compact' }, { agentsSections: '5' }, { agentsSections: [null] }, { agentsSections: [''] }, { briefProfile: 'review' }, { briefProfile: 'review', reviewInput: { baseSha: 'main', branch: 'topic', diffCommand: 'git diff' } }, { reviewIncludes: ['unknown'] }, { briefProfile: 'review', reviewInput: { ...validReviewInput, deltaPaths: 'scripts/x.ps1' } }, { briefProfile: 'review', reviewInput: { ...validReviewInput, deltaPaths: [1] } }, { briefProfile: 'review', reviewInput: { ...validReviewInput, deltaPaths: [''] } }]) {
     const result = assemble(data, extra);
@@ -248,8 +246,8 @@ test('verification clauses scale with the brief profile and print review deltas'
   assert.ok(standard.brief.includes('A change that can move assembled brief bytes must include `tests/task-brief-profiles.test.mjs` in its write set and required tests.'));
   assert.doesNotMatch(standard.brief, /### Re-verification scaled by the delta/);
   assert.match(standard.brief, /scripts\/verify-package\.ps1 -Suites/);
-  assert.match(standard.brief, /-Suites 'package contracts,git evidence'/);
-  for (const suite of ['package structure', 'package runtime', 'package contracts', 'project lifecycle', 'git evidence', 'evidence source mutations']) {
+  assert.match(standard.brief, /-Suites 'package contracts,project lifecycle'/);
+  for (const suite of ['package structure', 'package runtime', 'package contracts', 'project lifecycle']) {
     assert.ok(standard.brief.includes(suite), `standard brief must name suite: ${suite}`);
   }
 

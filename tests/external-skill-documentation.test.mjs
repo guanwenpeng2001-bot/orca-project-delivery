@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -14,7 +13,7 @@ const environment = Object.fromEntries(Object.entries(process.env).filter(([name
 
 // Frozen official release inventory; local extensions do not redefine this baseline.
 const releaseSnapshot = {
-  version: '2.9.1',
+  version: '3.0.0',
   roles: ['codebase-scout', 'technical-researcher', 'issue-investigator', 'requirements-analyst',
     'ui-designer', 'document-specialist', 'solution-planner', 'plan-adjudicator', 'software-architect',
     'software-implementer', 'code-reviewer', 'browser-test-engineer', 'security-reviewer',
@@ -90,7 +89,7 @@ for (const language of languages) {
     assert.match(result.text, /External Skill walkthrough passed: both delivery modes, original resources, unchanged sources, named failure\./);
   });
 
-  test(`${language} current-version guard accepts 2.9.1 and rejects stale version/counts`, (context) => {
+  test(`${language} current-version guard accepts 3.0.0 and rejects stale version/counts`, (context) => {
     const tutorial = blocks(read(`${language}/professional-capability-tutorial.md`));
     const countBlock = tutorial.find((block) => block.includes('$skills =') && block.includes('$roles ='));
     const versionBlock = tutorial.find((block) => block.includes('GUARD_PASSED'));
@@ -99,17 +98,17 @@ for (const language of languages) {
     const fixture = releaseGuardFixture(context);
     const current = runPowerShell(script, fixture);
     assert.equal(current.status, 0, current.text);
-    assert.match(current.text, /GUARD_PASSED skills=46 roles=16 version=2\.9\.1/);
+    assert.match(current.text, /GUARD_PASSED skills=46 roles=16 version=3\.0\.0/);
 
     writeFileSync(path.join(fixture, 'VERSION'), '2.4.0\n');
     const stale = runPowerShell(script, fixture);
     assert.equal(stale.status, 1, stale.text);
-    assert.match(stale.text, /Install the complete matching 2\.9\.1 package/);
-    writeFileSync(path.join(fixture, 'VERSION'), '2.9.1\n');
+    assert.match(stale.text, /Install the complete matching 3\.0\.0 package/);
+    writeFileSync(path.join(fixture, 'VERSION'), '3.0.0\n');
     writeFileSync(path.join(fixture, 'routing/skill-catalog.json'), JSON.stringify({ skills: [] }));
     const wrongCount = runPowerShell(script, fixture);
     assert.equal(wrongCount.status, 1, wrongCount.text);
-    assert.match(wrongCount.text, /Install the complete matching 2\.9\.1 package/);
+    assert.match(wrongCount.text, /Install the complete matching 3\.0\.0 package/);
   });
 }
 
@@ -121,7 +120,7 @@ test('external Skill guides keep runnable configuration and recipe identical acr
   assert.deepEqual(json(english), json(chinese));
 });
 
-test('official 2.9.1 snapshot retains exact release counts', (context) => {
+test('official 3.0.0 snapshot retains exact release counts', (context) => {
   const fixture = releaseGuardFixture(context);
   const fixtureJson = (file) => JSON.parse(readFileSync(path.join(fixture, file), 'utf8'));
   assert.deepEqual(fixtureJson('PACKAGE-MANIFEST.json').deliverables, { roles: 16, professionalSkills: 46, workflows: 4 });
@@ -130,16 +129,16 @@ test('official 2.9.1 snapshot retains exact release counts', (context) => {
   assert.equal(readdirSync(path.join(fixture, 'workflows')).length, 4);
 });
 
-test('current package catalogs, directories, manifest and hashes pass consistency acceptance', () => {
+test('current package catalogs, directories and manifest pass consistency acceptance', () => {
   assertConsistency(root);
 });
 
-test('public entry points describe the official 2.9.1 release', () => {
+test('public entry points describe the official 3.0.0 release', () => {
   for (const file of ['README.md', 'README.zh-CN.md']) {
-    assert.match(read(file), /version-2\.9\.1-blue/);
+    assert.match(read(file), /version-3\.0\.0-blue/);
     assert.match(read(file), /external-skills\.md/);
   }
-  assert.match(read('CHANGELOG.md'), /^## 2\.9\.1 — 2026-10-14$/m);
+  assert.match(read('CHANGELOG.md'), /^## 3\.0\.0 — 2026-10-23$/m);
   assert.match(read('CHANGELOG.md'), /^### 2\.4\.0 — professional skill depth$/m);
 });
 
@@ -181,23 +180,16 @@ for (const language of languages) {
     if (isOfficialCount) {
       assert.deepEqual(manifest.deliverables, { roles: 17, professionalSkills: 47, workflows: 4 });
     }
-    const hash = createHash('sha256').update(markdown[0]).digest('hex').toUpperCase();
-    const hashes = read('skills/README.md').replace(/^\|\s*`export-contract-check\/SKILL\.md`[^\n]*\n/gm, '');
-    writeFileSync(path.join(fixture, 'skills/README.md'), `${hashes}\n| \`export-contract-check/SKILL.md\` | ${hash} |\n`);
     assertConsistency(fixture);
     // Exercise the former blockers from inside the extended package, without recursing into this test.
     const documentation = spawnSync(process.execPath, ['--test',
-      '--test-name-pattern=current-version guard|official 2.9.1 snapshot|current package catalogs|release metadata',
+      '--test-name-pattern=current-version guard|official 3.0.0 snapshot|current package catalogs|release metadata',
       path.join(fixture, 'tests/external-skill-documentation.test.mjs')], {
       cwd: fixture, env: environment, encoding: 'utf8', timeout: 30000,
     });
     assert.ifError(documentation.error);
     assert.equal(documentation.status, 0, documentation.stdout + documentation.stderr);
 
-    writeFileSync(path.join(fixture, skill.path), markdown[0] + '\nChanged without updating the hash.\n');
-    const corrupt = consistencyAcceptance(fixture);
-    assert.equal(corrupt.status, 1, corrupt.text);
-    assert.match(corrupt.text, /Hash mismatch for export-contract-check\/SKILL\.md/);
     rmSync(path.join(fixture, skill.path));
     const missing = consistencyAcceptance(fixture);
     assert.equal(missing.status, 1, missing.text);

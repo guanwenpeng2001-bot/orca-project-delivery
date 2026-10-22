@@ -153,10 +153,7 @@
         "properties": { "branch": { "properties": { "mergeTarget": { "const": null } } } }
       },
       "else": {
-        "anyOf": [
-          { "properties": { "branch": { "properties": { "mergeTarget": { "type": "string", "minLength": 1 } } } } },
-          { "required": ["supersededBy"], "properties": { "supersededBy": { "type": "string", "minLength": 1 } } }
-        ]
+        "properties": { "branch": { "properties": { "mergeTarget": { "type": "string", "minLength": 1 } } } }
       }
     }
   ],

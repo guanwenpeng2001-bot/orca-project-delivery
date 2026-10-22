@@ -14,7 +14,7 @@
 
 ## Commit Binding
 
-Replace placeholders with observations from the actual review target. Set dirty from Git status; APPROVED requires false. This JSON mirrors one `reviews[]` entry; the coordinator writes accepted evidence and validates it. The validator checks report existence, not this block's contents, so reconcile both explicitly.
+Replace placeholders with observations from the actual review target. Set dirty from Git status; APPROVED requires false. The coordinator records this commit binding in the run records.
 
 ```json
 {
@@ -31,7 +31,7 @@ Replace placeholders with observations from the actual review target. Set dirty 
 - Target HEAD/status observation commands and results:
 - Baseline SHA and ancestry evidence:
 - Reviewer Task/Dispatch differs from the source worker's:
-- Source Task evidence path:
+- Source Task report path:
 
 ## Findings
 
