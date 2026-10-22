@@ -56,7 +56,7 @@ Use explicit decisions for optional features. `animation: none` means a still im
 | Tile | Intended neighboring edges join in a repeated test patch; no visible seam at target filtering and scale |
 | Mesh or material | Units, bounds, normals, UVs, material dependencies, and geometry/texture budgets fit the runtime context |
 | Animation | Required frames or clips exist; anchors remain stable; transitions and loops work during playback |
-| Audio | Duration, channel layout, encoding, and loop points fit intake requirements; listening and mixing continue under game-audio |
+| Audio | Duration, channel layout, encoding, and loop points fit intake requirements; listening and mixing proceed under game-audio |
 
 ### Preserve identity across revisions
 

@@ -25,7 +25,7 @@ First-session checklist: one runnable rule test, one startup smoke result, one p
 
 | Term | Meaning |
 | --- | --- |
-| Smoke | A short check that essential execution works well enough to continue testing |
+| Smoke | A short check that essential execution works well enough to proceed with testing |
 | Story | A complete player goal, including its visible result and relevant failure/recovery paths |
 | Regression | Previously working behavior or a repaired defect becoming broken again |
 | Soak | Repeated workload over a declared duration to expose accumulating failures |

@@ -82,7 +82,7 @@ Choose numeric limits before running the scene: peak ceiling, voice cap, memory 
 - A repeat-selection rule requiring no adjacent duplicates is tested only with pools of at least two valid takes; a one-take pool needs an explicit fallback decision.
 - Missing audio, targets, device observations, or timing measurements produce `NOT ASSESSED - NO DATA` for the corresponding quality claim. Never derive a listening pass from a successful load. A known measured failure blocks acceptance; otherwise any missing mandatory observation blocks an overall pass.
 
-Evaluation scenario: play two overlapping lines, change player music volume during the first, and finish that line while the second continues. Music must stay attenuated, then recover to the newly selected base level. Repeat a musical transition under slow rendering; it must retain its declared audio-clock timing or report the measured deviation.
+Evaluation scenario: play two overlapping lines, change player music volume during the first, and finish that line while the second remains active. Music must stay attenuated, then recover to the newly selected base level. Repeat a musical transition under slow rendering; it must retain its declared audio-clock timing or report the measured deviation.
 
 ## 5. Platform/engine boundary
 
