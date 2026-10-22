@@ -9,7 +9,7 @@ description: Develop UrhoX games within TapTap Maker using project-pulled docume
 
 Use for a TapTap Maker project whose intended delivery is a TapTap Creative Workshop game and whose creator accepts the platform's distribution and content-license terms. UrhoX combines an Urho3D-derived engine with Lua 5.4 gameplay and NanoVG-based UI; Maker supplies project setup, assets, remote builds, and device testing.
 
-Do not choose it for required standalone APK/iOS application delivery, WeChat/Douyin export, or independent engine/source redistribution. Stop the relevant path when the creator's rights conflict with the platform license, or when the required Maker runtime/account/MCP connection is unavailable. Local implementation may continue, but cannot be reported as a remotely built or device-verified release.
+Do not choose it for required standalone APK/iOS application delivery, WeChat/Douyin export, or independent engine/source redistribution. Stop the relevant path when the creator's rights conflict with the platform license, or when the required Maker runtime/account/MCP connection is unavailable. Local implementation may proceed, but cannot be reported as a remotely built or device-verified release.
 
 ## 2. Novice orientation
 
@@ -59,7 +59,7 @@ Detect the active Maker runtime and exposed tool schemas first. Start with maker
 
 Use the official Maker installation/configuration entry supplied by the active distribution if the integration needs setup. The installer is not the long-running MCP server executable; do not register an `install` command as that server. Keep the initialized project and its managed instructions as the source of tooling configuration.
 
-If MCP is disconnected, continue local file work, diagnostics, and an authorized local preview where available. Report the missing remote/device verification and restore the supported integration before building. There is no shell-build fallback: builds remain MCP-only. Current-game device feedback goes through the exposed Maker feedback tool; unrelated platform operations stay with project-side taptap-cli skills.
+If MCP is disconnected, proceed with local file work, diagnostics, and an authorized local preview where available. Report the missing remote/device verification and restore the supported integration before building. There is no shell-build fallback: builds remain MCP-only. Current-game device feedback goes through the exposed Maker feedback tool; unrelated platform operations stay with project-side taptap-cli skills.
 
 ## 7. License snapshot
 

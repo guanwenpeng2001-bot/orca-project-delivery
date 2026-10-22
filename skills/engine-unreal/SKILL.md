@@ -51,7 +51,7 @@ Keep the project's .uproject, source/content, plugins, and Config under its vers
 
 Detect the installed engine version, plugins, enabled toolsets, and endpoint before connecting. The [official Unreal MCP documentation](https://dev.epicgames.com/documentation/unreal-engine/unreal-mcp-in-unreal-editor), accessed 2026-10-23, documents the Experimental Unreal MCP plugin for UE 5.8. Follow that version's plugin enablement and generated client configuration; expose only the toolsets needed for the task. Its experimental status means tool contracts may change.
 
-For older versions or an unavailable/incompatible plugin, continue through project-file editing, the editor, and supported build tools. State which editor actions need manual execution and collect their results. Do not pretend a community MCP is first-party or require an engine upgrade just to automate editor actions. A successful tool response still requires checking the resulting project and playable build.
+For older versions or an unavailable/incompatible plugin, proceed through project-file editing, the editor, and supported build tools. State which editor actions need manual execution and collect their results. Do not pretend a community MCP is first-party or require an engine upgrade just to automate editor actions. A successful tool response still requires checking the resulting project and playable build.
 
 ## 7. License snapshot
 
