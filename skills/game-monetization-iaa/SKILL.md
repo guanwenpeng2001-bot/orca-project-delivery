@@ -32,7 +32,7 @@ Use these design guardrails, not claims of universal revenue optimization:
 - Never show an interstitial mid-gameplay or while a player is making a time-sensitive decision.
 - Do not show interstitials during the first 3 minutes of the first session.
 - Set a minimum interstitial interval in the 2–3 minute range, defaulting to 3 minutes pending project data; never go below 2 minutes under this method. Measure from the end of the previous interstitial. A timer expiring makes an ad eligible, not mandatory: wait for a natural break.
-- After a player death, offer an optional rewarded ad instead of an interstitial. If unavailable or declined, continue the normal retry/exit path without substituting an interstitial.
+- After a player death, offer an optional rewarded ad instead of an interstitial. If unavailable or declined, follow the normal retry/exit path without substituting an interstitial.
 - Apply stricter platform and audience rules where required. No-fill must not prevent the player from continuing the ordinary loop.
 
 ### Derive rewards from the economy
