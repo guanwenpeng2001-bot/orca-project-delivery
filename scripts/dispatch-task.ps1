@@ -141,7 +141,7 @@ $branchMapPath = Join-Path $runDir 'branch-map.json'
 $branchMap = Read-JsonDocument -Path $branchMapPath -Label 'branch-map'
 
 # Invariant 1 keeps one coordinator control worktree per project; recording a dispatch anywhere
-# else would write the run ledger from a tree the run does not own.
+# else would write run state from a tree the run does not own.
 if (-not (Test-SamePathText "$($state.coordinatorWorktree)" $gitRoot)) {
   throw "dispatch-task.ps1 must run in the coordinator control worktree '$($state.coordinatorWorktree)' (here: '$gitRoot')."
 }
@@ -327,7 +327,7 @@ if (Test-Path -LiteralPath $assignmentPath -PathType Leaf) {
   }
 }
 
-# --------------------------------------------------------------- ledger build
+# ---------------------------------------------------------- assignment build
 $now = [DateTimeOffset]::UtcNow.ToString('o')
 $requiredSkills = @()
 if ($definition.skills.required) { $requiredSkills = @($definition.skills.required | ForEach-Object { "$_" }) }
@@ -388,7 +388,7 @@ if (-not $valid) {
 }
 $null = ConvertFrom-Json -InputObject $assignmentJson -ErrorAction Stop
 
-# task-map drift: entries outside 'tasks' are the fingerprint of an improvised dispatch ledger
+# task-map drift: entries outside 'tasks' are the fingerprint of an improvised dispatch record
 # and are never read by the run contract.
 $strayKeys = @($taskMap.PSObject.Properties.Name | Where-Object { $_ -cnotin @('schemaVersion', 'tasks') })
 if ($strayKeys.Count) {

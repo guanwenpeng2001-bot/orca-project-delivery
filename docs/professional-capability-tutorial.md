@@ -72,7 +72,7 @@ count is not a constant: it describes the revision you are running, so quote
 the line you observed rather than a remembered number.
 
 This is an **offline verification** of package structure: parsing, encoding,
-routing, catalog counts, and current Skill hashes, plus offline behavior tests. When local Python
+routing, and catalog counts, plus offline behavior tests. When local Python
 Playwright and Chromium are present, its optional browser test launches that
 local browser; otherwise it records a named skip. Document read-back requires
 `-DocumentPython` pointing to an interpreter with the pinned libraries. The

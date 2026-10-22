@@ -55,8 +55,6 @@ try {
   $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json -AsHashtable
   $manifest.deliverables.roles++; $manifest.deliverables.professionalSkills++
   Save-Json $manifestPath $manifest
-  $hash = (Get-FileHash (Join-Path $package 'skills/fixture-skill/SKILL.md')).Hash
-  [IO.File]::AppendAllText((Join-Path $package 'skills/README.md'), "| ``fixture-skill/SKILL.md`` | $hash |`n", $utf8)
   $selection = @('-ProjectRoot', $project, '-Role', 'fixture-role', '-Skills', 'fixture-skill')
   Check 'missing-selected-dependencies' {
     $result = Run-Script 'check-requirements.ps1' $selection

@@ -180,17 +180,19 @@ settle, re-evaluate readiness and dispatch newly ready Tasks. After three
 consecutive empty waits, enumerate workers and act on the projected next
 action, using bounded worker reads where needed.
 
-For a source Task whose `worker_done` is confirmed, record the reported commit
-and report path in the Task's assignment record, then move the Task to review.
+For a source Task whose `worker_done` is confirmed, advance the assignment to
+`review`; the worker's report at the assignment's report path names the commit
+under review.
 
 ### 7. Review
 
 After a confirmed source `worker_done`, dispatch an independent review of the actual
 implementation branch in an isolated worktree, in parallel with other
 implementation. Reviewers report `APPROVED`, `CHANGES_REQUIRED`, or
-`UNVERIFIABLE`, never edit source, and record target/baseline SHAs. Record
-completed reviews in `reviews[]`. Accepted findings become fix Tasks followed by
-re-review.
+`UNVERIFIABLE`, never edit source, and record target/baseline SHAs. File
+completed review reports under `runs/<run>/reviews/`; the report's commit
+binding is the durable link between the verdict and the reviewed commit.
+Accepted findings become fix Tasks followed by re-review.
 
 ### 8. Integration
 

@@ -34,10 +34,8 @@ are in [Professional capabilities](professional-capabilities.md).
 The recorded commit is the upstream baseline for the original sixteen. Their
 current bodies are package-maintained MIT adaptations, enriched with domain
 methods, decision criteria, worked examples, failure signals and evaluation
-scenarios. Edit any Skill deliberately in place and recompute its current
-content SHA256 row in `skills/README.md`; retain the unchanged upstream MIT
-notice in `skills/LICENSE`. The hashes
-track today's adaptations, not byte-identical upstream copies. See
+scenarios. Edit any Skill deliberately in place; retain the unchanged upstream
+MIT notice in `skills/LICENSE`. See
 [Extending](extending.md) for authoring, registration and validation.
 
 ## The original sixteen

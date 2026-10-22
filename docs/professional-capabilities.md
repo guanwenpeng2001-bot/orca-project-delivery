@@ -45,8 +45,8 @@ the integrity rules.
 `security-review`, `performance-review`, `integration-verification`,
 `merge-conflict-resolution`.
 
-They are package-maintained adaptations. Their upstream baseline and current
-content hashes stay in `skills/README.md`.
+They are package-maintained adaptations. Their upstream baseline and
+provenance stay in `skills/README.md`.
 
 ## Software methods
 
@@ -190,7 +190,7 @@ stale the moment the package changes.
 | Claim in this release | Evidence you can check | Evidence this release does not have |
 | --- | --- | --- |
 | The package verifies its own structure offline. | `scripts/verify-package.ps1` exits 0 with `FAIL=0` on the revision you installed. | A passing suite says nothing about a generated image, video, or document. |
-| Methods are delivered as Skill files. | The Skill file exists at `skills/<id>/SKILL.md` and its hash matches `skills/README.md`. | Loading a Skill is not a test of the method's output. |
+| Methods are delivered as Skill files. | The Skill file exists at `skills/<id>/SKILL.md` and the catalog resolves it. | Loading a Skill is not a test of the method's output. |
 | Local tools run offline. | The tutorial runs contrast, PNG resize, image headers, subtitle conversion, the composition frame map, probe comparison, PNG compression, the web manifest, Markdown generation, dependency checks, and offline provider fixtures. | A frame map is not a rendered video, a probe comparison is not a transcode, a header check is not a decoded image, and fixture success is not provider or generation-quality evidence. |
 | Office and PDF blocks round-trip. | The tutorial reopens docx, xlsx, pptx, and pdf and compares text. | Programmatic read-back is not visual review. Table overflow, font substitution, and PDF pagination were not checked, and PPTX and PDF reject a `table` block. |
 | Online connectors exist as examples. | The tutorial names OpenAI for images, Pexo for video, and ElevenLabs for speech and transcription, each as an example. | No call was made. No provider was selected. No generation quality was measured. |
@@ -217,8 +217,7 @@ methods. A reference does not mean upstream Skill text was copied.
 - **The original sixteen** are package-maintained MIT adaptations of
   [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills)
   at commit `d9a174c7143bfb4c76ed042f457fb7785c35cea3`, enriched in this
-  package. Their upstream MIT notice stays in `skills/LICENSE`. Current hashes
-  track the adapted text, not byte-identical upstream copies.
+  package. Their upstream MIT notice stays in `skills/LICENSE`.
 - **Everything after the original sixteen is an original method.** The
   twenty-two added in 2.3.0 and the eight added in 2.4.0 were written in this
   project. They cite public specifications and documentation — WCAG 2.2, the

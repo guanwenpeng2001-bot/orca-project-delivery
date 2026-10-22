@@ -14,7 +14,7 @@
 
 ## Commit Binding
 
-Replace placeholders with observations from the actual review target. Set dirty from Git status; APPROVED requires false. The coordinator records this commit binding in the run records.
+Replace placeholders with observations from the actual review target. Set dirty from Git status; APPROVED requires false. This block is the durable record linking the verdict to the reviewed commit; keep it in this report.
 
 ```json
 {

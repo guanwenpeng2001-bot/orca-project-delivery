@@ -116,15 +116,6 @@ function New-FixtureCommit {
   $null = Invoke-FixtureGit @('-C', $Worktree, 'commit', '-m', $Message)
   return Invoke-FixtureGit @('-C', $Worktree, 'rev-parse', 'HEAD')
 }
-function Get-FileTreeSnapshot {
-  param([string[]]$Roots)
-  $entries = foreach ($rootDirectory in $Roots) {
-    foreach ($file in Get-ChildItem -LiteralPath $rootDirectory -Recurse -Force -File) {
-      $file.FullName + ':' + (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
-    }
-  }
-  return @($entries | Sort-Object)
-}
 
 function Invoke-PackageScript([string]$Name, [string[]]$Arguments, [switch]$DirtyGit) {
   Invoke-Child $script:pwsh (@('-NoProfile', '-NonInteractive', '-File', (Join-Path $script:stagedPackage "scripts/$Name")) + $Arguments) -DirtyGit:$DirtyGit

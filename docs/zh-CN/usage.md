@@ -90,11 +90,11 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 在运行时的 check 动词上等待；处理每一个问题和升级。确认每个 `worker_done` 属于活动 Dispatch 后再确认它，并决定每个终端的下一任所有者。每次确认结算之后，重新评估就绪状态并派发新就绪的任务。连续三次空等待之后，枚举工作者并按投影的下一步行动处理，必要时做有界的工作者读取。
 
-对 `worker_done` 已确认的源码任务：把它报告的提交和报告路径记入该任务的指派记录，然后把任务推进到审查。
+对 `worker_done` 已确认的源码任务：把指派推进到 `review`；工作者写在指派报告路径下的报告会注明受审的提交。
 
 ### 7. 审查
 
-源码任务 `worker_done` 确认之后，在隔离工作树中对实际实现分支做独立审查，与其他实施并行。审查者报告 `APPROVED`、`CHANGES_REQUIRED` 或 `UNVERIFIABLE`，从不编辑源码，并记录目标 / 基线 SHA。把已完成的审查记入 `reviews[]`。被接受的发现项变成修复任务，随后重新审查。
+源码任务 `worker_done` 确认之后，在隔离工作树中对实际实现分支做独立审查，与其他实施并行。审查者报告 `APPROVED`、`CHANGES_REQUIRED` 或 `UNVERIFIABLE`，从不编辑源码，并记录目标 / 基线 SHA。完成的审查报告归档到 `runs/<run>/reviews/`；报告中的提交绑定是裁决与受审提交之间的持久链接。被接受的发现项变成修复任务，随后重新审查。
 
 ### 8. 集成
 

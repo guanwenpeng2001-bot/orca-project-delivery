@@ -17,7 +17,7 @@ Orca Project Delivery 协调的工作者会加载**专业 Skill** — 提供专�
 
 本项目的 MIT 许可证只覆盖它的原创部分。它不重新许可第三方材料。有两个上游有意缺席：Anthropic 的 docx、pptx、pdf 和 xlsx Skill 是专有的，不复制；OpenMontage（AGPL-3.0）不复制。规则和逐项能力的状态见[专业能力](professional-capabilities.md)。
 
-记录的提交是原有十六个的上游基线。它们的当前正文是包内维护的 MIT 改编版，已补充领域方法、判断标准、完整示例、失败信号与评估场景。可以有意识地就地编辑任何 Skill，并重新计算 `skills/README.md` 中它的当前内容 SHA256 行；保留 `skills/LICENSE` 中未改动的上游 MIT 声明。哈希跟踪当前改编内容，不表示与上游逐字节一致。编写、注册与校验见[扩展指南](extending.md)。
+记录的提交是原有十六个的上游基线。它们的当前正文是包内维护的 MIT 改编版，已补充领域方法、判断标准、完整示例、失败信号与评估场景。可以有意识地就地编辑任何 Skill；保留 `skills/LICENSE` 中未改动的上游 MIT 声明。编写、注册与校验见[扩展指南](extending.md)。
 
 ## 原有的十六个 Skill
 

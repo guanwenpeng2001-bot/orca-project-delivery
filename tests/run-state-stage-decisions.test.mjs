@@ -51,9 +51,13 @@ function validate(t, document, expected, diagnostic) {
   assert.equal(result.valid, expected, JSON.stringify(result));
   // PowerShell 7.6.7's Test-Json emits no per-violation error records for nested
   // violations; the rejection verdict is asserted above regardless, and
-  // field-path detail is asserted whenever the engine provides it.
+  // field-path detail is asserted whenever the engine provides it. Without
+  // engine detail, Test-Document still emits its bare fallback line.
   const engineDetails = result.errors.filter((line) => !/: schema validation failed in /.test(line));
-  if (diagnostic && engineDetails.length) assert.match(engineDetails.join('\n'), diagnostic);
+  if (diagnostic) {
+    if (engineDetails.length) assert.match(engineDetails.join('\n'), diagnostic);
+    else assert.ok(result.errors.some((line) => /: schema validation failed in /.test(line)), 'expected the fallback diagnostic line');
+  }
 }
 
 for (const verdict of ['required', 'skipped']) {

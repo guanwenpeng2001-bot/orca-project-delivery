@@ -25,7 +25,7 @@
 
 `codebase-reconnaissance`、`technical-research`、`product-discovery`、`product-design`、`requirements-analysis`、`solution-architecture`、`api-design`、`database-design`、`implementation-planning`、`test-driven-development`、`systematic-debugging`、`code-review`、`security-review`、`performance-review`、`integration-verification`、`merge-conflict-resolution`。
 
-它们是包内维护的改编版。上游基线和当前内容哈希仍在 `skills/README.md`。
+它们是包内维护的改编版。上游基线与来源记录仍在 `skills/README.md`。
 
 ## 软件方法
 
@@ -135,7 +135,7 @@
 | 本版本中的说法 | 你可以核验的证据 | 本版本没有的证据 |
 | --- | --- | --- |
 | 本包离线验证自身结构。 | 在你安装的修订上，`scripts/verify-package.ps1` 以 0 退出且 `FAIL=0`。 | 套件通过并不能说明生成的图片、视频或文档。 |
-| 方法以 Skill 文件交付。 | Skill 文件存在于 `skills/<id>/SKILL.md`，且哈希与 `skills/README.md` 一致。 | 加载一个 Skill 不是对其产出的测试。 |
+| 方法以 Skill 文件交付。 | Skill 文件存在于 `skills/<id>/SKILL.md`，目录解析到它。 | 加载一个 Skill 不是对其产出的测试。 |
 | 本地工具离线运行。 | 教程运行对比度、PNG 缩图、图像头、字幕、帧映射、探测比较、PNG 压缩、manifest、Markdown、依赖检查和提供方夹具。 | 帧映射不是视频，探测比较不是转码，头检查不是解码，夹具不证明提供方质量。 |
 | Office/PDF 块能往返打开。 | 程序重开 docx、xlsx、pptx、pdf 并比较文本。 | 未检查视觉布局、表格溢出、字体替换和 PDF 分页；PPTX/PDF 拒绝 table 块。 |
 | 在线连接器以示例存在。 | 教程把 OpenAI 作为图像示例、Pexo 作为视频示例、ElevenLabs 作为语音和转录示例。 | 没有发起调用。没有选定提供方。没有测量生成质量。 |
@@ -148,7 +148,7 @@
 
 - **本项目保留自己的 MIT 许可证**，位于仓库根目录。MIT 覆盖本项目的原创文本：协调者 Skill、脚本、路由和公开文档。
 - **第三方材料保留它带来的许可证。** 一个 Apache-2.0 的 Skill 仍是 Apache-2.0，声明原样保留在旁边。项目的 MIT 许可证不把它重新许可。
-- **原有的十六个**是 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) 在提交 `d9a174c7143bfb4c76ed042f457fb7785c35cea3` 上的包内维护 MIT 改编版，并在本包内做了补充。它们的上游 MIT 声明留在 `skills/LICENSE`。当前哈希跟踪改编后的文本，不是逐字节一致的上游副本。
+- **原有的十六个**是 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) 在提交 `d9a174c7143bfb4c76ed042f457fb7785c35cea3` 上的包内维护 MIT 改编版，并在本包内做了补充。它们的上游 MIT 声明留在 `skills/LICENSE`。
 - **其余三十个均为原创方法。** 2.3.0 的二十二个和 2.4.0 的八个均在本项目编写，引用 WCAG 2.2、PNG、WebVTT、MCP、PostgreSQL、OpenTelemetry、React 等公开资料，不复制上游 Skill 文本。没有 Skill 目录附带 `LICENSE.txt`，来源表标记为 `Original`。
 - **有两个上游有意不复制。** Anthropic 的 docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内；`document-production` 针对许可允许的库独立编写。OpenMontage 是 AGPL-3.0，不包含在内；`media-transcoding` 依据 FFmpeg 自身文档编写，所装 FFmpeg 构建及其编码器的许可另行核查。
 - **资产自带许可。** 图标集、字体和素材图片不由获取它们的工具的许可覆盖。`icon-assets` 要求每个图标集都有来源和许可。

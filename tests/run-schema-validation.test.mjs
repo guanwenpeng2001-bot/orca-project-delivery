@@ -72,6 +72,7 @@ for (const [name, mutate, expected, diagnostic] of cases) {
       // and field-path detail is asserted whenever the engine provides it.
       const engineDetails = result.errors.filter((line) => !/: schema validation failed in /.test(line));
       if (engineDetails.length) assert.match(engineDetails.join('\n'), diagnostic);
+      else assert.ok(result.errors.some((line) => /: schema validation failed in /.test(line)), 'expected the fallback diagnostic line');
       for (const error of result.errors) assert.match(error, /^assignments\/schema-regression\.json:/);
     }
   });
@@ -88,6 +89,8 @@ test('multiple errors preserve both field paths', (t) => {
   if (engineDetails.length) {
     assert.match(engineDetails.join('\n'), /skills(?:\.|\/)required/);
     assert.match(engineDetails.join('\n'), /skills(?:\.|\/)conditional(?:\[0\]|\/0|\.0)/);
+  } else {
+    assert.ok(result.errors.some((line) => /: schema validation failed in /.test(line)), 'expected the fallback diagnostic line');
   }
 });
 

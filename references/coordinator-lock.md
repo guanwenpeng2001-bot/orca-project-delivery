@@ -13,7 +13,7 @@ Authority for Run, Task, Dispatch and Worker lifecycle stays with the current gl
 ## Lock record
 
 Written by `scripts/bootstrap-project.ps1`; `activeRun` is updated by `scripts/create-run.ps1`.
-`updatedAt` is refreshed by every ledger write (`create-run.ps1`, `dispatch-task.ps1`), so a stale
+`updatedAt` is refreshed by every state write (`create-run.ps1`, `dispatch-task.ps1`), so a stale
 `updatedAt` tells the user nothing has been recorded recently — it is an observability signal for a
 human reader, not a liveness test. Liveness stays with the `orca terminal show` probe below.
 

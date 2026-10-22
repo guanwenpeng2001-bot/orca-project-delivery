@@ -97,7 +97,7 @@ orca-project-delivery/
 │   ├── professional-capability-tutorial.md
 │   ├── faq.md                # 常见问题与排障（英文）
 │   └── zh-CN/                # 上述指南的简体中文译本
-├── references/               # 10 篇深入参考（运行时、分支模型、交接等）
+├── references/               # 11 篇深入参考（运行时、分支模型、交接等）
 ├── roles/                    # 16 份角色合同 + catalog.json
 ├── routing/                  # 模型、角色、Skill、工作流路由表
 ├── skills/                   # 46 个随包专业 Skill + LICENSE + README
