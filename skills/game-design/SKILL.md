@@ -27,7 +27,7 @@ First-session checklist: a playable start-to-end path, an explicit failure or co
 
 | Term | Meaning |
 | --- | --- |
-| Core loop | The recurring sequence of decisions, consequences, and reasons to continue |
+| Core loop | The recurring sequence of decisions, consequences, and reasons to keep playing |
 | Mechanic | A rule connecting an action or condition to a change in state |
 | Feedback | Information that lets the player understand that change |
 | Progression | How available actions, knowledge, stakes, or rewards evolve |
@@ -59,13 +59,13 @@ Do not import a genre's entire feature checklist. A survival game may deliberate
 
 Create a decision table containing state, alternatives, visible information, cost, benefit, and consequence. Compare options under different states and player goals; raw damage or currency alone is not a universal utility function. Investigate an option that wins under every modeled condition before adding more content.
 
-Map the learning sequence: isolated introduction, safe practice, variation, combination, and mastery. Define where tension releases and where the next goal becomes legible. Test the smallest complete loop before adding progression layers. Separate comprehension failures from execution failures and from a player choosing not to continue.
+Map the learning sequence: isolated introduction, safe practice, variation, combination, and mastery. Define where tension releases and where the next goal becomes legible. Test the smallest complete loop before adding progression layers. Separate comprehension failures from execution failures and from a player choosing to stop.
 
 Define measurements before observation: loop completion time, unaided completion count / eligible attempts, decision distribution by state, and failures by cause. Report cohort, build, input device, sample size, and observation window. Set project targets before comparison; there is no universal retention or fun threshold.
 
 Review the information path as part of the rules: readable objectives, distinguishable states without color alone, input focus, back/pause behavior, text scaling, and framing across supported displays. Verify actual navigation with each supported input rather than approving a screenshot.
 
-Deliver a design specification containing the experience hypothesis, rules and state transitions, decision table, learning arc, prototype scope, observed results, and unresolved assumptions. Hand numeric pricing, spatial layout, and embodied movement questions to their corresponding game design skills.
+Deliver a design specification containing the experience hypothesis, rules and state transitions, decision table, learning arc, prototype scope, observed results, and unresolved assumptions. Hand pricing questions to `game-economy-design`, spatial layout to `game-level-design`, and embodied movement to `game-3c-design`.
 
 ## 4. Failure criteria and measurable invariants
 

@@ -68,7 +68,7 @@ Compute reward / normal session yield only when the denominator is positive, the
 
 ### Audit option dominance with an explicit state distribution
 
-Define comparable options, feasible states, player objective, time horizon, costs, and an expected-value model. For each option, compute the weighted fraction of evaluated states in which its expected value is strictly greater than every alternative. Use the referenced heuristic as an investigation threshold: no option should exceed **80%** for a system intended to sustain strategic alternatives. Record ties, weights, excluded states, and sensitivity to the utility model.
+Define comparable options, feasible states, player objective, time horizon, costs, and an expected-value model. For each option, compute the weighted fraction of evaluated states in which its expected value is strictly greater than every alternative. Use the source's 80% dominance heuristic as an investigation threshold: no option should exceed **80%** for a system intended to sustain strategic alternatives. Record ties, weights, excluded states, and sensitivity to the utility model.
 
 This threshold is a source-authored heuristic, not empirical proof of fairness. A higher-tier upgrade may intentionally dominate its predecessor; compare alternatives available at the same decision point. An arbitrary sample or a single metric cannot establish global balance. Follow simulation with observed choices and player explanations.
 
