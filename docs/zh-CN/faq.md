@@ -17,7 +17,7 @@
 它只在 Windows 上用 PowerShell 7+ 运行过。脚本是 PowerShell，其他平台上没有任何东西经过测试或得到支持。
 
 **如何更新这个包？**
-拉取最新修订并重跑 `scripts/verify-package.ps1` — 见 [installation.md](installation.md#升级)。每个项目的 `.dev-work/` 状态都经过 schema 校验，旧运行保持可读。
+拉取最新修订并重跑 `scripts/verify-package.ps1` — 见 [installation.md](installation.md#升级)。旧运行作为本地历史保持可读。
 
 ## 专业能力
 

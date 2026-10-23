@@ -27,8 +27,8 @@ PowerShell, and nothing on other platforms is tested or supported.
 
 **How do I update the package?**
 Pull the latest revision and re-run `scripts/verify-package.ps1` — see
-[installation.md](installation.md#upgrade). Per-project `.dev-work/` state is
-schema-validated, and old runs stay readable.
+[installation.md](installation.md#upgrade). Old runs stay readable as local
+history.
 
 ## Professional capabilities
 

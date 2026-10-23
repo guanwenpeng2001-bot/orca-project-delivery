@@ -143,7 +143,7 @@ orca-project-delivery/
 ├── routing/                  # Model, role, skill, and workflow routing tables
 ├── skills/                   # 69 maintained professional Skills + LICENSE + README
 ├── workflows/                # 5 workflow definitions
-├── schemas/                  # State, requirements and configuration schemas
+├── schemas/                  # Requirements, task and configuration input schemas
 ├── scripts/                  # Delivery and configuration PowerShell helpers
 └── templates/                # AGENTS.md, task/review/report templates, .dev-work seeds
 ```

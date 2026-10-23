@@ -47,13 +47,13 @@ When unsure where an artifact belongs, read `references/artifact-model.md`.
 1. Locate the coordinator control worktree; read `references/coordinator-lock.md` at bootstrap or whenever a second coordinator is suspected.
 2. Refuse a second live coordinator; preserve unknown liveness for investigation instead of taking over.
 3. Preserve existing `AGENTS.md`; only when absent create it from `templates/AGENTS.md`.
-4. Initialize missing `.dev-work/` using `scripts/bootstrap-project.ps1`; otherwise validate and reuse it. Templates are schema references, not copies to overwrite state with.
+4. Initialize missing `.dev-work/` using `scripts/bootstrap-project.ps1`; otherwise validate and reuse it. Templates are shape references, not copies to overwrite state with.
 5. Bootstrap preserves existing `.env.example` and `project-config.example.json`, creating only missing examples; locally excludes `/AGENTS.md`, `/.dev-work/` and `/.env` through clone-shared `info/exclude`.
 6. Resolve and record `delivery_branch` and its source using the invariant's chain; choose a distinct control branch before bootstrap. Detached HEAD and control=delivery are refused. The explicit override acknowledges a violation, not a normal integration path.
 7. Create or resume a run record using `scripts/create-run.ps1`; forced reuse archives prior state.
 8. Create or bind the Orca Run using current global Skill instructions.
 9. Run `scripts/probe-claude-capabilities.ps1` at bootstrap or after changing hosts; inspect the JSON and warnings, not merely its exit code.
-10. Record the coordinator, delivery branch, Orca Run id, schema versions and probe evidence in the control tree.
+10. Record the coordinator, delivery branch, Orca Run id and probe evidence in the control tree.
 
 The probe writes `.dev-work/runtime/claude-capabilities.json`; `accepted` proves only parameter acceptance, never actual model/effort effectiveness.
 Any `launched` verdict is an abnormal sentinel launch: stop probing and dispatch, mark unverified, inspect residual resources and escalate immediately. Exit 0 does not override this stop.

@@ -102,7 +102,7 @@ orca-project-delivery/
 ├── routing/                  # 模型、角色、Skill、工作流路由表
 ├── skills/                   # 69 个随包专业 Skill + LICENSE + README
 ├── workflows/                # 5 个工作流定义
-├── schemas/                  # 状态、依赖与配置的 JSON schema
+├── schemas/                  # 依赖、任务与配置输入的 JSON schema
 ├── scripts/                  # 交付与配置的 PowerShell 辅助脚本
 └── templates/                # AGENTS.md、任务/审查/报告模板、.dev-work 种子
 ```
