@@ -1,10 +1,10 @@
 {
   "name": "orca-project-delivery",
-  "version": "3.1.1",
+  "version": "4.0.0",
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-23",
   "releasedAt": "2026-10-23",
-  "revisionNote": "Remove review ceremony and bound review effort: drop the review-report Commit Binding hash block (guarded by a structure assertion), scale review effort to run scale and delta with coordinator-precomputed mechanical checks, route lightweight-run review to the code-reviewer floor tier, require bounded worker commands, and replace byte-hash brief pins with behavioral assertions. Bundled counts remain 69 Skills, 18 Roles and 5 workflows.",
+  "revisionNote": "Remove the state-schema audit layer: delete validate-run.ps1 and the six state schemas, drop dispatch-task's pre-write schema gate and post-write re-validation (-SkipPostValidation removed), stop creating the unread dispatch-receipts directory, drop the worker-report runtime self-report section, and rewrite the project-rules template to table density with every rule preserved. The delivery mechanism is unchanged; the input schemas (task-definition, project-config, requirements) remain. Bundled counts remain 69 Skills, 18 Roles and 5 workflows.",
   "deliverables": {
     "roles": 18,
     "professionalSkills": 69,

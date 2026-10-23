@@ -32,7 +32,7 @@ history.
 
 ## Professional capabilities
 
-**Does 3.1.1 generate images, video, speech, or documents?**
+**Does 4.0.0 generate images, video, speech, or documents?**
 It ships local PNG, subtitle, manifest, Markdown, and Office/PDF tools as well
 as methods and gated provider connectors. Bounded local Chromium and FFmpeg
 checks ran on Windows. No real provider call, HyperFrames render, or Office
@@ -45,7 +45,7 @@ Selecting a provider, a budget, and an upload scope is a per-task user
 decision. Installing the package does not authorize a call.
 
 **Why does the package claim 69 Skills when my catalog shows 16?**
-A complete 3.1.1 install contains 69 Skills and 18 Roles. A catalog showing
+A complete 4.0.0 install contains 69 Skills and 18 Roles. A catalog showing
 16 Skills belongs to a version that does not match this release, even if newer
 documentation is present. Install the complete matching release; the
 [tutorial](professional-capability-tutorial.md) checks the version, catalog

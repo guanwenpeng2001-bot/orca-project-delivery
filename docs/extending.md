@@ -18,7 +18,7 @@ Extend the package's native catalogs when a reusable method or a distinct delive
 
 ## Native registration
 
-Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 3.1.1 package ships 69 Skills and 18 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
+Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 4.0.0 package ships 69 Skills and 18 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
 
 | File | What to add or update |
 | --- | --- |
@@ -173,7 +173,7 @@ Duplicate declarations within an entry fail. Across selected entries, identical 
 
 ## Validate the extension
 
-After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 3.1.1 package starts at 18 Roles / 69 Skills, so these illustrative additions yield 19 / 70. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 3.1.1. Keep workflow counts correct.
+After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 4.0.0 package starts at 18 Roles / 69 Skills, so these illustrative additions yield 19 / 70. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 4.0.0. Keep workflow counts correct.
 
 ```powershell
 (Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
@@ -196,7 +196,7 @@ $metadataExit = $LASTEXITCODE
 $packageExit = $LASTEXITCODE
 ```
 
-Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs and manifest counts/version; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. Documentation tests run the official 3.1.1 count assertions and the capability tutorial's release guard against a fixed release fixture; acceptance of the edited package compares its actual catalogs, files and manifest without requiring 18 / 69. A mismatched count, missing route or invalid path must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
+Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs and manifest counts/version; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. Documentation tests run the official 4.0.0 count assertions and the capability tutorial's release guard against a fixed release fixture; acceptance of the edited package compares its actual catalogs, files and manifest without requiring 18 / 69. A mismatched count, missing route or invalid path must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
 
 ## Select and deliver methods
 

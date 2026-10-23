@@ -4,14 +4,14 @@
 
 面向 Orca 与 Claude Code 用户的**仅协调者** Skill，把软件目标变成隔离、独立审查、集成并验证过的变更。
 
-![Version](https://img.shields.io/badge/version-3.1.1-blue)
+![Version](https://img.shields.io/badge/version-4.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-这些指南描述**3.1.1 包：69 个 Skill、18 个角色、5 个工作流**。安装完整且匹配的版本，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。版本不匹配就不是本版本。
+这些指南描述**4.0.0 包：69 个 Skill、18 个角色、5 个工作流**。安装完整且匹配的版本，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。版本不匹配就不是本版本。
 
-3.1.1 新增：移除审查仪式并约束审查投入。审查报告模板删掉 Commit Binding 哈希绑定块（结构断言防止复活）；审查投入随运行规模与改动量缩放；协调者派发前预跑机械检查（凭据扫描、排除路径、版本残留、文件集比对、HEAD/状态观察），结果作为证据附进简报，审查者审计证据而非重跑；light 档审查路由到 code-reviewer 的 floor 档位；Worker 只运行有界命令——显式超时，禁止 watch 与重试轮询；简报逐字节哈希钉改为行为断言，改合同不再需要重钉仪式。包内计数仍为 69 个 Skill、18 个角色、5 个工作流；继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
+4.0.0 新增：移除状态 schema 审计层，交付机制不变。`validate-run.ps1` 与六个状态 schema 被删除——引导拒绝、派发落点检查、每次组装时的目录交叉核对以及契约突变测试在问题发生处承担同样的把关。`dispatch-task.ps1` 去掉写盘前 schema 门与写后复验（`-SkipPostValidation` 移除）；`create-run.ps1` 不再创建无人读取的 `dispatch-receipts/` 目录；工作者报告去掉运行时自报节（派发指派记录才是权威路由记录）；项目规则模板重写为表格密度，307 行压到 158 行，规则逐条保留。包内计数仍为 69 个 Skill、18 个角色、5 个工作流；继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
 
 Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 工作者智能体跑完整条软件交付流水线。它解决的问题是：在同一个仓库里监督许多自主智能体，同时不丢掉分支纪律、独立审查和可核验的结果。它写给担任协调者的人：你已经有 Orca（多代理 IDE）和 Claude Code，希望由隔离的工作者在明确合同下产出、审查、集成并做最终验证大型变更。
 
@@ -82,7 +82,7 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 orca-project-delivery/
 ├── SKILL.md                  # 协调者入口（17 节，不超过 250 行）
 ├── LICENSE                   # MIT
-├── VERSION                   # 3.1.1
+├── VERSION                   # 4.0.0
 ├── PACKAGE-MANIFEST.json     # 包元数据与交付物计数
 ├── CHANGELOG.md
 ├── README.md                 # 英文（默认）
