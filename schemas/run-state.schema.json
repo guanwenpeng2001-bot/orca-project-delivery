@@ -33,7 +33,8 @@
         "feature-development",
         "bug-fix",
         "refactor",
-        "audit"
+        "audit",
+        "game-development"
       ]
     },
     "status": {

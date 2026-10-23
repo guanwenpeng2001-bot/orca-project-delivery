@@ -27,8 +27,9 @@ test('all five workflows create runs and persist the selected workflow', (contex
     mkdirSync(project);
     const initialized = run('git', ['init', '-b', 'control'], project);
     assert.equal(initialized.status, 0, initialized.text);
-    mkdirSync(path.join(project, '.dev-work'));
-    writeFileSync(path.join(project, '.dev-work/manifest.json'), '{}\n');
+    const bootstrap = run('pwsh', ['-NoProfile', '-NonInteractive', '-File', path.join(root, 'scripts/bootstrap-project.ps1'),
+      '-ProjectRoot', project, '-DeliveryBranch', 'main'], project);
+    assert.equal(bootstrap.status, 0, bootstrap.text);
     const result = run('pwsh', ['-NoProfile', '-NonInteractive', '-File', path.join(root, 'scripts/create-run.ps1'),
       '-ProjectRoot', project, '-Objective', 'Workflow acceptance', '-Workflow', workflow,
       '-DeliveryBranch', 'main', '-RunSlug', 'workflow-acceptance'], project);
@@ -37,6 +38,9 @@ test('all five workflows create runs and persist the selected workflow', (contex
     assert.equal(state.workflow, workflow);
     assert.equal(state.stage, 'intake');
     assert.equal(state.deliveryBranch, 'main');
+    const validation = run('pwsh', ['-NoProfile', '-NonInteractive', '-File', path.join(root, 'scripts/validate-run.ps1'),
+      '-ProjectRoot', project, '-SkipPackageChecks'], project);
+    assert.equal(validation.status, 0, validation.text);
   }
 });
 
@@ -44,15 +48,18 @@ test('metadata validation rejects nonexistent workflow rule and default targets'
   const directory = temporary(context, 'game-workflow-paths-');
   cpSync(root, directory, { recursive: true, filter: (source) => !['.git', '.dev-work'].includes(path.basename(source)) });
   const original = JSON.parse(read('routing/workflow-selection.json'));
-  for (const target of ['rule', 'default']) {
+  for (const target of ['rule', 'default', 'missing-key']) {
     const selection = structuredClone(original);
     if (target === 'rule') selection.rules[0].workflow = 'missing-workflow';
+    else if (target === 'missing-key') delete selection.rules[0].workflow;
     else selection.default = 'missing-workflow';
     writeFileSync(path.join(directory, 'routing/workflow-selection.json'), JSON.stringify(selection, null, 2) + '\n');
     const result = run('pwsh', ['-NoProfile', '-NonInteractive', '-File',
       path.join(directory, 'scripts/verify-package.ps1'), '-MetadataOnly'], directory);
     assert.equal(result.status, 1, result.text);
-    assert.match(result.text, /workflow: missing definition missing-workflow/);
+    assert.match(result.text, target === 'missing-key'
+      ? /workflow: rule missing name/
+      : /workflow: missing definition missing-workflow/);
   }
 });
 
