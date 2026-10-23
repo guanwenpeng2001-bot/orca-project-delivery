@@ -2,7 +2,7 @@
 
 **English** | [简体中文](zh-CN/professional-capabilities.md)
 
-The 3.1.1 package carries game development (added in 3.1.0) alongside the existing delivery, engineering and media methods, and bounds review effort (see `CHANGELOG.md`). The package carries **69 professional Skills**, **18 Roles**, and **5 workflows**. This guide explains each capability's scope and verification limits.
+The 3.1.1 package carries game development (added in 3.1.0) alongside the existing delivery, engineering and media methods, and bounds review effort (see `CHANGELOG.md`). It ships with **69 professional Skills**, **18 Roles**, and **5 workflows**. This guide explains each capability's scope and verification limits.
 
 This guide describes the 3.1.1 package: 69 Skills, 18 Roles, and 5
 workflows. Install the complete matching release. Confirm `VERSION` is `3.1.1`,

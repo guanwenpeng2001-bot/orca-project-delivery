@@ -76,7 +76,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 为每个任务写任务定义，并用 `scripts/assemble-task.ps1` 组装其输入。每个任务携带：一个主角色、必需（以及可选的条件）Skill、允许与禁止范围、分支与工作树合同、一条 `.dev-work` 报告路径、验收条件，以及 Orca Worker Contract。即使已有 Markdown 简报，也要把机器可读的指派记在 `runs/<run>/assignments/<task>.json` 下 — 包括请求的和生效的运行时值。只编码真实依赖；使用并行波次，避免深于 3–4 步的链。
 
-组装会对照包内真实脚本及其声明参数逐条校验验收与测试命令，命令不可执行时组装失败、不写简报。审查简报可带 `reviewInput.deltaPaths` 并按 delta 缩放重验范围；标准简报点名最小相关套件，全量门禁留在合并后与终态验证。点名套件用 `scripts/verify-package.ps1 -Suites '<name>'` 运行，前置套件会自动补齐。`-SuiteTimeoutSeconds` 只为 package runtime 套件的子进程计时，其余检查沿用每子进程 60 秒的默认预算。
+组装会对照包内真实脚本及其声明参数逐条校验验收与测试命令，命令不可执行时组装失败、不写简报。审查简报可带 `reviewInput.deltaPaths`（按 delta 缩放重验范围）与 `reviewInput.coordinatorEvidence`（协调者预跑的机械检查结果，审查者审计而非重跑）；标准简报点名最小相关套件，全量门禁留在合并后与终态验证。点名套件用 `scripts/verify-package.ps1 -Suites '<name>'` 运行，前置套件会自动补齐。`-SuiteTimeoutSeconds` 只为 package runtime 套件的子进程计时，其余检查沿用每子进程 60 秒的默认预算。
 
 随包专业 Skill 从本包的 `skills/<skill-id>/SKILL.md` 解析。外部 Skill 必须在版本 2 项目配置中显式注册，见[外部 Skill](external-skills.md)。组装交付解析后的路径（`explicit-path`），或内联同一正文（`inline-extract`）。随包文件缺失时组装失败，不会静默回退到 `~/.agents/skills` 下的同级安装。随包 Skill 的出处写在 `skills/README.md`。见 [professional-skills.md](professional-skills.md)、[professional-capabilities.md](professional-capabilities.md) 和 [installation.md](installation.md)。检查安装、运行本地工具和依赖辅助脚本而不调用提供方的走读在 [professional-capability-tutorial.md](professional-capability-tutorial.md)。
 

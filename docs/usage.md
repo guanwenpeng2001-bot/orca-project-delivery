@@ -128,7 +128,9 @@ dependencies; use parallel waves and avoid chains deeper than 3–4 steps.
 Assembly checks every acceptance/tests command against the real package
 scripts and their declared parameters and fails without writing a brief when
 a command cannot run. Review briefs take optional `reviewInput.deltaPaths`
-and scale re-verification by the delta; standard briefs name the minimum
+(scaling re-verification by the delta) and `reviewInput.coordinatorEvidence`
+(coordinator-precomputed mechanical checks the reviewer audits instead of
+re-running); standard briefs name the minimum
 relevant suites, with full gates at post-merge and final. Named suites run as
 `scripts/verify-package.ps1 -Suites '<name>'`; prerequisites are added automatically.
 `-SuiteTimeoutSeconds` budgets only the package runtime suite's child processes; other

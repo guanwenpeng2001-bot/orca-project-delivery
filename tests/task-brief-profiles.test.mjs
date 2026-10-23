@@ -166,6 +166,10 @@ test('review profile narrows input and supports explicit optional sections', (co
   for (const value of Object.values(reviewInput)) assert.ok(result.brief.includes(value), value);
   assert.ok(!result.brief.includes('Declared Requirements'));
   assert.ok(result.brief.includes('(assigned at dispatch)'));
+  const withEvidence = assemble(data, { ...extra, reviewInput: { ...reviewInput, coordinatorEvidence: ['credential scan: zero hits', 'ls-files comparison: identical'] } });
+  assert.equal(withEvidence.code, 0, withEvidence.diagnostics);
+  assert.ok(withEvidence.brief.includes('Coordinator-precomputed evidence (audit, do not re-run):'));
+  assert.ok(withEvidence.brief.includes('- credential scan: zero hits'));
   const optedIn = assemble(data, { ...extra, reviewIncludes: ['role', 'skills', 'requirements'] });
   assert.equal(optedIn.code, 0, optedIn.diagnostics);
   for (const heading of ['## Primary Role', '## Required and Conditional Skills', '### Declared Requirements']) assert.ok(optedIn.brief.includes(heading), heading);
