@@ -11,7 +11,7 @@
 
 这些指南描述**4.0.0 包：69 个 Skill、18 个角色、5 个工作流**。安装完整且匹配的版本，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。版本不匹配就不是本版本。
 
-4.0.0 新增：移除状态 schema 审计层，交付机制不变。`validate-run.ps1` 与六个状态 schema 被删除——引导拒绝、派发落点检查、每次组装时的目录交叉核对以及契约突变测试在问题发生处承担同样的把关。`dispatch-task.ps1` 去掉写盘前 schema 门与写后复验（`-SkipPostValidation` 移除）；`create-run.ps1` 不再创建无人读取的 `dispatch-receipts/` 目录；工作者报告去掉运行时自报节（派发指派记录才是权威路由记录）；项目规则模板重写为表格密度，307 行压到 158 行，规则逐条保留。包内计数仍为 69 个 Skill、18 个角色、5 个工作流；继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
+4.0.0 新增：移除状态 schema 审计层，交付机制不变。`validate-run.ps1` 与六个状态 schema 被删除——引导拒绝、派发落点检查、每次组装时的目录交叉核对以及契约突变测试在问题发生处承担同样的把关。`dispatch-task.ps1` 去掉写盘前 schema 门与写后复验（`-SkipPostValidation` 移除）；`create-run.ps1` 不再创建无人读取的 `dispatch-receipts/` 目录；工作者报告去掉运行时自报节（派发指派记录才是权威路由记录）；项目规则模板重写为表格密度，306 行压到 145 行，规则逐条保留。包内计数仍为 69 个 Skill、18 个角色、5 个工作流；继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
 
 Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 工作者智能体跑完整条软件交付流水线。它解决的问题是：在同一个仓库里监督许多自主智能体，同时不丢掉分支纪律、独立审查和可核验的结果。它写给担任协调者的人：你已经有 Orca（多代理 IDE）和 Claude Code，希望由隔离的工作者在明确合同下产出、审查、集成并做最终验证大型变更。
 

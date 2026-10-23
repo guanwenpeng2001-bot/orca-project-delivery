@@ -38,6 +38,7 @@ test('all five workflows create runs and persist the selected workflow', (contex
     assert.equal(state.workflow, workflow);
     assert.equal(state.stage, 'intake');
     assert.equal(state.deliveryBranch, 'main');
+    assert.deepEqual(state.stageDecisions, {});
   }
 });
 

@@ -47,7 +47,7 @@ Bootstrap sequence (from `SKILL.md`):
 6. Run `scripts/probe-claude-capabilities.ps1` and inspect its JSON and
    warnings, not just the exit code. Any `launched` verdict is an abnormal
    sentinel launch: stop, mark unverified, and escalate.
-7. Record the coordinator, delivery branch, Orca Run id, schema versions, and
+7. Record the coordinator, delivery branch, Orca Run id, and
    probe evidence in the control tree.
 
 To start from a coordinator session, explicitly ask it to read

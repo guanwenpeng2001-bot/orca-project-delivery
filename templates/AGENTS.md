@@ -32,7 +32,7 @@ Role、Skill、模型默认值和通用最佳实践不得覆盖项目规则。
 
 - 同一控制工作区同一时间只允许一个 Coordinator Agent。
 - 控制分支只承载协调者会话、`AGENTS.md`、`.dev-work/` 和业务编排状态：不开发源码、不接收源码任务分支合并、不作为任务基线、审查目标或最终交付来源。
-- 涉及最新源码事实时必须读取实际 `delivery_branch` 或目标任务分支的工作树；不得把控制树的 HEAD、文件或测试结果当成最新集成状态。
+- 协调者控制分支是否跟随源码更新不影响交付；涉及最新源码事实时必须读取实际 `delivery_branch` 或目标任务分支的工作树；不得把控制树的 HEAD、文件或测试结果当成最新集成状态。
 - 控制分支必须与 `delivery_branch` 不同，不得在交付分支上启动协调者会话。`scripts/bootstrap-project.ps1` 在当前分支等于解析出的交付分支时拒绝初始化，除非显式传 `-AllowControlEqualsDelivery` 承担控制/交付分离违规的责任（见 `SKILL.md` 的 `Bootstrap` 节）。
 
 ## 4. 交付分支

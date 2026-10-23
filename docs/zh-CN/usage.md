@@ -26,7 +26,7 @@
 4. 引导保留已有 `.env.example` 和 `project-config.example.json`，仅创建缺失示例；通过同一克隆各工作树共享的本地 Git `info/exclude` 排除 `/AGENTS.md`、`/.dev-work/` 和 `/.env`。
 5. 用 `scripts/create-run.ps1` 创建或恢复运行记录，然后创建或绑定 Orca Run。
 6. 运行 `scripts/probe-claude-capabilities.ps1`，检查它的 JSON 和警告，而不只是退出码。任何 `launched` 结论都是异常的哨兵启动：停止、标为未验证，并升级。
-7. 在控制树中记录协调者、交付分支、Orca Run id、schema 版本和探测证据。
+7. 在控制树中记录协调者、交付分支、Orca Run id 和探测证据。
 
 要从协调者会话开始，明确要求它读取 `~/.agents/skills/orca-project-delivery/SKILL.md`，并给出目标、交付分支、范围和验收条件。例如：
 
