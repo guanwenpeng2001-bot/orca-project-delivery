@@ -122,7 +122,6 @@ try {
   $subdirs = @(
     "assignments",
     "attempts",
-    "dispatch-receipts",
     "handoffs",
     "reconnaissance",
     "audits",

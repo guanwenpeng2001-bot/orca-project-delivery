@@ -4,6 +4,18 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 4.0.0 — 2026-10-23
+
+Breaking simplification: the state-schema audit layer is removed. The delivery mechanism — isolated task branches, single writer per branch, dispatch records written from `worker-start` receipts, independent review, supervised merge, final verification on the delivery branch — is unchanged.
+
+- Deleted `scripts/validate-run.ps1` and the six state schemas (`active-run`, `assignment`, `coordinator-lock`, `manifest`, `run-state`, `runtime-capabilities`). The remaining schemas (`task-definition`, `project-config`, `requirements`) validate input documents, not the package's own writes.
+- `scripts/dispatch-task.ps1`: removed the pre-write assignment schema gate, the post-write `validate-run.ps1` invocation and `-SkipPostValidation`; a completed write reports `ok: true`. Placement refusals, duplicate-dispatch refusal and the requested/effective runtime comparison are unchanged.
+- Where the load went: bootstrap refuses control-equals-delivery at initialization; `Get-RequirementsCatalog` cross-checks the role/skill catalogs on every assembly and in the package structure suite; routing and selection regressions stay covered by the contract mutation tests.
+- `scripts/create-run.ps1` no longer creates the empty `dispatch-receipts/` directory; receipts reach `dispatch-task.ps1` directly via `-ReceiptPath`.
+- `templates/worker-report.md` drops the Requested and Effective Runtime section: a worker cannot observe its own effective route, and the assignment written from the receipt is the record.
+- `templates/AGENTS.md` rewritten to table density (306 → 145 lines); every rule preserved section by section. Briefs embedding the project rules get lighter for every dispatch.
+- Documentation swept for schema-audit wording; run-state `stageDecisions` remains a plain coordinator record without a format schema.
+
 ## 3.1.1 — 2026-10-23
 
 - Removed review ceremony left over from the pre-3.0.0 apparatus: the Commit Binding hash block in `templates/review-report.md` is gone (the reviewed target is one plain observed line; merge-time HEAD checks stay with the coordinator), and a structure assertion keeps hash-binding vocabulary out of the template.

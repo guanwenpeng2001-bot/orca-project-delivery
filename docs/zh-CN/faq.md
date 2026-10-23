@@ -17,18 +17,18 @@
 它只在 Windows 上用 PowerShell 7+ 运行过。脚本是 PowerShell，其他平台上没有任何东西经过测试或得到支持。
 
 **如何更新这个包？**
-拉取最新修订并重跑 `scripts/verify-package.ps1` — 见 [installation.md](installation.md#升级)。每个项目的 `.dev-work/` 状态都经过 schema 校验，旧运行保持可读。
+拉取最新修订并重跑 `scripts/verify-package.ps1` — 见 [installation.md](installation.md#升级)。旧运行作为本地历史保持可读。
 
 ## 专业能力
 
-**3.1.1 会生成图像、视频、语音或文档吗？**
+**4.0.0 会生成图像、视频、语音或文档吗？**
 它附带本地 PNG、字幕、manifest、Markdown 和 Office/PDF 工具，以及方法和有门控的提供方连接器。Windows 上运行过有界的 Chromium 与 FFmpeg 检查，但不声称真实提供方调用、HyperFrames 渲染或 Office 视觉审查通过。证据和限制见[能力指南](professional-capabilities.md)；仅加载 Skill 不会执行命令。
 
 **OpenAI、Pexo 和 ElevenLabs 是选定的提供方吗？**
 不是。它们是示例连接器，点名是为了让配置的形状具体。选择提供方、预算和上传范围是按任务做出的用户决定。安装本包并不授权一次调用。
 
 **为什么包声称 69 个 Skill，而我的目录显示 16 个？**
-完整的 3.1.1 安装包含 69 个 Skill 和 18 个角色。显示 16 个 Skill 的目录属于与本版本不匹配的版本，即使旁边已有新文档也一样。请安装完整且匹配的版本；[教程](professional-capability-tutorial.md)在运行新命令前核对版本、目录计数和清单。
+完整的 4.0.0 安装包含 69 个 Skill 和 18 个角色。显示 16 个 Skill 的目录属于与本版本不匹配的版本，即使旁边已有新文档也一样。请安装完整且匹配的版本；[教程](professional-capability-tutorial.md)在运行新命令前核对版本、目录计数和清单。
 
 **可以把 Anthropic 的文档 Skill 或 OpenMontage 复制进来吗？**
 不可以。docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内。OpenMontage 是 AGPL-3.0，不包含在内。`document-production` 和 `media-transcoding` 是独立编写的。见[许可证一节](professional-capabilities.md#许可证与来源)。

@@ -19,7 +19,7 @@ human reader, not a liveness test. Liveness stays with the `orca terminal show` 
 
 | Field | Meaning |
 | --- | --- |
-| `schemaVersion` | `1` — validated against `schemas/coordinator-lock.schema.json` |
+| `schemaVersion` | `1` |
 | `status` | `active` or `released` |
 | `coordinatorTerminalHandle` | `ORCA_TERMINAL_HANDLE` of the coordinator session (null outside an Orca terminal) |
 | `coordinatorWorktreeId` | `ORCA_WORKTREE_ID` of the control worktree |

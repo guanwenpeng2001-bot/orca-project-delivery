@@ -29,7 +29,7 @@ Assert-RequirementsSchema $task 'task-definition' 'Task definition (including sk
 
 # ------------------------------------------------------- package command checks
 # A brief that names a package script with a parameter the script does not declare sends the
-# worker into a guaranteed failure (observed: "scripts/validate-run.ps1 -Run nightly"). Check
+# worker into a guaranteed failure (observed: "scripts/verify-package.ps1 -Run nightly"). Check
 # every scripts/<name>.ps1 mention in acceptance and tests against the real param blocks;
 # mentions of paths outside the package and of variables are left alone. A mention that cannot
 # be parsed as a command is checked with a per-line fallback instead of being trusted.

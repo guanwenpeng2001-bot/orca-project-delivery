@@ -2,7 +2,7 @@
 
 **English** | [简体中文](zh-CN/external-skills.md)
 
-Version **3.1.1** supports explicitly configured, already-installed external Skills alongside the **69 bundled Skills, 18 Roles and 5 workflows**. Registration does not copy or rewrite the third-party files, change bundled catalogs, or increase package counts. Keep upstream notices and licenses with the original installation. For native package authoring, see [Extending](extending.md); for environment rules, see [Configuration precedence](../references/configuration-precedence.md).
+Version **4.0.0** supports explicitly configured, already-installed external Skills alongside the **69 bundled Skills, 18 Roles and 5 workflows**. Registration does not copy or rewrite the third-party files, change bundled catalogs, or increase package counts. Keep upstream notices and licenses with the original installation. For native package authoring, see [Extending](extending.md); for environment rules, see [Configuration precedence](../references/configuration-precedence.md).
 
 ## Register an installed file
 

@@ -47,18 +47,18 @@ When unsure where an artifact belongs, read `references/artifact-model.md`.
 1. Locate the coordinator control worktree; read `references/coordinator-lock.md` at bootstrap or whenever a second coordinator is suspected.
 2. Refuse a second live coordinator; preserve unknown liveness for investigation instead of taking over.
 3. Preserve existing `AGENTS.md`; only when absent create it from `templates/AGENTS.md`.
-4. Initialize missing `.dev-work/` using `scripts/bootstrap-project.ps1`; otherwise validate and reuse it. Templates are schema references, not copies to overwrite state with.
+4. Initialize missing `.dev-work/` using `scripts/bootstrap-project.ps1`; otherwise validate and reuse it. Templates are shape references, not copies to overwrite state with.
 5. Bootstrap preserves existing `.env.example` and `project-config.example.json`, creating only missing examples; locally excludes `/AGENTS.md`, `/.dev-work/` and `/.env` through clone-shared `info/exclude`.
 6. Resolve and record `delivery_branch` and its source using the invariant's chain; choose a distinct control branch before bootstrap. Detached HEAD and control=delivery are refused. The explicit override acknowledges a violation, not a normal integration path.
 7. Create or resume a run record using `scripts/create-run.ps1`; forced reuse archives prior state.
 8. Create or bind the Orca Run using current global Skill instructions.
 9. Run `scripts/probe-claude-capabilities.ps1` at bootstrap or after changing hosts; inspect the JSON and warnings, not merely its exit code.
-10. Record the coordinator, delivery branch, Orca Run id, schema versions and probe evidence in the control tree.
+10. Record the coordinator, delivery branch, Orca Run id and probe evidence in the control tree.
 
 The probe writes `.dev-work/runtime/claude-capabilities.json`; `accepted` proves only parameter acceptance, never actual model/effort effectiveness.
 Any `launched` verdict is an abnormal sentinel launch: stop probing and dispatch, mark unverified, inspect residual resources and escalate immediately. Exit 0 does not override this stop.
 Missing/unusable Claude CLI or unreadable routing is a hard failure; missing Orca produces unknown combinations. Unknown/rejected combinations are not verified routes; investigate before automatic routing.
-Use `scripts/assemble-task.ps1` to assemble definitions, `scripts/validate-run.ps1` for schemas and invariants, and `scripts/reconcile-state.ps1` to compare assignments with Git.
+Use `scripts/assemble-task.ps1` to assemble definitions and `scripts/reconcile-state.ps1` to compare assignments with Git.
 Use `scripts/verify-package.ps1` for offline package acceptance and `scripts/release-coordinator.ps1 -ConfirmRunClosed` for safe closure.
 
 ## Workflow selection
@@ -166,7 +166,7 @@ For read-only retries, preserve each attempt under a unique report path; the coo
 Close only after required Tasks settle, accepted source enters delivery, final verification completes or is explicitly marked unverifiable, and reports/decisions are stored.
 Ensure the fleet has zero reclaimable resources; `retained`/`user_owned` terminals require recorded ownership decisions and are not leaks.
 Write `final-report.md` linked to the final-verification report and the delivery commit it verified, plus a separate user-decision report: what needs deciding, consequence of deferral, options and recommendation.
-Before closure, confirm every intended Task is accounted for in the run records and final verification ran at the current delivery HEAD; run `scripts/validate-run.ps1` as the structural check.
+Before closure, confirm every intended Task is accounted for in the run records and final verification ran at the current delivery HEAD.
 Recheck status/diff for process-artifact exclusion, then use `scripts/release-coordinator.ps1 -ConfirmRunClosed`; it archives active state and marks the lock released.
 Keep `.dev-work/runs/<run>/` as local history. Unverifiable acceptance must not be described as READY.
 

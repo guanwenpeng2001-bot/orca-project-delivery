@@ -4,7 +4,7 @@
 
 Use the [installed external Skill walkthrough](external-skills.md) for version 2 project registration, mixed bindings, resolved requirement selectors and original sibling resources. No separate installation is required for bundled Skills.
 
-This tutorial targets the complete **3.1.1 package: 69 Skills, 18 Roles, and 5
+This tutorial targets the complete **4.0.0 package: 69 Skills, 18 Roles, and 5
 workflows**. It exercises local tools, offline provider fixtures, and scoped
 dependency injection using a temporary project and synthetic values. No actual
 provider or paid call is made; offline simulation does not verify generation
@@ -13,7 +13,7 @@ quality.
 Run the PowerShell blocks in order in a PowerShell 7 session from the package
 root, with Node.js 22.15+ (the baseline documented by the bundled Skills) and Python 3.10+ available
 for the examples that use them.
-Install the complete matching 3.1.1 release first. A version that does not
+Install the complete matching 4.0.0 release first. A version that does not
 match lacks the scripts these commands use. The guard rejects an incomplete or mismatched installation.
 
 ## 1. Confirm what you installed
@@ -29,10 +29,10 @@ Read four fields:
 
 | Field | What it tells you |
 | --- | --- |
-| `VERSION` | The package revision. 3.1.1 is the current release. |
-| `deliverables.professionalSkills` | How many Skills the package claims. The 3.1.1 release claims 69. |
-| `deliverables.roles` | How many Roles the package claims. The 3.1.1 release claims 18. |
-| `workflows/` | How many workflow definitions ship. The 3.1.1 release ships 5. |
+| `VERSION` | The package revision. 4.0.0 is the current release. |
+| `deliverables.professionalSkills` | How many Skills the package claims. The 4.0.0 release claims 69. |
+| `deliverables.roles` | How many Roles the package claims. The 4.0.0 release claims 18. |
+| `workflows/` | How many workflow definitions ship. The 4.0.0 release ships 5. |
 
 Then confirm the claim against the catalogs rather than against this tutorial:
 
@@ -51,12 +51,12 @@ $manifest = Get-Content -Raw ./PACKAGE-MANIFEST.json | ConvertFrom-Json
 $version = (Get-Content -Raw ./VERSION).Trim()
 $workflows = (Get-ChildItem ./workflows -Filter *.md).Count
 "catalog workflows: $workflows"
-if ($version -ne '3.1.1' -or $manifest.version -ne $version -or
+if ($version -ne '4.0.0' -or $manifest.version -ne $version -or
     $skills -ne 69 -or $roles -ne 18 -or $workflows -ne 5 -or
     $manifest.deliverables.professionalSkills -ne $skills -or
     $manifest.deliverables.roles -ne $roles -or
     $manifest.deliverables.workflows -ne $workflows) {
-  throw 'Install the complete matching 3.1.1 package before continuing.'
+  throw 'Install the complete matching 4.0.0 package before continuing.'
 }
 "GUARD_PASSED skills=$skills roles=$roles version=$version"
 ```
@@ -235,7 +235,7 @@ python -I ./skills/document-production/scripts/office-document.py --input "$work
 
 ## 6. Run the 2.4.0 local tools
 
-These commands were introduced in 2.4.0 and remain available in 3.1.1. The file-processing commands run offline and write only under `$work`.
+These commands were introduced in 2.4.0 and remain available in 4.0.0. The file-processing commands run offline and write only under `$work`.
 They require Node.js 22.15+; the optional browser test also needs Python
 Playwright and a local Chromium. No command contacts a provider.
 

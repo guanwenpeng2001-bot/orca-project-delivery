@@ -6,7 +6,7 @@
 
 本走读从协调者的位置演示一次完整交付。它概括 `SKILL.md` 及其参考所定义的工作流；运行时以该 Skill 本身为权威，每一条 Orca 命令则以已安装的全局 `orchestration` Skill 加上当前 `--help` 输出为权威。
 
-本指南面向3.1.1：**69 个 Skill、18 个角色、5 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。加载 Skill 不会自行新增角色或扩大权限；两个游戏角色已显式注册。
+本指南面向4.0.0：**69 个 Skill、18 个角色、5 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。加载 Skill 不会自行新增角色或扩大权限；两个游戏角色已显式注册。
 
 ## 游戏开发交付
 
@@ -26,7 +26,7 @@
 4. 引导保留已有 `.env.example` 和 `project-config.example.json`，仅创建缺失示例；通过同一克隆各工作树共享的本地 Git `info/exclude` 排除 `/AGENTS.md`、`/.dev-work/` 和 `/.env`。
 5. 用 `scripts/create-run.ps1` 创建或恢复运行记录，然后创建或绑定 Orca Run。
 6. 运行 `scripts/probe-claude-capabilities.ps1`，检查它的 JSON 和警告，而不只是退出码。任何 `launched` 结论都是异常的哨兵启动：停止、标为未验证，并升级。
-7. 在控制树中记录协调者、交付分支、Orca Run id、schema 版本和探测证据。
+7. 在控制树中记录协调者、交付分支、Orca Run id 和探测证据。
 
 要从协调者会话开始，明确要求它读取 `~/.agents/skills/orca-project-delivery/SKILL.md`，并给出目标、交付分支、范围和验收条件。例如：
 
@@ -44,7 +44,6 @@ $package = Join-Path $env:USERPROFILE '.agents/skills/orca-project-delivery'
 pwsh -NoProfile -File "$package/scripts/bootstrap-project.ps1" -ProjectRoot '<project>' -DeliveryBranch main
 pwsh -NoProfile -File "$package/scripts/create-run.ps1" -ProjectRoot '<project>' -Objective 'Validate configuration behavior' -Workflow feature-development -RunSlug configuration-validation -DeliveryBranch main
 pwsh -NoProfile -File "$package/scripts/probe-claude-capabilities.ps1" -ProjectRoot '<project>'
-pwsh -NoProfile -File "$package/scripts/validate-run.ps1" -ProjectRoot '<project>'
 ```
 
 通过已安装的全局 Skill 绑定真正的 Orca Run，并记录该绑定。绝不要把模板占位符当作观察结果抄进活动记录。
@@ -88,7 +87,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 每次派发都走运行时的 worker-start 动词，使用 Claude 智能体，以及从 `routing/model-routing.json` 选出的路由。派发没有权限旗标：权限来自实际的 Claude 配置和用户的 Orca 设置，只记录，不臆造。
 
-用 `scripts/dispatch-task.ps1` 从协调者捕获的 `worker-start --json` 回执（`-ReceiptPath`）记录本次派发：脚本推导请求值 / 生效值的核对结论，拒绝落点在协调者控制树或与任务定义矛盾的回执，写盘前先用 `schemas/assignment.schema.json` 校验指派，并且同一任务的重复在途派发默认被拒 — 除非 `-ForceReDispatch` 把先前派发记入 `runtime.previousDispatches`。记录 `runtime.mode` 与终端 `surface`；`structured` 工作者属于后台会话，下一次里程碑汇报必须明说。
+用 `scripts/dispatch-task.ps1` 从协调者捕获的 `worker-start --json` 回执（`-ReceiptPath`）记录本次派发：脚本推导请求值 / 生效值的核对结论，拒绝落点在协调者控制树或与任务定义矛盾的回执，并且同一任务的重复在途派发默认被拒 — 除非 `-ForceReDispatch` 把先前派发记入 `runtime.previousDispatches`。记录 `runtime.mode` 与终端 `surface`；`structured` 工作者属于后台会话，下一次里程碑汇报必须明说。
 
 执行循环和审查 / 集成的操作细节位于[执行循环参考](../../references/execution-loop.md)；派发和处理工作者前先阅读该参考。
 

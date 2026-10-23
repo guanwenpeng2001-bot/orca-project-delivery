@@ -160,7 +160,7 @@ test('MetadataOnly rejects every missing required script and parses discovered e
   const required = [
     'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'dispatch-task.ps1',
     'probe-claude-capabilities.ps1', 'query-routing.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
-    'validate-run.ps1', 'verify-package.ps1',
+    'verify-package.ps1',
     'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',
     'verify-requirements.ps1', 'project-common.ps1', 'verification-common.ps1',
     'verification-structure.ps1', 'verification-runtime.ps1', 'verification-lifecycle.ps1',

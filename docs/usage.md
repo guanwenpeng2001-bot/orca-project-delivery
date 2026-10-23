@@ -9,7 +9,7 @@ summarizes the workflow defined in `SKILL.md` and its references; the Skill
 itself is the authority at runtime, and the installed global `orchestration`
 Skill plus current `--help` output are the authority for every Orca command.
 
-This guide targets 3.1.1: **69 Skills, 18 Roles, 5 workflows**. Select
+This guide targets 4.0.0: **69 Skills, 18 Roles, 5 workflows**. Select
 only the methods needed by the Task: shared tokens use `design-system`, domain
 invariants use `domain-modeling`, upgrades use `migration-upgrade`, and tool
 protocols use `mcp-server-development`. Diagrams, localization, Skill evaluation
@@ -47,7 +47,7 @@ Bootstrap sequence (from `SKILL.md`):
 6. Run `scripts/probe-claude-capabilities.ps1` and inspect its JSON and
    warnings, not just the exit code. Any `launched` verdict is an abnormal
    sentinel launch: stop, mark unverified, and escalate.
-7. Record the coordinator, delivery branch, Orca Run id, schema versions, and
+7. Record the coordinator, delivery branch, Orca Run id, and
    probe evidence in the control tree.
 
 To start from a coordinator session, explicitly ask it to read
@@ -70,7 +70,6 @@ $package = Join-Path $env:USERPROFILE '.agents/skills/orca-project-delivery'
 pwsh -NoProfile -File "$package/scripts/bootstrap-project.ps1" -ProjectRoot '<project>' -DeliveryBranch main
 pwsh -NoProfile -File "$package/scripts/create-run.ps1" -ProjectRoot '<project>' -Objective 'Validate configuration behavior' -Workflow feature-development -RunSlug configuration-validation -DeliveryBranch main
 pwsh -NoProfile -File "$package/scripts/probe-claude-capabilities.ps1" -ProjectRoot '<project>'
-pwsh -NoProfile -File "$package/scripts/validate-run.ps1" -ProjectRoot '<project>'
 ```
 
 Bind the actual Orca Run through the installed global Skill and record that
@@ -169,10 +168,9 @@ Record the dispatch with `scripts/dispatch-task.ps1` from the
 coordinator-captured `worker-start --json` receipt (`-ReceiptPath`): it
 derives the requested/effective verification, refuses a receipt whose
 worktree effect lands on the coordinator control worktree or contradicts the
-task definition, validates the assignment against
-`schemas/assignment.schema.json` before writing anything, and refuses a
-duplicate live dispatch of the same Task unless `-ForceReDispatch` records
-the earlier dispatch under `runtime.previousDispatches`. Record
+task definition, and refuses a duplicate live dispatch of the same Task
+unless `-ForceReDispatch` records the earlier dispatch under
+`runtime.previousDispatches`. Record
 `runtime.mode` and the terminal `surface`; a background (`structured`)
 worker is a background session, and the next milestone report names it as
 such.

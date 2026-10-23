@@ -4,14 +4,14 @@
 
 A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
-![Version](https://img.shields.io/badge/version-3.1.1-blue)
+![Version](https://img.shields.io/badge/version-4.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-These guides describe the **3.1.1 package: 69 Skills, 18 Roles, and 5 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
+These guides describe the **4.0.0 package: 69 Skills, 18 Roles, and 5 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
 
-New in 3.1.1: review ceremony is removed and review effort is bounded. The review-report template drops its Commit Binding hash block (a structure assertion keeps it from returning); review effort scales with the run scale and the delta; the coordinator precomputes mechanical checks into the brief as evidence the reviewer audits instead of re-running; lightweight runs route review to the code-reviewer floor tier; workers run bounded commands only — explicit timeouts, no watch or retry loops; and the byte-hash pin on assembled briefs becomes behavioral assertions, ending the re-pin ritual on every contract edit. Bundled counts remain 69 Skills, 18 Roles, and 5 workflows; [Installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
+New in 4.0.0: the state-schema audit layer is removed; the delivery mechanism is unchanged. `validate-run.ps1` and the six state schemas are deleted — bootstrap refusal, dispatch placement checks, catalog cross-checks on every assembly, and the contract mutation tests carry the same load where it occurs. `dispatch-task.ps1` drops its pre-write schema gate and post-write re-validation (`-SkipPostValidation` is gone); `create-run.ps1` no longer creates the unread `dispatch-receipts/` directory; the worker report drops its runtime self-report section, since the dispatch assignment is the authoritative route record; and the project-rules template is rewritten to table density, 306 lines to 145, with every rule preserved. Bundled counts remain 69 Skills, 18 Roles, and 5 workflows; [Installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
 
 Orca Project Delivery is a coordinator-only Skill that runs a complete software
 delivery pipeline with Claude Code worker agents. It solves the problem of
@@ -123,7 +123,7 @@ integrate, and close. The walkthrough lives in
 orca-project-delivery/
 ├── SKILL.md                  # Coordinator entry point (17 sections, <= 250 lines)
 ├── LICENSE                   # MIT
-├── VERSION                   # 3.1.1
+├── VERSION                   # 4.0.0
 ├── PACKAGE-MANIFEST.json     # Package metadata and deliverable counts
 ├── CHANGELOG.md
 ├── README.md                 # English (default)
@@ -143,7 +143,7 @@ orca-project-delivery/
 ├── routing/                  # Model, role, skill, and workflow routing tables
 ├── skills/                   # 69 maintained professional Skills + LICENSE + README
 ├── workflows/                # 5 workflow definitions
-├── schemas/                  # State, requirements and configuration schemas
+├── schemas/                  # Requirements, task and configuration input schemas
 ├── scripts/                  # Delivery and configuration PowerShell helpers
 └── templates/                # AGENTS.md, task/review/report templates, .dev-work seeds
 ```

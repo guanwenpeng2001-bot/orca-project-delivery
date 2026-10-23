@@ -18,7 +18,7 @@
 
 ## 原生注册
 
-在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。3.1.1 的包随附 69 个 Skill 和 18 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
+在独立开发检出或可丢弃副本中操作，保留现有条目，文本保存为无 BOM 的 UTF-8，使用 LF 换行。下文的 `export-contract-check` Skill 和 `export-reviewer` Role 是**示例新增项**，不是包内生产条目。4.0.0 的包随附 69 个 Skill 和 18 个 Role；校验器比较目录与清单，并未把这些数量永久写死。
 
 | 文件 | 新增或更新内容 |
 | --- | --- |
@@ -173,7 +173,7 @@ Role 条目也支持同样的可选结构。[requirements.schema.json](../../sch
 
 ## 校验扩展
 
-添加示例后，从编辑后的目录推导清单计数。把 `deliverables.roles` 和 `deliverables.professionalSkills` 分别设为下面打印的对应值，不要照抄其他修订的计数。完整的 3.1.1 包起始为 18 个 Role / 69 个 Skill，因此添加这两个示例后为 19 / 70。保留原有的 `VERSION` 及与之相同的清单 `version`；扩展旧检出不会使它升级到 3.1.1。工作流数量也要保持正确。
+添加示例后，从编辑后的目录推导清单计数。把 `deliverables.roles` 和 `deliverables.professionalSkills` 分别设为下面打印的对应值，不要照抄其他修订的计数。完整的 4.0.0 包起始为 18 个 Role / 69 个 Skill，因此添加这两个示例后为 19 / 70。保留原有的 `VERSION` 及与之相同的清单 `version`；扩展旧检出不会使它升级到 4.0.0。工作流数量也要保持正确。
 
 ```powershell
 (Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
@@ -196,7 +196,7 @@ $metadataExit = $LASTEXITCODE
 $packageExit = $LASTEXITCODE
 ```
 
-两者都必须退出 0，且 `FAIL=0`。`-MetadataOnly` 检查解析、编码、路由、入口大纲、目录、清单数量/版本；它跳过运行时夹具，不是完整验收门。完整套件离线运行合成的运行时与扩展夹具。文档测试针对固定的发行夹具运行官方 3.1.1 数量断言及能力教程的发行版本门禁；编辑后包的验收比较其实际目录、文件与清单，不要求固定为 18 / 69。数量不匹配、缺路由或无效路径必须失败。修正后再运行完整套件，检查 Git diff 和 `git diff --check`，然后走正常交付流程取得独立审查。
+两者都必须退出 0，且 `FAIL=0`。`-MetadataOnly` 检查解析、编码、路由、入口大纲、目录、清单数量/版本；它跳过运行时夹具，不是完整验收门。完整套件离线运行合成的运行时与扩展夹具。文档测试针对固定的发行夹具运行官方 4.0.0 数量断言及能力教程的发行版本门禁；编辑后包的验收比较其实际目录、文件与清单，不要求固定为 18 / 69。数量不匹配、缺路由或无效路径必须失败。修正后再运行完整套件，检查 Git diff 和 `git diff --check`，然后走正常交付流程取得独立审查。
 
 ## 选择与交付方法
 

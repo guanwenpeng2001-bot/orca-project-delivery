@@ -13,7 +13,7 @@ const environment = Object.fromEntries(Object.entries(process.env).filter(([name
 
 // Frozen official release inventory; local extensions do not redefine this baseline.
 const releaseSnapshot = {
-  version: '3.1.1',
+  version: '4.0.0',
   roles: ['codebase-scout', 'technical-researcher', 'issue-investigator', 'requirements-analyst',
     'ui-designer', 'document-specialist', 'solution-planner', 'plan-adjudicator', 'software-architect',
     'software-implementer', 'code-reviewer', 'browser-test-engineer', 'security-reviewer',
@@ -94,7 +94,7 @@ for (const language of languages) {
     assert.match(result.text, /External Skill walkthrough passed: both delivery modes, original resources, unchanged sources, named failure\./);
   });
 
-  test(`${language} current-version guard accepts 3.1.1 and rejects stale version/counts`, (context) => {
+  test(`${language} current-version guard accepts 4.0.0 and rejects stale version/counts`, (context) => {
     const tutorial = blocks(read(`${language}/professional-capability-tutorial.md`));
     const countBlock = tutorial.find((block) => block.includes('$skills =') && block.includes('$roles ='));
     const versionBlock = tutorial.find((block) => block.includes('GUARD_PASSED'));
@@ -103,17 +103,17 @@ for (const language of languages) {
     const fixture = releaseGuardFixture(context);
     const current = runPowerShell(script, fixture);
     assert.equal(current.status, 0, current.text);
-    assert.match(current.text, /GUARD_PASSED skills=69 roles=18 version=3\.1\.1/);
+    assert.match(current.text, /GUARD_PASSED skills=69 roles=18 version=4\.0\.0/);
 
     writeFileSync(path.join(fixture, 'VERSION'), '2.4.0\n');
     const stale = runPowerShell(script, fixture);
     assert.equal(stale.status, 1, stale.text);
-    assert.match(stale.text, /Install the complete matching 3\.1\.1 package/);
-    writeFileSync(path.join(fixture, 'VERSION'), '3.1.1\n');
+    assert.match(stale.text, /Install the complete matching 4\.0\.0 package/);
+    writeFileSync(path.join(fixture, 'VERSION'), '4.0.0\n');
     writeFileSync(path.join(fixture, 'routing/skill-catalog.json'), JSON.stringify({ skills: [] }));
     const wrongCount = runPowerShell(script, fixture);
     assert.equal(wrongCount.status, 1, wrongCount.text);
-    assert.match(wrongCount.text, /Install the complete matching 3\.1\.1 package/);
+    assert.match(wrongCount.text, /Install the complete matching 4\.0\.0 package/);
   });
 }
 
@@ -125,7 +125,7 @@ test('external Skill guides keep runnable configuration and recipe identical acr
   assert.deepEqual(json(english), json(chinese));
 });
 
-test('official 3.1.1 snapshot retains exact release counts', (context) => {
+test('official 4.0.0 snapshot retains exact release counts', (context) => {
   const fixture = releaseGuardFixture(context);
   const fixtureJson = (file) => JSON.parse(readFileSync(path.join(fixture, file), 'utf8'));
   assert.deepEqual(fixtureJson('PACKAGE-MANIFEST.json').deliverables, { roles: 18, professionalSkills: 69, workflows: 5 });
@@ -138,12 +138,12 @@ test('current package catalogs, directories and manifest pass consistency accept
   assertConsistency(root);
 });
 
-test('public entry points describe the official 3.1.1 release', () => {
+test('public entry points describe the official 4.0.0 release', () => {
   for (const file of ['README.md', 'README.zh-CN.md']) {
-    assert.match(read(file), /version-3\.1\.1-blue/);
+    assert.match(read(file), /version-4\.0\.0-blue/);
     assert.match(read(file), /external-skills\.md/);
   }
-  assert.match(read('CHANGELOG.md'), /^## 3\.1\.1 — 2026-10-23$/m);
+  assert.match(read('CHANGELOG.md'), /^## 4\.0\.0 — 2026-10-23$/m);
   assert.match(read('CHANGELOG.md'), /^### 2\.4\.0 — professional skill depth$/m);
 });
 
@@ -188,7 +188,7 @@ for (const language of languages) {
     assertConsistency(fixture);
     // Exercise the former blockers from inside the extended package, without recursing into this test.
     const documentation = spawnSync(process.execPath, ['--test',
-      '--test-name-pattern=current-version guard|official 3.1.1 snapshot|current package catalogs|release metadata',
+      '--test-name-pattern=current-version guard|official 4.0.0 snapshot|current package catalogs|release metadata',
       path.join(fixture, 'tests/external-skill-documentation.test.mjs')], {
       cwd: fixture, env: environment, encoding: 'utf8', timeout: 30000,
     });

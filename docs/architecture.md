@@ -174,8 +174,7 @@ Optional `requires` metadata names CLI, env and API dependencies. Assembly label
 
 The coordinator writes each assignment with `scripts/dispatch-task.ps1` from
 the captured `worker-start` receipt; the script refuses a control-worktree
-placement and a duplicate live dispatch for one Task, and validates the
-assignment against `schemas/assignment.schema.json` before writing.
+placement and a duplicate live dispatch for one Task.
 
 Integration safety comes from the process itself, checked directly by the
 coordinator at the moment it acts:

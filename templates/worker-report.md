@@ -32,14 +32,6 @@ Error text quoted in a report must be verbatim from the archived log, preserving
 | --- | --- | --- | --- |
 |  |  |  |  |
 
-## Requested and Effective Runtime
-
-- Requested Agent/model/effort:
-- Effective Agent/model/effort:
-- Verification evidence:
-- Permission mode:
-- Skill delivery mode:
-
 ## Deviations
 
 <Any deviation from Task, Role, Skills, or project rules.>
