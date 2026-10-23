@@ -100,7 +100,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 ### 7. 审查
 
-源码任务 `worker_done` 确认之后，在隔离工作树中对实际实现分支做独立审查，与其他实施并行。审查者报告 `APPROVED`、`CHANGES_REQUIRED` 或 `UNVERIFIABLE`，从不编辑源码，并记录目标 / 基线 SHA。完成的审查报告归档到 `runs/<run>/reviews/`；报告中的提交绑定是裁决与受审提交之间的持久链接。被接受的发现项变成修复任务，随后重新审查。
+源码任务 `worker_done` 确认之后，在隔离工作树中对实际实现分支做独立审查，与其他实施并行。审查者报告 `APPROVED`、`CHANGES_REQUIRED` 或 `UNVERIFIABLE`，从不编辑源码，并以一行观察记录注明受审提交。完成的审查报告归档到 `runs/<run>/reviews/`；合并前由协调者亲自复核源码 HEAD。被接受的发现项变成修复任务，随后重新审查。
 
 ### 8. 集成
 

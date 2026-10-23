@@ -71,6 +71,12 @@ test('legacy bundled briefs assemble with contract and structure in both modes',
     assert.ok(result.brief.includes('Run bounded commands only'), mode);
     assert.ok(result.brief.includes('## Acceptance Criteria'), mode);
     assert.ok(result.brief.includes('## Orca Worker Contract'), mode);
+    if (mode === 'explicit-path') {
+      assert.ok(/skills[/\\]test-driven-development[/\\]SKILL\.md/.test(result.brief), mode);
+    } else {
+      const body = readFileSync(path.join(packageRoot, 'skills', 'test-driven-development', 'SKILL.md'), 'utf8').trim();
+      assert.ok(result.brief.includes(body), mode);
+    }
   }
 });
 

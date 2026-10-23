@@ -53,6 +53,11 @@
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
           "description": "Paths changed since the reviewed revision; the review brief prints them and scales re-verification to them."
+        },
+        "coordinatorEvidence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Coordinator-precomputed mechanical-check results (scans, sweeps, comparisons, status observations) printed into the review brief; the reviewer audits them instead of re-running."
         }
       },
       "additionalProperties": false

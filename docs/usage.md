@@ -195,9 +195,9 @@ under review.
 After a confirmed source `worker_done`, dispatch an independent review of the actual
 implementation branch in an isolated worktree, in parallel with other
 implementation. Reviewers report `APPROVED`, `CHANGES_REQUIRED`, or
-`UNVERIFIABLE`, never edit source, and record target/baseline SHAs. File
-completed review reports under `runs/<run>/reviews/`; the report's commit
-binding is the durable link between the verdict and the reviewed commit.
+`UNVERIFIABLE`, never edit source, and record the reviewed target as one observed
+line. File completed review reports under `runs/<run>/reviews/`; the coordinator
+re-checks the source HEAD itself before merging.
 Accepted findings become fix Tasks followed by re-review.
 
 ### 8. Integration
