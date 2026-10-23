@@ -61,7 +61,7 @@ Pinned source: [Unreal Engine EULA 18.1 PDF](https://cdn2.unrealengine.com/unrea
 - The first **USD 1 million lifetime gross revenue per product** is excluded, subject to timely Notice of Distribution. It is not a fresh allowance each year or per store.
 - A calendar quarter with **less than USD 10,000** gross revenue for that product is excluded. Exactly USD 10,000 does not meet the “less than” condition.
 - Revenue from Unreal Engine Marketplace and Epic Games Store sales, and subsequent in-product purchases using Epic's payment services, is excluded as specified in the addendum. Do not extend this exclusion to unrelated storefronts or payment providers.
-- Submit the **Notice of Distribution** as early as reasonably possible before distributing a revenue-generating Royalty Product; if a distributed product will begin generating revenue, submit it before that revenue begins. Failure to submit on time can remove permitted exclusions, including the lifetime exclusion.
+- Give Epic the **Notice of Distribution** with as much advance notice as reasonably feasible before shipping a revenue-generating Royalty Product; if a distributed product will begin generating revenue, submit it before that revenue begins. Failure to submit on time can remove permitted exclusions, including the lifetime exclusion.
 
 **Verify current policy:** before distribution or monetization, compare the agreement actually accepted by the project with this 18.1 snapshot. Re-check royalty definitions, notice/reporting duties, exclusions, any seat requirements applicable to the use case, and any separately negotiated terms. Record the applicable version and date; do not calculate a liability from this short index alone.
 

@@ -32,6 +32,7 @@ Official source: [Unity 6 platform development](https://docs.unity3d.com/6000.0/
 | Web | Browser build; not a mini-game export |
 | tvOS, UWP, visionOS, XR | Target-specific modules and device requirements |
 | Dedicated Server, embedded systems | Separate target requirements; check entitlement and hardware |
+| PlayStation, Xbox (Game Core), Nintendo | Closed platforms; platform-provider agreements and matching modules required |
 | WeChat / Douyin mini-games | Not listed; use the separate Tuanjie assessment below |
 | HarmonyOS / OpenHarmony | Not listed |
 
@@ -72,7 +73,7 @@ Access date for all sources below: 2026-10-23. These are pinned commercial facts
 
 ### Global Unity
 
-[Pricing updates](https://unity.com/products/pricing-updates) documents Personal as free up to USD 200,000 in trailing-12-month revenue and funding; Pro is USD 2,310 per seat/year prepaid (or USD 210 per seat/month). The page describes Enterprise as required above USD 25 million annual revenue; verify the applicable subscription terms at that exact boundary. The Unity Runtime Fee was canceled, including for Unity 6 and other versions: this global licensing path has no runtime royalty. Do not transfer these dollar thresholds or that pricing conclusion to Tuanjie.
+[Pricing updates](https://unity.com/products/pricing-updates) documents Personal as free up to USD 200,000 in revenue and funding; Pro is USD 2,310 per seat/year prepaid (or USD 210 per seat/month). The page describes Enterprise as required above USD 25 million annual revenue and funding. The [pricing page](https://unity.com/pricing) specifies the prior-12-month window for Personal and the last-12-month window for Enterprise; verify the applicable subscription terms at that exact boundary. The Unity Runtime Fee was canceled, including for Unity 6 and other versions: this global licensing path has no runtime royalty. Do not transfer these dollar thresholds or that pricing conclusion to Tuanjie.
 
 ### Tuanjie
 
