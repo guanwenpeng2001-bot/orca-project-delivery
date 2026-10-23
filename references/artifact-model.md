@@ -19,7 +19,6 @@ Only the coordinator control worktree contains `.dev-work/`.
     ├── task-map.json
     ├── assignments/
     ├── attempts/
-    ├── dispatch-receipts/
     ├── handoffs/
     ├── reconnaissance/
     ├── audits/
@@ -40,7 +39,6 @@ Coordinator-only:
 
 - lock, active run, run state;
 - branch/task maps and assignments;
-- `dispatch-receipts/`: capture `worker-start` receipts on the same command line that launches each worker;
 - accepted plan and decisions;
 - final report.
 
