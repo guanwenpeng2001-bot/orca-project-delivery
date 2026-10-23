@@ -25,8 +25,8 @@
 3. 用 `scripts/bootstrap-project.ps1` 初始化或校验 `.dev-work/`。脚本会解析并记录交付分支、写入协调者锁，并拒绝在交付分支本身上运行。
 4. 引导保留已有 `.env.example` 和 `project-config.example.json`，仅创建缺失示例；通过同一克隆各工作树共享的本地 Git `info/exclude` 排除 `/AGENTS.md`、`/.dev-work/` 和 `/.env`。
 5. 用 `scripts/create-run.ps1` 创建或恢复运行记录，然后创建或绑定 Orca Run。
-6. 运行 `scripts/probe-claude-capabilities.ps1`，检查它的 JSON 和警告，而不只是退出码。任何 `launched` 结论都是异常的哨兵启动：停止、标为未验证，并升级。
-7. 在控制树中记录协调者、交付分支、Orca Run id 和探测证据。
+6. 选择 Orca 支持且执行主机已配置可用的 Agent，不探测模型或 effort。
+7. 在控制树中记录协调者、交付分支和 Orca Run id。
 
 要从协调者会话开始，明确要求它读取 `~/.agents/skills/orca-project-delivery/SKILL.md`，并给出目标、交付分支、范围和验收条件。例如：
 
@@ -43,7 +43,6 @@ Tasks, and obtain independent review before integration.
 $package = Join-Path $env:USERPROFILE '.agents/skills/orca-project-delivery'
 pwsh -NoProfile -File "$package/scripts/bootstrap-project.ps1" -ProjectRoot '<project>' -DeliveryBranch main
 pwsh -NoProfile -File "$package/scripts/create-run.ps1" -ProjectRoot '<project>' -Objective 'Validate configuration behavior' -Workflow feature-development -RunSlug configuration-validation -DeliveryBranch main
-pwsh -NoProfile -File "$package/scripts/probe-claude-capabilities.ps1" -ProjectRoot '<project>'
 ```
 
 通过已安装的全局 Skill 绑定真正的 Orca Run，并记录该绑定。绝不要把模板占位符当作观察结果抄进活动记录。
@@ -85,7 +84,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 任务**就绪**的条件是：真实依赖已通过各自的门成功结算 — 源码依赖只在它自己的审查*和*集成之后才算数，绝不只凭 `worker_done` — 写入范围与在途任务不相交，并且基线与路由可用。立即派发就绪任务（滚动派发）；不要为无关的在途工作设置批次屏障。
 
-每次派发都走运行时的 worker-start 动词，使用 Claude 智能体，以及从 `routing/model-routing.json` 选出的路由。派发没有权限旗标：权限来自实际的 Claude 配置和用户的 Orca 设置，只记录，不臆造。
+每次派发都走运行时的 worker-start 动词，只指定可用 Agent，默认省略 model/effort。派发没有权限旗标：权限来自所选 Agent 配置和用户的 Orca 设置，只记录，不臆造。
 
 用 `scripts/dispatch-task.ps1` 从协调者捕获的 `worker-start --json` 回执（`-ReceiptPath`）记录本次派发：脚本推导请求值 / 生效值的核对结论，拒绝落点在协调者控制树或与任务定义矛盾的回执，并且同一任务的重复在途派发默认被拒 — 除非 `-ForceReDispatch` 把先前派发记入 `runtime.previousDispatches`。记录 `runtime.mode` 与终端 `surface`；`structured` 工作者属于后台会话，下一次里程碑汇报必须明说。
 
@@ -115,40 +114,17 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 写链接到最终验证报告的最终报告，以及一份单独的用户决策报告，列出仍待决的事项。结算工作者，确认没有可回收资源残留，复查过程产物从未进入交付分支，然后用 `scripts/release-coordinator.ps1 -ConfirmRunClosed` 释放。把 `.dev-work/runs/<run>/` 留作本地历史。
 
-## 选择角色与模型路由
+## 选择角色与 Agent
 
-按交付物为每个任务恰好选择一个主角色，使用 `routing/role-selection.json`；按 `routing/skill-selection.json` 从当前 `routing/skill-catalog.json` 目录中选 1–3 个必需 Skill，再为实质风险加 0–2 个条件 Skill。角色的模型路由来自 `routing/model-routing.json`：选定链，从默认档开始，绝不低于最低档。
+按交付物为每个 Task 选择一个主 Role，使用 `routing/role-selection.json`；按 `routing/skill-selection.json` 从当前目录中选 1–3 个必需 Skill，为实质风险加 0–2 个条件 Skill。Role 定义职责、Skill 定义方法、Task 定义有界目标，Agent 负责运行时执行。
 
-默认路由（每个角色链的索引 1）：
+选用 Orca 支持且执行主机已配置可用的 Agent。默认启动只传 Agent，省略 model 和 effort，让 Agent 原生配置决定。仅转发用户明确锁定的 model/effort；无法满足时挂起相关选择并询问用户，不自动替换。
 
-| 角色 | 默认档位 / 推理档 |
-| --- | --- |
-| codebase-scout | haiku / medium |
-| technical-researcher | haiku / high |
-| issue-investigator | sonnet / medium |
-| requirements-analyst | sonnet / high |
-| solution-planner | fable / high |
-| plan-adjudicator | fable / xhigh |
-| software-architect | fable / high |
-| software-implementer | sonnet / high |
-| code-reviewer | opus / high |
-| security-reviewer | opus / xhigh |
-| release-verifier | opus / high |
-| merge-resolver | sonnet / high |
-| ui-designer | opus / medium |
-| browser-test-engineer | sonnet / high |
-| media-producer | sonnet / high |
-| document-specialist | sonnet / high |
-| game-designer | sonnet / high |
-| game-test-engineer | sonnet / high |
-
-本表包含 2.3.0 新增的四个角色与 3.1.0 新增的两个游戏角色。路由文件是权威；如果它与本表不一致，以文件为准。每个新角色做什么、拒绝什么，见[专业能力](professional-capabilities.md)。
-
-升档沿链向右一步（先提推理档，再提档位）；降档只在有明确的速率限制、配额或模型不可用证据时发生，绝不因沉默而降。haiku 档优先使用带推理档的完整模型 id，被拒绝或不匹配时回退到不带推理档的别名。用户锁定的选择禁止一切自动变更。
+Task 内可使用原生子 Agent，父 Worker 对范围、写入隔离、结果与收尾负责。只读助手可共享上下文，并发写入需独立分支和工作树；不得借此另建项目级 Orca Run/Task，也不替代独立审查。
 
 ## 分支与工作树约定
 
-- 每个任务 — 包括只读的侦察、审计、审查和验证工作 — 都有自己的分支和工作树。默认基线是交付分支；任何其他基线都要记录原因。
+- 每个顶层 Orca Task — 包括只读的侦察、审计、审查和验证工作 — 都有自己的分支和工作树。默认基线是交付分支；任何其他基线都要记录原因。
 - 一条任务分支同一时刻只有一个写者。替换写者需要证据表明旧写者已停止（或被隔离、围栏，或已明确交接），外加已结算的 Dispatch 和保留下来的 Git 状态交接。
 - 工作者在报告前把授权的变更提交到自己的任务分支，并且从不合并自己的分支。
 - 只读任务在指派中声明 `branch.mergeTarget: null`。
@@ -166,7 +142,6 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 | 审查报告 | `runs/<run>/reviews/` |
 | 最终验证报告 | `runs/<run>/verification/` |
 | 交接 | `runs/<run>/handoffs/` |
-| 能力探测 | `runtime/claude-capabilities.json` |
 | 降级事件 | `runs/<run>/degradation-events.json` |
 | 最终报告 | `runs/<run>/final-report.md` |
 
@@ -180,7 +155,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 - **effective** — 只取**第一次** `worker-start` 回执中 `launch.effective` 块的值；未能核验的保持 `null`；
 - **verification** — `verified`、`mismatch` 或 `unverified`，并附证据。
 
-三者都记入指派的 `runtime` 块。参数被接受并不能证明已生效：把路由当作已验证之前先调和 mismatch，并且绝不把请求值当作生效值。单独一个非零的启动回执并不能证明尝试失败 — 用 `references/failure-taxonomy.md` 检查 `failedStage` 和残留资源。
+三者都记入指派的 `runtime` 块。只比较请求的 Agent 和用户明确锁定的 model/effort；未请求的内部模型/effort 缺失不阻塞默认派发。参数被接受并不能证明已生效，不得把未知值声称为用户锁定值已生效。单独一个非零的启动回执并不能证明尝试失败 — 用 `references/failure-taxonomy.md` 检查 `failedStage` 和残留资源。
 
 ## 常见使用问题
 

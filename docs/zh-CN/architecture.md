@@ -25,7 +25,7 @@
 | **Git** | 源码、分支、提交、集成真相。 |
 | **Orca Runtime** | Run、Task、Dispatch、Worker、Message、Gate、生命周期真相。 |
 | **`.dev-work/`**（仅控制树） | 业务阶段、映射、方案、报告、决策 — 绝不是第二套生命周期数据库。 |
-| **本 Skill** | 工作流、角色 / Skill / 模型路由、降级规则、输入组装。 |
+| **本 Skill** | 工作流、Role/Skill 选择、Agent 执行、恢复规则、输入组装。 |
 
 在任何编排动词之前，协调者加载已安装的全局 `orchestration` Skill，并用当前 `--help` 确认语法；本包把业务动作映射到运行时概念；命令示例必须对照已安装的合同检查。只有协调者编辑全局过程状态；工作者只写分配给自己的报告路径。
 
@@ -33,30 +33,28 @@
 
 每个任务一个主角色，按交付物经 `routing/role-selection.json` 选择。身份来自角色，方法来自专业 Skill，目标来自任务。
 
-| 角色 | 类别 | 默认 Skill | 模型链（默认在索引 1） |
-| --- | --- | --- | --- |
-| codebase-scout | research | codebase-reconnaissance | haiku low → **haiku medium** → haiku high → sonnet medium |
-| technical-researcher | research | technical-research | haiku medium → **haiku high** → sonnet medium → sonnet high |
-| issue-investigator | research | systematic-debugging, codebase-reconnaissance | haiku high → **sonnet medium** → sonnet high → opus medium |
-| requirements-analyst | product | requirements-analysis, product-discovery | sonnet medium → **sonnet high** → opus medium → opus high |
-| solution-planner | architecture | implementation-planning, solution-architecture | opus high → **fable high** → fable xhigh → fable max |
-| plan-adjudicator | architecture | implementation-planning, solution-architecture | fable high → **fable xhigh** → fable max |
-| software-architect | architecture | solution-architecture | opus xhigh → **fable high** → fable xhigh |
-| software-implementer | engineering | test-driven-development, integration-verification | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
-| code-reviewer | quality | code-review, integration-verification | sonnet xhigh → **opus high** → opus xhigh → fable high |
-| security-reviewer | quality | security-review, code-review | opus high → **opus xhigh** → fable high |
-| release-verifier | quality | integration-verification | sonnet high → **opus high** → opus xhigh |
-| merge-resolver | quality | merge-conflict-resolution, integration-verification | sonnet medium → **sonnet high** → opus medium |
-| ui-designer | product | product-design, frontend-visual-design | sonnet high → **opus medium** → opus high → opus xhigh |
-| browser-test-engineer | quality | browser-e2e, integration-verification | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
-| media-producer | media | （无；由任务选择） | sonnet medium → **sonnet high** → opus medium → opus high |
-| document-specialist | product | document-production | sonnet medium → **sonnet high** → opus medium → opus high |
-| game-designer | product | game-design, game-economy-design, game-level-design | sonnet medium → **sonnet high** → opus medium → opus high |
-| game-test-engineer | quality | game-testing-ladders | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
+| 角色 | 类别 | 默认 Skill |
+| --- | --- | --- |
+| codebase-scout | research | codebase-reconnaissance |
+| technical-researcher | research | technical-research |
+| issue-investigator | research | systematic-debugging, codebase-reconnaissance |
+| requirements-analyst | product | requirements-analysis, product-discovery |
+| solution-planner | architecture | implementation-planning, solution-architecture |
+| plan-adjudicator | architecture | implementation-planning, solution-architecture |
+| software-architect | architecture | solution-architecture |
+| software-implementer | engineering | test-driven-development, integration-verification |
+| code-reviewer | quality | code-review, integration-verification |
+| security-reviewer | quality | security-review, code-review |
+| release-verifier | quality | integration-verification |
+| merge-resolver | quality | merge-conflict-resolution, integration-verification |
+| ui-designer | product | product-design, frontend-visual-design |
+| browser-test-engineer | quality | browser-e2e, integration-verification |
+| media-producer | media | （无；由任务选择） |
+| document-specialist | product | document-production |
+| game-designer | product | game-design, game-economy-design, game-level-design |
+| game-test-engineer | quality | game-testing-ladders |
 
-本表包含 2.3.0 新增的四个角色与 3.1.0 新增的两个游戏角色。它们不是 `routing/model-routing.json` 的副本，该文件仍是权威；两者不一致时以路由文件为准，并需要更新本表。
-
-互相冲突的身份 — 设计、实施、独立审查 — 拆成不同的任务。升档沿链向右一步（先提推理档，再提档位）；降档需要明确的速率限制、配额或模型不可用证据，且绝不低于角色的最低档。
+Role 定义职责、Skill 定义方法、Task 定义有界目标、Agent 负责运行时执行。选择可用的 Orca Agent，默认省略 model/effort；仅转发用户明确锁定的值。原生助手由父 Worker 负责范围、写入隔离、结果与收尾，独立审查仍由单独 Task 完成。
 
 ## 5 个工作流
 
@@ -133,7 +131,7 @@ Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `
 
 ## 原生扩展与执行配置
 
-Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由和清单数量。数量由目录驱动。原有十六个 Skill 是 MIT 改编版，其后五十三个为引用公开资料的原创方法。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。显式版本 2 项目配置另支持已安装外部 Skill 和混合 Role 绑定，无需编辑这些目录，见[外部 Skill](external-skills.md)。不支持目录可执行 hook 或通用路由覆盖。
+Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role/Skill 绑定和清单数量。数量由目录驱动。原有十六个 Skill 是 MIT 改编版，其后五十三个为引用公开资料的原创方法。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。显式版本 2 项目配置另支持已安装外部 Skill 和混合 Role 绑定，无需编辑这些目录，见[外部 Skill](external-skills.md)。不支持目录可执行 hook 或通用路由覆盖。
 
 可选 `requires` 元数据声明 CLI、env 和 API 依赖名称。组装标出必需与条件集合，不新增顶层合同段。在实际执行主机上，辅助脚本使用显式选择器和 ProjectRoot。配置优先级为继承进程值（包括空值）、根 `.env`、显式非秘密 JSON。只有所选声明的文件变量补入子进程；已有变量继承，父进程不变。API 检查仅判断存在性。配置路径留在根内，授权可执行文件可以在外；直接批处理启动不保证兼容。注册与可运行示例见[扩展](extending.md)。
 
@@ -196,4 +194,4 @@ Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json
 11. 控制分支既不是开发来源也不是集成来源；它的 HEAD 可以落后，且不是当前交付证据。
 12. 审查实际的实现基线；最终验证使用来自最新 `delivery_branch` 的干净工作树，并明确标记不可验证的证据。
 
-离线验收套件（`scripts/verify-package.ps1`）强制本设计的结构侧面 — 路由链单调性、角色 / Skill 路径存在性、17 节入口大纲、仅 Claude 的内容和编码 — 因此本包可以在没有运行时的情况下被验证。
+离线验收套件（`scripts/verify-package.ps1`）强制本设计的结构侧面 — 角色 / Skill 路径存在性、17 节入口大纲、内容结构和编码 — 因此本包可以在没有运行时的情况下被验证。

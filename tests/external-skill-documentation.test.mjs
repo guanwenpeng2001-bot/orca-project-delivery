@@ -156,8 +156,7 @@ for (const language of languages) {
     const json = [...guide.matchAll(/^```json\r?\n([\s\S]*?)^```/gm)].map((match) => JSON.parse(match[1]));
     const skill = json.find((entry) => entry.id === 'export-contract-check');
     const role = json.find((entry) => entry.id === 'export-reviewer');
-    const route = json.find((entry) => entry.chain);
-    assert.ok(skill && role && route);
+    assert.ok(skill && role);
     assert.equal(markdown.length, 2);
     const fixtureJson = (file) => JSON.parse(readFileSync(path.join(fixture, file), 'utf8'));
     const skills = fixtureJson('routing/skill-catalog.json');
@@ -172,9 +171,6 @@ for (const language of languages) {
       mkdirSync(path.dirname(path.join(fixture, entry.path)), { recursive: true });
       writeFileSync(path.join(fixture, entry.path), body);
     }
-    const routing = fixtureJson('routing/model-routing.json');
-    routing.roles[role.id] = route;
-    writeJson(fixture, 'routing/model-routing.json', routing);
     const selection = fixtureJson('routing/role-selection.json');
     selection.deliverableRoutes['export-contract-review'] = role.id;
     writeJson(fixture, 'routing/role-selection.json', selection);

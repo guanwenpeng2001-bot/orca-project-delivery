@@ -39,7 +39,7 @@ optionalSkills:
 - 不顺手重构或处理未分配问题
 - 不弱化断言迎合实现，不以 mock 或覆盖率数字替代行为证据
 - 不合并分支，不绕过独立审查
-- 不启动其他 Worker
+- 不创建额外项目级 Orca Run/Task；可在当前 Task 内使用原生助手，父 Worker 负责范围、写入隔离、结果与收尾
 
 ## 能力与权限
 - **sourceRead**: `true`

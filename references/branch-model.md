@@ -28,7 +28,7 @@ The one selected delivery branch is the default Task base, reviewed-source integ
 
 ## Task plane
 
-Every Task gets an isolated branch/worktree, including read-only research and review. Use `delivery_branch` as the default base; an explicit user base, review target, true unintegrated prerequisite, or historical reproduction may require a different base recorded in the Task Contract.
+Every top-level Orca Task gets an isolated branch/worktree, including read-only research and review. Use `delivery_branch` as the default base; an explicit user base, review target, true unintegrated prerequisite, or historical reproduction may require a different base recorded in the Task Contract.
 
 - Read-only Task: report only; declare `branch.mergeTarget: null` in the assignment, including review and final-verification Tasks.
 - Source Task: commit, independent review, merge directly into delivery branch.
@@ -37,6 +37,8 @@ Every Task gets an isolated branch/worktree, including read-only research and re
 - Fix Task: base on the source state named by the coordinator.
 
 One task branch has one writer at a time; before replacement or retry, pass the [writer-replacement gate](recovery-and-idempotency.md#writer-replacement-hardened-gate) and follow [Writing Task handoff](worker-handoff.md#writing-task-handoff).
+
+Native helpers remain inside their parent Task. Read-only helpers may share context; concurrent writers require isolated branches and worktrees. The parent owns the combined result and cleanup, and internal checks do not replace the separate review Task.
 
 ## Integration
 

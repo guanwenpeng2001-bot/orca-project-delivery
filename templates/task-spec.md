@@ -60,7 +60,7 @@ Read before starting:
 
 - `<path or subsystem>`
 
-The assembled-brief pin inputs are `scripts/assemble-task.ps1`, `templates/task-definition.json`, `references/worker-contract.md`, `roles/**` (the resolved role file), the pin fixture's `AGENTS.md`, and bundled `skills/**/SKILL.md` under `inline-extract` mode. Any Task whose write set intersects these inputs must include `tests/task-brief-profiles.test.mjs` in its write set and required tests; it owns any resulting re-pin. `templates/task-spec.md` is not a pin input.
+The assembled-brief inputs are `scripts/assemble-task.ps1`, `templates/task-definition.json`, `references/worker-contract.md`, `roles/**` (the resolved role file), the fixture's `AGENTS.md`, and bundled `skills/**/SKILL.md` under `inline-extract` mode. Any Task whose write set intersects these inputs must include `tests/task-brief-profiles.test.mjs` in its write set and required tests; update behavioral assertions when the contract changes. `templates/task-spec.md` is not an assembly input.
 
 ## Forbidden Scope
 
@@ -112,7 +112,8 @@ Standard and read-only briefs add a `Minimum relevant suites` clause (task-named
 - Ask only when the decision cannot be made under project policy.
 - Escalate true blockers.
 - Send exactly one explicit completion outcome.
-- Stop after completion; do not start new work or create sub-workers unless authorized.
+- Native internal helpers may work within this Task; the parent owns scope, write isolation, results and cleanup. Read-only helpers may share context; concurrent source writers must be isolated. Internal checks do not replace independent review.
+- Creating additional Orca Tasks or Runs requires explicit authorization. Finish internal helpers before reporting, then stop after completion.
 
 ---
 

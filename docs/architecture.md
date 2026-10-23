@@ -34,7 +34,7 @@ Four authorities, each owning exactly one kind of truth:
 | **Git** | Source, branches, commits, integration truth. |
 | **Orca Runtime** | Run, Task, Dispatch, Worker, Message, Gate, lifecycle truth. |
 | **`.dev-work/`** (control tree only) | Business stages, mappings, plans, reports, decisions — never a second lifecycle database. |
-| **This Skill** | The workflow, role/Skill/model routing, degradation rules, input assembly. |
+| **This Skill** | The workflow, Role/Skill selection, Agent execution, recovery rules, input assembly. |
 
 Before any orchestration verb, the coordinator loads the installed global
 `orchestration` Skill and confirms syntax with current `--help`; this package
@@ -49,36 +49,28 @@ One Primary Role per Task, selected by deliverable via
 `routing/role-selection.json`. Identity comes from the role, method from the
 professional Skills, and the objective from the Task.
 
-| Role | Category | Default Skills | Model chain (default at index 1) |
-| --- | --- | --- | --- |
-| codebase-scout | research | codebase-reconnaissance | haiku low → **haiku medium** → haiku high → sonnet medium |
-| technical-researcher | research | technical-research | haiku medium → **haiku high** → sonnet medium → sonnet high |
-| issue-investigator | research | systematic-debugging, codebase-reconnaissance | haiku high → **sonnet medium** → sonnet high → opus medium |
-| requirements-analyst | product | requirements-analysis, product-discovery | sonnet medium → **sonnet high** → opus medium → opus high |
-| solution-planner | architecture | implementation-planning, solution-architecture | opus high → **fable high** → fable xhigh → fable max |
-| plan-adjudicator | architecture | implementation-planning, solution-architecture | fable high → **fable xhigh** → fable max |
-| software-architect | architecture | solution-architecture | opus xhigh → **fable high** → fable xhigh |
-| software-implementer | engineering | test-driven-development, integration-verification | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
-| code-reviewer | quality | code-review, integration-verification | sonnet xhigh → **opus high** → opus xhigh → fable high |
-| security-reviewer | quality | security-review, code-review | opus high → **opus xhigh** → fable high |
-| release-verifier | quality | integration-verification | sonnet high → **opus high** → opus xhigh |
-| merge-resolver | quality | merge-conflict-resolution, integration-verification | sonnet medium → **sonnet high** → opus medium |
-| ui-designer | product | product-design, frontend-visual-design | sonnet high → **opus medium** → opus high → opus xhigh |
-| browser-test-engineer | quality | browser-e2e, integration-verification | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
-| media-producer | media | (none; the task selects) | sonnet medium → **sonnet high** → opus medium → opus high |
-| document-specialist | product | document-production | sonnet medium → **sonnet high** → opus medium → opus high |
-| game-designer | product | game-design, game-economy-design, game-level-design | sonnet medium → **sonnet high** → opus medium → opus high |
-| game-test-engineer | quality | game-testing-ladders | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
+| Role | Category | Default Skills |
+| --- | --- | --- |
+| codebase-scout | research | codebase-reconnaissance |
+| technical-researcher | research | technical-research |
+| issue-investigator | research | systematic-debugging, codebase-reconnaissance |
+| requirements-analyst | product | requirements-analysis, product-discovery |
+| solution-planner | architecture | implementation-planning, solution-architecture |
+| plan-adjudicator | architecture | implementation-planning, solution-architecture |
+| software-architect | architecture | solution-architecture |
+| software-implementer | engineering | test-driven-development, integration-verification |
+| code-reviewer | quality | code-review, integration-verification |
+| security-reviewer | quality | security-review, code-review |
+| release-verifier | quality | integration-verification |
+| merge-resolver | quality | merge-conflict-resolution, integration-verification |
+| ui-designer | product | product-design, frontend-visual-design |
+| browser-test-engineer | quality | browser-e2e, integration-verification |
+| media-producer | media | (none; the task selects) |
+| document-specialist | product | document-production |
+| game-designer | product | game-design, game-economy-design, game-level-design |
+| game-test-engineer | quality | game-testing-ladders |
 
-The table includes the four Roles added in 2.3.0 and the two game Roles added in 3.1.0.
-They are not a copy of `routing/model-routing.json`, which remains the
-authority; where the two differ, the routing file wins and this table needs
-updating.
-
-Conflicting identities — design, implementation, independent review — are
-split into separate Tasks. Escalation moves one step right along the chain
-(effort first, then tier); downgrades require explicit rate-limit, quota, or
-model-unavailability evidence and never go below the role's floor.
+Role defines responsibility, Skill defines method, Task defines a bounded objective, and Agent is the runtime executor. Select a usable Orca Agent without a Role-specific model route; omit model/effort unless the user pins them. Native helpers remain under the parent worker’s scope, isolation, results and cleanup responsibilities. Independent review remains a separate Task.
 
 ## The 5 workflows
 
@@ -166,7 +158,7 @@ this release has not verified.
 
 ## Native extension and execution configuration
 
-Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes and manifest counts. Counts are catalog-driven. The original sixteen Skill bodies are maintained MIT adaptations; the other fifty-three are original methods with public references. This project's original work is MIT; third-party Skills keep the license they arrived with, recorded per Skill in `skills/README.md`. Explicit version 2 project configuration additionally registers installed external Skills and mixed Role bindings without editing these catalogs; see [external Skills](external-skills.md). No executable catalog hooks or generic routing overlays are supported.
+Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role bindings and manifest counts. Counts are catalog-driven. The original sixteen Skill bodies are maintained MIT adaptations; the other fifty-three are original methods with public references. This project's original work is MIT; third-party Skills keep the license they arrived with, recorded per Skill in `skills/README.md`. Explicit version 2 project configuration additionally registers installed external Skills and mixed Role bindings without editing these catalogs; see [external Skills](external-skills.md). No executable catalog hooks or generic routing overlays are supported.
 
 Optional `requires` metadata names CLI, env and API dependencies. Assembly labels required and conditional sets without adding a new top-level contract section. On the actual execution host, helpers use explicit selectors and ProjectRoot. Configuration precedence is inherited process values (even empty), root `.env`, then explicit non-secret JSON. Only selected declared file variables are added to the child; inherited variables remain and the parent is unchanged. API checks are presence-only. Config paths stay inside the root, while an authorized executable may be outside; direct batch-launch compatibility is not guaranteed. See [Extending](extending.md) for registration and runnable examples.
 
@@ -236,7 +228,7 @@ them.
 | 12 | Review the actual implementation baseline; final verification uses a clean worktree from the latest `delivery_branch`, marking unverifiable evidence explicitly. |
 
 The offline acceptance suite (`scripts/verify-package.ps1`) enforces the
-structural side of this design — routing chain monotonicity, role/skill path
-existence, the 17-section entry outline, Claude-only content, and
+structural side of this design — role/Skill path
+existence, the 17-section entry outline, content structure, and
 encoding — so the package can be verified without a
 runtime.

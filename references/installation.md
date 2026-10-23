@@ -12,7 +12,7 @@ This package adds `orca-project-delivery` only. The 4.0.0 package contains 69 pr
 
 Use the global `orca-project-delivery` Skill from the coordinator control worktree. The Skill initializes or reuses project-local `AGENTS.md` and `.dev-work/`.
 
-Deliver professional Skills to Claude Code workers with `explicit-path`: include each selected Skill's exact readable `SKILL.md` path in the Task (bundled paths under `skills/`, or explicitly registered external paths). If the Worker cannot reliably read that path, use `inline-extract` and record the source path, included headings, and omitted sections. A Skill name alone does not prove it was loaded; require evidence of the path read or method applied.
+Deliver professional Skills to workers with `explicit-path`: include each selected Skill's exact readable `SKILL.md` path in the Task (bundled paths under `skills/`, or explicitly registered external paths). If the Worker cannot reliably read that path, use `inline-extract` and record the source path, included headings, and omitted sections. A Skill name alone does not prove it was loaded; require evidence of the path read or method applied.
 
 The original sixteen are maintained MIT adaptations; the later fifty-three are original methods with public references; the upstream license notice is retained in `skills/README.md`. For native Role/Skill registration, dependency declarations, execution-host configuration and offline examples, read [docs/extending.md](../docs/extending.md).
 

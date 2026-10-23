@@ -82,7 +82,7 @@ Create self-contained Tasks with:
 
 Encode only real dependencies. Parallelize independent work.
 
-A Task is ready when its real dependencies have settled successfully through their existing gates — a source dependency needs its review and integration first, not `worker_done` alone — its write scope is disjoint from in-flight Tasks, and its baseline and route are usable. Dispatch ready Tasks as they become ready; do not hold a batch barrier for unrelated in-flight Tasks.
+A Task is ready when its real dependencies have settled successfully through their existing gates — a source dependency needs its review and integration first, not `worker_done` alone — its write scope is disjoint from in-flight Tasks, and its baseline and Agent are usable. Dispatch ready Tasks as they become ready; do not hold a batch barrier for unrelated in-flight Tasks.
 
 ### Implementation
 

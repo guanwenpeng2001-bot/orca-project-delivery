@@ -43,9 +43,10 @@ Role、Skill、模型默认值和通用最佳实践不得覆盖项目规则。
 
 ## 5. 任务隔离与分支
 
-所有子代理任务都必须使用独立分支和独立工作树：侦察、技术研究、产品分析、审计、方案、裁决、架构设计、实施、代码审查、安全审查、修复、最终验证。
+所有顶层 Orca Task 都必须使用独立分支和独立工作树：侦察、技术研究、产品分析、审计、方案、裁决、架构设计、实施、代码审查、安全审查、修复、最终验证。
 
 - 一个 Task 一个工作分支；一个工作分支同一时刻只有一个写者。
+- Task 内可使用原生子 Agent：父 Worker 对范围、写入隔离、结果与内部收尾负责。只读协作可共享上下文；并发写入必须使用独立分支和工作树。原生助手不另建项目级 Orca Run/Task，也不替代独立审查。
 - 没有明确基线要求时从 `delivery_branch` 创建；用户、依赖关系或审查对象指定了基线时从指定分支创建。
 - 依赖只表达真实先后；能并行且不会争用同一写入范围的任务必须并行；不构造不必要的深依赖链。
 - Worker 不得自行合并自己的分支；合并由协调者监督，在实际检出 `delivery_branch` 的工作树中完成。
@@ -69,18 +70,15 @@ Role、Skill、模型默认值和通用最佳实践不得覆盖项目规则。
 - Worker 不得加载或启动完整的 `orca-project-delivery` 协调 Skill，除非 Task 明确授权为嵌套协调者。
 - Worker 必须按 Task 指定方式加载专业 Skill；专业 Skill 只提供方法，不得扩大任务范围；任务完成前必须执行相应验证 Skill 或验证步骤。
 
-## 8. 模型、推理档位与降级
+## 8. Agent 与执行配置
 
-所有 Worker 都是 Claude Code（`--agent claude`）。协调者通过 `orca-project-delivery` 的 `routing/model-routing.json` 选择每个角色的档位链、默认档与最低档，不得凭记忆构造启动参数；Orca 的命令与回执形状以当前安装的全局 `orchestration` Skill 与 `--help` 为准。
+协调者为每个 Task 指定一个 Orca 支持且在执行主机已配置可用的 Agent。Role 定义职责、Skill 定义方法、Task 定义有界目标、Agent 负责运行时执行；角色不绑定供应商或模型档位。
 
-每次派发必须记录：requested model/effort、effective model/effort、permission mode、Skill 交付方式、fallback 原因、Orca Task/Dispatch、分支、工作树与报告路径。请求值不等于生效值：effective 只以首次 worker-start 回执的 `launch.effective` 为准；无法核对时记为未知，不得宣称已经生效。
+默认启动只指定 Agent，省略 model 和 effort，由 Agent 的原生配置和能力决定；不探测模型、不维护角色档位链、不自动升降档。用户明确锁定 Agent/model/effort 时尊重其选择；无法满足时只挂起相关 Task 并向用户提问。
 
-- haiku 档位的请求形态：首选完整 id `claude-haiku-4-5` 加 effort；被 Orca 拒绝或回执不符时回退别名 `haiku` 且不指定 effort，并记录。
-- 协调者自己的模型不在路由范围内：不选择、不校验；用户主动说明时仅作记录。
-- 升降档只在 Claude 内部沿角色的档位链进行：升档先同模型提 effort、到顶再升模型；降档仅在有明确 rate limit、quota、model unavailable 证据时发生，且不得低于角色的最低档；最低档也不可用时挂起该 Task 并记录，不阻塞其他独立 Task。
-- 用户锁定 model/effort 时不得自动升降档；锁定选择不可用时挂起相关 Task 并向用户提问。
-- 静默、空等待或 `unverifiable` 不等于额度耗尽，不触发降级；降级不得制造第二个并发写者。
-- 实施 Worker 中途失效时，必须先确认原 Worker 已停止或完成交接，保存 Git 状态与 handoff，再由新 Worker 顺序接管。
+每次派发记录 Agent 身份、Orca Task/Dispatch、分支、工作树、报告路径、Skill 交付方式及可获得的 requested/effective 启动值。请求值不等于生效值：effective 只以首次 worker-start 回执为准；内部模型/effort 未提供时记为未知，不得因此阻塞默认派发，也不得声称用户锁定值已经生效。
+
+协调者自己的模型不选择、不探测、不校验；用户主动说明时仅作记录。静默、空等待或 `unverifiable` 不等于额度耗尽或退出。实施 Worker 中途失效时，先确认原 Worker 已停止或完成交接，保存 Git 状态与 handoff，再由新 Worker 顺序接管，不制造第二个并发写者。
 
 ## 9. 命名规则
 
@@ -138,7 +136,7 @@ Worker 必须遵守当前 Orca preamble 和全局 `orchestration` Skill：
 
 ## 16. 无人值守与权限来源
 
-权限的权威来源是 **Claude Code 自身配置 + 用户在本机的 Orca 设置**。Orca 的 `worker-start` 没有权限旗标，本包只能在报告中记录 requested / effective，不能在派发时设定权限。
+权限的权威来源是 **所选 Agent 自身配置 + 用户在本机的 Orca 设置**。Orca 的 `worker-start` 没有权限旗标，本包只能在报告中记录 requested / effective，不能在派发时设定权限。
 
 - 无人值守（自动批准）仅当以下条件同时成立：项目规则允许，且本任务有界、可预期；工作树隔离，且不接触生产数据、共享服务或密钥；命令范围已知，失败可用任务内返工修正。
 - 出现以下任一情形必须回到人工批准：不可逆操作、越出本机、写共享环境或生产数据、任务范围不清、用户要求人工确认。

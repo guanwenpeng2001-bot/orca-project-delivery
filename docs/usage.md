@@ -44,11 +44,8 @@ Bootstrap sequence (from `SKILL.md`):
 4. Bootstrap preserves existing `.env.example` and `project-config.example.json`, creating missing examples only; it excludes `/AGENTS.md`, `/.dev-work/` and `/.env` through local Git `info/exclude`, shared across the clone's worktrees.
 5. Create or resume the run record with `scripts/create-run.ps1`, then create
    or bind the Orca Run.
-6. Run `scripts/probe-claude-capabilities.ps1` and inspect its JSON and
-   warnings, not just the exit code. Any `launched` verdict is an abnormal
-   sentinel launch: stop, mark unverified, and escalate.
-7. Record the coordinator, delivery branch, Orca Run id, and
-   probe evidence in the control tree.
+6. Select an Orca-supported Agent configured and usable on the execution host; do not probe models or effort.
+7. Record the coordinator, delivery branch and Orca Run id in the control tree.
 
 To start from a coordinator session, explicitly ask it to read
 `~/.agents/skills/orca-project-delivery/SKILL.md` and give the objective,
@@ -69,7 +66,6 @@ commands do not dispatch workers or create the Orca Run:
 $package = Join-Path $env:USERPROFILE '.agents/skills/orca-project-delivery'
 pwsh -NoProfile -File "$package/scripts/bootstrap-project.ps1" -ProjectRoot '<project>' -DeliveryBranch main
 pwsh -NoProfile -File "$package/scripts/create-run.ps1" -ProjectRoot '<project>' -Objective 'Validate configuration behavior' -Workflow feature-development -RunSlug configuration-validation -DeliveryBranch main
-pwsh -NoProfile -File "$package/scripts/probe-claude-capabilities.ps1" -ProjectRoot '<project>'
 ```
 
 Bind the actual Orca Run through the installed global Skill and record that
@@ -154,15 +150,11 @@ Assembly places catalog `requires` names/purposes under Inputs and Dependencies,
 A Task is **ready** when its real dependencies have settled successfully
 through their gates — a source dependency counts only after its own review
 *and* integration, never on `worker_done` alone — its write scope is disjoint
-from in-flight Tasks, and its baseline and route are usable. Dispatch ready
+from in-flight Tasks, and its baseline and Agent are usable. Dispatch ready
 Tasks immediately (rolling dispatch); do not hold a batch barrier for
 unrelated in-flight work.
 
-Every dispatch goes through the runtime's worker-start verb with the Claude
-agent and the route selected from `routing/model-routing.json`. There is no
-permission flag on dispatch: permissions come from the actual Claude
-configuration and the user's Orca settings, and are recorded rather than
-invented.
+Every dispatch goes through the runtime's worker-start verb with a usable Agent and no model/effort flags by default. Permission comes from the selected Agent configuration and user Orca settings; record it rather than inventing a permission flag.
 
 Record the dispatch with `scripts/dispatch-task.ps1` from the
 coordinator-captured `worker-start --json` receipt (`-ReceiptPath`): it
@@ -230,52 +222,17 @@ the delivery branch, then release with
 `scripts/release-coordinator.ps1 -ConfirmRunClosed`. Keep
 `.dev-work/runs/<run>/` as local history.
 
-## Choosing roles and model routes
+## Choosing roles and Agents
 
-Select exactly one Primary Role per Task by deliverable, using
-`routing/role-selection.json`; select 1–3 required Skills from the current catalog in
-`routing/skill-catalog.json` following `routing/skill-selection.json`, plus
-0–2 conditional Skills for material risk. The role's model route comes from
-`routing/model-routing.json`: pick the chain, start at the default, never go
-below the floor.
+Select exactly one Primary Role per Task by deliverable using `routing/role-selection.json`; select 1–3 required Skills following Role defaults and `routing/skill-selection.json`, plus 0–2 conditional Skills for material risk. Role defines responsibility, Skill defines method, Task defines a bounded objective, and Agent is the runtime executor.
 
-Default routes (chain index 1 of each role's chain):
+Choose an Orca-supported Agent configured and usable on the execution host. Default launches pass only the Agent and omit model/effort so native Agent configuration decides. Forward only explicit user pins; if they cannot be honored, suspend the affected choice and ask the user without automatic substitution.
 
-| Role | Default tier / effort |
-| --- | --- |
-| codebase-scout | haiku / medium |
-| technical-researcher | haiku / high |
-| issue-investigator | sonnet / medium |
-| requirements-analyst | sonnet / high |
-| solution-planner | fable / high |
-| plan-adjudicator | fable / xhigh |
-| software-architect | fable / high |
-| software-implementer | sonnet / high |
-| code-reviewer | opus / high |
-| security-reviewer | opus / xhigh |
-| release-verifier | opus / high |
-| merge-resolver | sonnet / high |
-| ui-designer | opus / medium |
-| browser-test-engineer | sonnet / high |
-| media-producer | sonnet / high |
-| document-specialist | sonnet / high |
-| game-designer | sonnet / high |
-| game-test-engineer | sonnet / high |
-
-The table includes the four Roles added in 2.3.0 and two game Roles added in 3.1.0. The routing file
-is the authority; if it disagrees with this table, the file wins. What each new
-Role does and refuses is in
-[Professional capabilities](professional-capabilities.md).
-
-Escalation moves one step right along the chain (effort first, then tier);
-downgrades happen only on explicit rate-limit, quota, or model-unavailability
-evidence, never from silence. The haiku tier prefers its full model id with
-effort and falls back to the alias without effort when rejected or
-mismatched. A user-pinned choice forbids every automatic change.
+Native subagents may assist within a Task. The parent worker owns their scope, write isolation, results and cleanup; read-only helpers may share context, concurrent writers require isolated branches and worktrees. They create no extra project-level Orca Runs/Tasks and never replace independent review.
 
 ## Branch and worktree conventions
 
-- Every Task — including read-only scout, audit, review, and verification
+- Every top-level Orca Task — including read-only scout, audit, review, and verification
   work — gets its own branch and worktree. Default base is the delivery
   branch; record the reason for any other base.
 - One task branch has one writer at a time. Replacing a writer requires
@@ -299,7 +256,6 @@ Everything process-side lives under the control worktree's `.dev-work/`:
 | Review reports | `runs/<run>/reviews/` |
 | Final verification report | `runs/<run>/verification/` |
 | Handoffs | `runs/<run>/handoffs/` |
-| Capability probe | `runtime/claude-capabilities.json` |
 | Degradation events | `runs/<run>/degradation-events.json` |
 | Final report | `runs/<run>/final-report.md` |
 
@@ -316,9 +272,7 @@ launched:
   `launch.effective` block; anything you could not verify stays `null`;
 - **verification** — `verified`, `mismatch`, or `unverified`, with evidence.
 
-Record all three in the assignment's `runtime` block. Parameter acceptance
-does not prove effectiveness: reconcile mismatches before treating the route
-as verified, and never treat requested values as effective. A nonzero start
+Record all three in the assignment's `runtime` block. Compare the requested Agent and explicit user model/effort pins only. Missing unrequested internal model/effort does not block a default dispatch. Parameter acceptance does not prove effectiveness; never claim an explicit pin was honored without matching effective evidence. A nonzero start
 receipt alone does not prove a failed attempt — inspect `failedStage` and
 residual resources using `references/failure-taxonomy.md`.
 

@@ -29,7 +29,7 @@ optionalSkills:
 - 不实现被测功能，不做视觉设计决策
 - 不替代 `release-verifier` 的最终集成验证
 - 不把页面实现者的自检当成独立验收
-- 不合并分支，不启动其他 Worker
+- 不合并分支，不创建额外项目级 Orca Run/Task；可在当前 Task 内使用原生助手，父 Worker 负责范围、写入隔离、结果与收尾
 
 ## 能力与权限
 - **sourceRead**: `true`

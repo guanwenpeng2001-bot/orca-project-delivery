@@ -4,7 +4,8 @@
 - Treat the injected Orca preamble as the only authority for worker handle, Task ID, Dispatch ID, capability, and message address.
 - Execute only the current Task, Role, Skills, branch, and scope.
 - Do not start `orca-project-delivery` unless the Task explicitly authorizes nested coordination.
-- Do not create other workers unless the Task explicitly authorizes nested coordination.
+- Do not create extra project-level Orca Runs/Tasks unless the Task explicitly authorizes nested coordination.
+- Native internal helpers may assist within this Task. The parent worker owns their scope, write isolation, results and cleanup before reporting; read-only helpers may share context, concurrent writers must use isolated branches and worktrees. Internal self-check never replaces independent review.
 - Check coordinator messages at natural checkpoints and before completion.
 - Make reversible local engineering decisions yourself under `AGENTS.md`.
 - Ask the coordinator only for genuinely external, directional, or missing decisions.

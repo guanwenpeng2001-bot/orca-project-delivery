@@ -4,6 +4,13 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## Unreleased
+
+- Workers may use any usable Orca-supported Agent. Role remains responsibility, Skill remains method and Task remains the bounded assignment; default launches omit model and effort so the Agent owns its configuration. Explicit user pins remain respected.
+- Removed `routing/model-routing.json`, `scripts/query-routing.ps1`, `scripts/probe-claude-capabilities.ps1` and their consumers. Existing projects stop invoking these files; no capability bootstrap, role model ladder or replacement router is needed.
+- Dispatch receipts still record Agent identity and requested/effective launch fields. Omitted model/effort do not cause a mismatch; explicit requests with missing effective values remain unverified rather than being claimed as honored.
+- Native helpers are allowed inside a Task, with the parent responsible for scope, write isolation, results and cleanup. Top-level Task isolation, user/coordinator communication, independent review, integration and final verification remain in place.
+
 ## 4.0.0 — 2026-10-23
 
 Breaking simplification: the state-schema audit layer is removed. The delivery mechanism — isolated task branches, single writer per branch, dispatch records written from `worker-start` receipts, independent review, supervised merge, final verification on the delivery branch — is unchanged.

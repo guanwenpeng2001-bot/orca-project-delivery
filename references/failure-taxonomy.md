@@ -8,18 +8,18 @@ surface that carries the evidence or the action — current global `orchestratio
 
 | Classification | Orca evidence / action |
 | --- | --- |
-| `binary_missing` | `worker-start` receipt `failedStage` (`agent_unconfigured`), explicit binary-resolution errors, or capability probe evidence that the Claude CLI is missing; repair installation |
+| `binary_missing` | `worker-start` receipt `failedStage` (`agent_unconfigured`), explicit binary-resolution errors, or evidence that the selected Agent CLI is missing; repair installation |
 
 ## Access and configuration
 
 | Classification | Orca evidence / action |
 | --- | --- |
-| `auth_missing` | Claude CLI auth error in `worker-read`; repair credentials, not a capacity-based downgrade |
-| `model_unavailable` | Explicit model-unavailable text or receipt; apply `routing/model-routing.json` policies, excluding that tier's chain entries while respecting the Role floor and user pins |
-| `effort_unsupported` | Explicit Orca parameter rejection for the requested model/effort; consult `routing/model-routing.json` model-tier rules and the installed Orca contract |
-| `launch_mismatch` | First `worker-start` receipt `launch.effective` differs from requested model/effort; record `mismatch`, do not infer quota or model unavailability; use the configured model-tier rule, or suspend and ask for a user-pinned choice |
-| `permission_blocked` | Claude permission prompt/refusal in `worker-read`; inspect Claude configuration, user Orca settings, and Task scope; do not invent a `worker-start` permission flag |
-| `trust_blocked` | Claude trust preflight text; repair trust before retrying |
+| `auth_missing` | Agent CLI auth error in `worker-read`; repair credentials, not a capacity-based downgrade |
+| `model_unavailable` | Explicit model-unavailable text or receipt; respect user pins; diagnose the Agent configuration without selecting a package-defined replacement model |
+| `effort_unsupported` | Explicit Orca parameter rejection for the requested model/effort; check the explicit user request and installed Orca contract; never add effort to a default launch |
+| `launch_mismatch` | First `worker-start` receipt `launch.effective` differs from the requested Agent or explicit user model/effort pin; record `mismatch` and resolve the pin with the user. Unknown unrequested model/effort is not a mismatch |
+| `permission_blocked` | Agent permission prompt/refusal in `worker-read`; inspect Agent configuration, user Orca settings, and Task scope; do not invent a `worker-start` permission flag |
+| `trust_blocked` | Agent trust preflight text; repair trust before retrying |
 | `skill_unavailable` | Worker reports the explicit Skill path was unreadable; repair the path or use a recorded `inline-extract` (see `references/installation.md`) |
 
 ## Startup and delivery
@@ -36,8 +36,8 @@ surface that carries the evidence or the action — current global `orchestratio
 
 | Classification | Orca evidence / action |
 | --- | --- |
-| `rate_limited` | Explicit rate-limit text captured from the worker transcript; apply the bounded same-tier backoff in `routing/model-routing.json` policies |
-| `quota_exhausted` | Explicit quota text or receipt; apply `routing/model-routing.json` policies to exclude that tier's chain entries and select only an eligible entry at or above the Role floor |
+| `rate_limited` | Explicit rate-limit text captured from the worker transcript; follow the Agent/runtime recovery guidance within the Task budget; do not choose a model ladder |
+| `quota_exhausted` | Explicit quota text or receipt; record the evidence and recover within scope; unavailable user-pinned choices require a user decision |
 
 ## Task execution
 
@@ -58,20 +58,16 @@ Writer replacement or retry must pass the [writer-replacement gate](recovery-and
 
 ## Action
 
-Use the degradation procedure in `SKILL.md` and the policies in `routing/model-routing.json`.
-User-pinned model/effort choices permit no automatic upgrade or downgrade; rejection or
-mismatch requires suspension and a question. If no eligible chain entry remains at or above
-the floor, or the same Task reaches its same-class failure circuit breaker, suspend that Task,
-record the event, and keep independent Tasks running. Never create a second concurrent writer.
+Use the recovery procedure in `SKILL.md` and the installed Orca contract. The package does not choose model/effort replacements. A user-pinned Agent/model/effort permits no automatic substitution; rejection, mismatch or missing proof that the pin was honored requires a question. Keep independent Tasks running, and never create a second concurrent writer.
 
-Every degradation event in `degradation-events.json` records:
+Every recovery event in `degradation-events.json` records:
 
 - time;
 - Task/Dispatch;
 - classification (package label) plus the Orca evidence above;
 - evidence;
-- prior model/effort;
-- selected action/model/effort;
+- prior Agent and any available launch values;
+- selected recovery action;
 - whether the user had pinned the choice;
 - handoff path for writing Tasks.
 

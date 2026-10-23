@@ -1,41 +1,3 @@
-# The sole vocabulary declaration is exempt from scanning, by its AST extent only.
-$forbiddenAgentIds = @(
-  'claude-agent-teams', 'codebuddy', 'openclaude', 'codex', 'autohand', 'opencode',
-  'opencode2', 'mimo-code', 'pi', 'omp', 'qoder', 'gemini', 'antigravity', 'aider',
-  'goose', 'amp', 'kilo', 'kiro', 'crush', 'aug', 'cline', 'codebuff', 'freebuff',
-  'command-code', 'continue', 'cursor', 'droid', 'kimi', 'mistral-vibe', 'qwen-code',
-  'rovo', 'hermes', 'openclaw', 'copilot', 'grok', 'devin', 'ante', 'trae', 'muse',
-  'zcode', 'prime-agent', 'dsh'
-)
-
-function Assert-ModelRouting($Routing, $Catalog) {
-  $ids = @($Catalog.roles.id)
-  Assert-Condition ($ids.Count -gt 0 -and @($ids | Select-Object -Unique).Count -eq $ids.Count) 'routing: expected nonempty unique catalog roles'
-  Assert-Condition ($Routing.agent -ceq 'claude') 'routing: agent must be claude'
-  Assert-Condition ($Routing.roles -is [Collections.IDictionary]) 'routing: roles must be a map'
-  Assert-Condition (-not (Compare-Object ($ids | Sort-Object) (@($Routing.roles.Keys) | Sort-Object) -CaseSensitive)) 'routing: role sets differ'
-  $tiers = @($Routing.vocabulary.modelLadder)
-  $efforts = @($Routing.vocabulary.effortLevels)
-  Assert-Condition (($tiers -join ',') -ceq 'haiku,sonnet,opus,fable') 'routing: invalid model ladder'
-  Assert-Condition (($efforts -join ',') -ceq 'low,medium,high,xhigh,max') 'routing: invalid effort levels'
-  foreach ($id in $ids) {
-    $route = $Routing.roles[$id]
-    Assert-Condition ($route.chain -is [array] -and $route.chain.Count -gt 0) "routing: $id chain must be nonempty"
-    foreach ($indexName in @('floor', 'default')) {
-      $index = $route[$indexName]
-      Assert-Condition ($index -is [int] -or $index -is [long]) "routing: $id $indexName must be an integer"
-    }
-    Assert-Condition ($route.floor -ge 0 -and $route.floor -le $route.default -and $route.default -lt $route.chain.Count) "routing: $id invalid floor/default bounds"
-    $previous = -1
-    foreach ($step in $route.chain) {
-      Assert-Condition ($tiers -ccontains $step.tier -and $efforts -ccontains $step.effort) "routing: $id unknown tier/effort"
-      $rank = [array]::IndexOf($tiers, $step.tier) * $efforts.Count + [array]::IndexOf($efforts, $step.effort)
-      Assert-Condition ($rank -gt $previous) "routing: $id chain is not strictly increasing"
-      $previous = $rank
-    }
-  }
-}
-
 function Assert-RoleSelection($Selection, $Catalog) {
   Assert-Condition ($Selection.deliverableRoutes -is [Collections.IDictionary] -and $Selection.deliverableRoutes.Count -gt 0) 'selection: empty or invalid routes'
   foreach ($deliverable in $Selection.deliverableRoutes.Keys) {
@@ -60,50 +22,11 @@ function Assert-DesignTriggers($Document, $Selection) {
   }
 }
 
-function Assert-ClaudeText([string]$Content, [string]$Extension, [string]$Source) {
-  $segments = @($Content)
-  if ($Extension -eq '.ps1') {
-    $tokens = $null
-    $errors = $null
-    $syntax = [Management.Automation.Language.Parser]::ParseInput($Content, [ref]$tokens, [ref]$errors)
-    Assert-Condition ($errors.Count -eq 0) "agent scanner: invalid PowerShell in $Source"
-    $exemption = $null
-    if ($Source -ceq 'scripts/verification-structure.ps1') {
-      $declarations = @($syntax.FindAll({ param($node)
-        $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -ceq '$forbiddenAgentIds'
-      }, $true))
-      Assert-Condition ($declarations.Count -eq 1) 'agent scanner: expected exactly one vocabulary declaration'
-      $exemption = $declarations[0].Right.Extent
-    }
-    # Token offsets retain comments and all string forms, while excluding keywords.
-    $segments = @(foreach ($token in $tokens) {
-      if ($token.Kind -notin @('Comment', 'StringLiteral', 'StringExpandable', 'HereStringLiteral', 'HereStringExpandable', 'Generic')) { continue }
-      if ($exemption -and $token.Extent.StartOffset -ge $exemption.StartOffset -and $token.Extent.EndOffset -le $exemption.EndOffset) { continue }
-      # The common-parameter enum is language configuration, not an agent name.
-      if ($token.Text -ceq ('Con' + 'tinue') -and $Content.Substring(0, $token.Extent.StartOffset) -match '-ErrorAction\s+$') { continue }
-      $token.Text
-    })
-  }
-  $pattern = '(?i)(?<![a-z0-9_-])(' + (($forbiddenAgentIds | ForEach-Object { [regex]::Escape($_) }) -join '|') + ')(?![a-z0-9_])'
-  foreach ($segment in $segments) {
-    foreach ($match in [regex]::Matches($segment, $pattern)) {
-      # Only this ordinary English imperative is disambiguated; quoted IDs still fail.
-      $ordinaryProse = $Extension -eq '.md' -and $match.Value -ieq ('con' + 'tinue') -and
-        $segment.Substring($match.Index) -match ('^Con' + 'tinue (processing|working|with|to)\b') -and
-        ($match.Index -eq 0 -or $segment[$match.Index - 1] -notin @('`', '"', "'"))
-      $databaseTerm = $Extension -eq '.md' -and $match.Value -ceq ('cur' + 'sor') -and
-        ($match.Index -eq 0 -or $segment[$match.Index - 1] -notin @('`', '"', "'")) -and
-        ($segment.Substring(0, $match.Index) -cmatch '(database|SQL) $' -or $segment.Substring($match.Index) -cmatch ('^cur' + 'sor pagination\b'))
-      Assert-Condition ($ordinaryProse -or $databaseTerm) "agent reference: $Source contains $($match.Value)"
-    }
-  }
-}
-
 function Test-PackageStructure {
   # Presence is a fixed package contract; discovery below also covers added scripts.
   $requiredScripts = @(
     'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'dispatch-task.ps1',
-    'probe-claude-capabilities.ps1', 'query-routing.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
+    'reconcile-state.ps1', 'release-coordinator.ps1',
     'verify-package.ps1',
     'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',
     'verify-requirements.ps1', 'project-common.ps1', 'verification-common.ps1',
@@ -137,9 +60,6 @@ function Test-PackageStructure {
     Assert-Condition ($violations.Count -eq 0) ($violations -join '; ')
     Write-Host "ENCODING $($files.Count) package files checked (excluding .git and .dev-work)"
   }
-  Invoke-Check 'routing/model-routing-schema' {
-    Assert-ModelRouting (Read-PackageJson 'routing/model-routing.json') (Read-PackageJson 'roles/catalog.json')
-  }
   Invoke-Check 'routing/role-selection-valid' {
     Assert-RoleSelection (Read-PackageJson 'routing/role-selection.json') (Read-PackageJson 'roles/catalog.json')
   }
@@ -158,17 +78,8 @@ function Test-PackageStructure {
   Invoke-Check 'routing/design-triggers-valid' {
     Assert-DesignTriggers (Read-PackageJson 'routing/design-triggers.json') (Read-PackageJson 'routing/role-selection.json')
   }
-  Invoke-Check 'package/claude-only' {
-    Assert-AbsentPaths $root @('agents', 'adapters')
-    Assert-Condition ($forbiddenAgentIds.Count -eq 42) 'Expected 42 excluded agent IDs'
-    foreach ($file in $files) {
-      $relative = [IO.Path]::GetRelativePath($root, $file.FullName).Replace('\', '/')
-      if ($relative -ceq 'CHANGELOG.md') { continue }
-      Assert-ClaudeText ([IO.File]::ReadAllText($file.FullName, $utf8)) $file.Extension $relative
-    }
-  }
   Invoke-Check 'package/no-mirror-tables' {
-    Assert-AbsentPaths $root @('agents/role-compatibility.json', 'routing/agent-selection.json')
+    Assert-AbsentPaths $root @('agents', 'adapters', 'agents/role-compatibility.json', 'routing/agent-selection.json')
   }
   Invoke-Check 'metadata/entry-character-budget' {
     $entry = [IO.File]::ReadAllText((Join-Path $root 'SKILL.md'), $utf8)
@@ -186,7 +97,7 @@ function Test-PackageStructure {
     $entryPath = Join-Path $root 'SKILL.md'
     $lines = [IO.File]::ReadAllLines($entryPath, $utf8)
     Assert-Condition ($lines.Count -le 250) "Entry has $($lines.Count) lines; limit is 250"
-    $expected = @('Purpose', 'Coordinator-only guard', 'System boundaries', 'Required invariants', 'Bootstrap', 'Workflow selection', 'Dynamic reconnaissance', 'Role and Skill routing', 'Model and effort routing', 'Skill delivery', 'Task and branch creation', 'Worker input order', 'Execution loop', 'Review and integration', 'Degradation and handoff', 'Completion', 'Do not do')
+    $expected = @('Purpose', 'Coordinator-only guard', 'System boundaries', 'Required invariants', 'Bootstrap', 'Workflow selection', 'Dynamic reconnaissance', 'Role and Skill routing', 'Agent execution', 'Skill delivery', 'Task and branch creation', 'Worker input order', 'Execution loop', 'Review and integration', 'Recovery and handoff', 'Completion', 'Do not do')
     $headings = @($lines | Where-Object { $_.StartsWith('## ') } | ForEach-Object { $_.Substring(3) })
     Assert-Condition (($headings -join '|') -ceq ($expected -join '|')) 'Entry must contain all 17 sections in order'
     Write-Host "ENTRY $($lines.Count) lines; 17 sections"
@@ -248,28 +159,8 @@ function Test-PackageStructure {
 }
 
 function Test-PackageContracts {
-  Invoke-Check 'regression/routing-contracts' {
+  Invoke-Check 'regression/role-and-design-selection' {
     $catalog = Read-PackageJson 'roles/catalog.json'
-    Assert-ModelRouting (Read-PackageJson 'routing/model-routing.json') $catalog
-    $mutations = [ordered]@{
-      'missing-role' = { param($document) $document.roles.Remove('codebase-scout') }
-      'extra-role' = { param($document) $document.roles['unknown-role'] = $document.roles['codebase-scout'] }
-      'empty-chain' = { param($document) $document.roles['codebase-scout'].chain = @() }
-      'unknown-tier' = { param($document) $document.roles['codebase-scout'].chain[0].tier = 'unknown-tier' }
-      'unknown-effort' = { param($document) $document.roles['codebase-scout'].chain[0].effort = 'unknown-effort' }
-      'duplicate-step' = { param($document) $document.roles['codebase-scout'].chain[1] = $document.roles['codebase-scout'].chain[0] }
-      'descending-tier' = { param($document) $document.roles['codebase-scout'].chain[0].tier = 'fable' }
-      'negative-floor' = { param($document) $document.roles['codebase-scout'].floor = -1 }
-      'floor-above-default' = { param($document) $document.roles['codebase-scout'].floor = 2 }
-      'default-outside-chain' = { param($document) $document.roles['codebase-scout'].default = 4 }
-      'fractional-default' = { param($document) $document.roles['codebase-scout'].default = 1.5 }
-      'string-floor' = { param($document) $document.roles['codebase-scout'].floor = '0' }
-    }
-    foreach ($case in $mutations.Keys) {
-      $document = Read-PackageJson 'routing/model-routing.json'
-      $null = & $mutations[$case] $document
-      Assert-Rejected $case { Assert-ModelRouting $document $catalog } 'routing:'
-    }
     $selection = Read-PackageJson 'routing/role-selection.json'
     Assert-RoleSelection $selection $catalog
     $selection.deliverableRoutes['unknown-deliverable'] = 'unknown-role'
@@ -284,26 +175,6 @@ function Test-PackageContracts {
       $null = & $designMutations[$case].mutate $document
       Assert-Rejected $case { Assert-DesignTriggers $document $selection } $designMutations[$case].diagnostic
     }
-  }
-  Invoke-Check 'regression/agent-reference-scanner' {
-    foreach ($agentId in $forbiddenAgentIds) {
-      foreach ($extension in @('.md', '.json', '.ps1')) {
-        $sample = if ($extension -eq '.json') { '{"agent":"' + $agentId + '"}' } elseif ($extension -eq '.ps1') { '$agent = "' + $agentId + '"' } else { 'Worker agent: `' + $agentId + '`' }
-        Assert-Rejected "$extension-agent-reference" { Assert-ClaudeText $sample $extension 'fixture' } 'agent reference:'
-      }
-      Assert-Rejected 'comment-agent-reference' { Assert-ClaudeText ('# Worker agent: ' + $agentId) '.ps1' 'fixture' } 'agent reference:'
-    }
-    Assert-ClaudeText ('foreach ($entry in @()) { con' + 'tinue }') '.ps1' 'fixture'
-    Assert-ClaudeText ('Write-Error message -ErrorAction Con' + 'tinue') '.ps1' 'fixture'
-    Assert-ClaudeText ('Con' + 'tinue processing the current task.') '.md' 'fixture'
-    Assert-ClaudeText 'Use claude-haiku-4-5 with effort.' '.md' 'fixture'
-    Assert-ClaudeText ('A database cur' + 'sor reads rows; use cur' + 'sor pagination for API results.') '.md' 'fixture'
-    Assert-Rejected 'quoted-database-term' { Assert-ClaudeText ('Use `cur' + 'sor` as worker agent.') '.md' 'fixture' } 'agent reference:'
-    Assert-Rejected 'capitalized-agent' { Assert-ClaudeText ('Use Cur' + 'sor as worker agent.') '.md' 'fixture' } 'agent reference:'
-    $nonClaudeRouting = Read-PackageJson 'routing/model-routing.json'
-    $nonClaudeRouting.agent = 'cur' + 'sor'
-    Assert-Rejected 'non-claude-routing' { Assert-ModelRouting $nonClaudeRouting (Read-PackageJson 'roles/catalog.json') } 'agent must be claude'
-    Assert-Rejected 'vocabulary-name-does-not-exempt-other-files' { Assert-ClaudeText ('$forbiddenAgentIds = @("' + $forbiddenAgentIds[0] + '")') '.ps1' 'fixture' } 'agent reference:'
   }
   Invoke-Check 'regression/bundled-skill-resolution' {
     $bundled = Join-Path $stagedPackage 'skills/code-review/SKILL.md'

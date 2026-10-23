@@ -130,7 +130,7 @@
 
 其余十二个角色的身份不变。架构师按需加载 `domain-modeling`、`migration-upgrade`、`mcp-server-development`、`technical-diagrams`；实施者按需加载 `migration-upgrade`、`mcp-server-development`、`localization`、`skill-authoring-evaluation`。React、PostgreSQL、可观测性与 CI 仍不新增角色。可选 Skill 的权威是安装版本的 `roles/catalog.json`。
 
-模型路由、交付物路由和风险路由是 `routing/` 里的包数据。本指南不复制它们，因为复制的表会在包一变时就过时。
+交付物路由和风险路由是 `routing/` 里的包数据。本指南不复制它们，因为复制的表会在包一变时就过时。
 
 ## 六组增强
 

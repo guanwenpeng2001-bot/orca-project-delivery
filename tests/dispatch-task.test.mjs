@@ -95,8 +95,8 @@ function writeInputs(t, project, mutate = {}) {
       stage: 'input_accepted',
       turnStart: 'observed',
       launch: {
-        requested: { agent: 'claude', model: 'sonnet', effort: 'high' },
-        effective: mutate.effective ?? { agent: 'claude', model: 'sonnet', effort: 'high' },
+        requested: { agent: 'codex' },
+        effective: mutate.effective ?? { agent: 'codex' },
       },
       mode: { mode: 'terminal', preferred: 'terminal', reason: 'user_default', detail: 'Started a terminal agent worker.' },
       timeoutMs: 60000,
@@ -148,15 +148,24 @@ test('records the resolved brief path and refreshes it on redispatch', (t) => {
 });
 
 for (const [name, launch, status, note] of [
-  ['explicit-null', { requested: null, effective: null }, 'unverified', /no usable route values/],
-  ['object-of-nulls', { requested: { agent: null, model: null, effort: null }, effective: { agent: null, model: null, effort: null } }, 'unverified', /no usable route values/],
+  ['explicit-null', { requested: null, effective: null }, 'unverified', /agent identity/],
+  ['object-of-nulls', { requested: { agent: null, model: null, effort: null }, effective: { agent: null, model: null, effort: null } }, 'unverified', /agent identity/],
   ['missing', undefined, 'unverified', /no launch.requested\/effective block/],
-  ['missing fields', { requested: {}, effective: {} }, 'unverified', /no usable route values/],
+  ['missing fields', { requested: {}, effective: {} }, 'unverified', /agent identity/],
+  ['agent defaults', { requested: { agent: 'codex' }, effective: { agent: 'codex' } }, 'verified', /matches/],
+  ['reported defaults', { requested: { agent: 'codex' }, effective: { agent: 'codex', model: 'native-model', effort: 'native-effort' } }, 'verified', /matches/],
+  ['unknown default internals', { requested: { agent: 'opencode', model: null, effort: null }, effective: { agent: 'opencode', model: null, effort: null } }, 'verified', /matches/],
+  ['model pin unknown', { requested: { agent: 'codex', model: 'pinned-model' }, effective: { agent: 'codex' } }, 'unverified', /not reported.*model/],
+  ['effort pin unknown', { requested: { agent: 'codex', effort: 'high' }, effective: { agent: 'codex', model: 'native-model' } }, 'unverified', /not reported.*effort/],
+  ['model pin honored', { requested: { agent: 'codex', model: 'pinned-model' }, effective: { agent: 'codex', model: 'pinned-model', effort: 'native-effort' } }, 'verified', /matches/],
+  ['effort pin honored', { requested: { agent: 'codex', effort: 'high' }, effective: { agent: 'codex', model: 'native-model', effort: 'high' } }, 'verified', /matches/],
+  ['agent mismatch', { requested: { agent: 'codex' }, effective: { agent: 'claude' } }, 'mismatch', /differs/],
+  ['model pin mismatch', { requested: { agent: 'codex', model: 'pinned-model' }, effective: { agent: 'codex', model: 'other-model' } }, 'mismatch', /differs/],
   ['equal', { requested: { agent: 'claude', model: 'sonnet', effort: 'high' }, effective: { agent: 'claude', model: 'sonnet', effort: 'high' } }, 'verified', /matches/],
   ['mismatch', { requested: { agent: 'claude', model: 'sonnet', effort: 'high' }, effective: { agent: 'claude', model: 'haiku', effort: null } }, 'mismatch', /differs/],
   ['alias-fallback', { requested: { agent: 'claude', model: 'haiku', effort: null }, effective: { agent: 'claude', model: 'haiku', effort: null } }, 'verified', /matches/],
 ]) {
-  test(`routing comparator ${name} records ${status}`, (t) => {
+  test(`launch comparator ${name} records ${status}`, (t) => {
     const { project, runDir } = createProject(t);
     const paths = writeInputs(t, project);
     const receipt = readJson(paths.receiptPath);
@@ -168,6 +177,13 @@ for (const [name, launch, status, note] of [
     const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
     assert.equal(assignment.runtime.verification.status, status);
     assert.match(assignment.runtime.verification.evidence, note);
+    for (const profile of ['requested', 'effective']) {
+      for (const field of ['agent', 'model', 'effort']) {
+        assert.equal(assignment.runtime[profile][field], launch?.[profile]?.[field] ?? null);
+      }
+    }
+    if (status === 'verified') assert.deepEqual(parseOutput(result).warnings, []);
+    if (status === 'unverified') assert.equal(assignment.fallbackReason, null);
   });
 }
 
@@ -192,6 +208,8 @@ test('records a successful dispatch receipt as the run record', (t) => {
   assert.deepEqual(assignment.orca, { runId: orcaRunId, taskId: 'task_abcdef123456', dispatchId: 'ctx_abcdef123456' });
   assert.equal(assignment.status, 'active');
   assert.equal(assignment.runtime.verification.status, 'verified');
+  assert.deepEqual(assignment.runtime.requested, { agent: 'codex', model: null, effort: null });
+  assert.deepEqual(assignment.runtime.effective, { agent: 'codex', model: null, effort: null });
   assert.equal(assignment.runtime.mode.mode, 'terminal');
   assert.equal(assignment.runtime.surface, 'visible');
   assert.equal(assignment.runtime.terminalHandle, 'term_fixture');

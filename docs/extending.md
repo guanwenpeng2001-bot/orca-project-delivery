@@ -26,7 +26,6 @@ Work in a separate development checkout or a disposable copy, preserve existing 
 | `routing/skill-catalog.json` → `skills` | Skill ID, name, description, exact package-relative path, optional `requires` |
 | `roles/<category>/<id>.md` | Role contract and matching front matter |
 | `roles/catalog.json` → `roles` | ID, name, category, path, `defaultSkills`, `optionalSkills`, optional `requires` |
-| `routing/model-routing.json` → `roles` | A chain, default index and floor index for every catalog Role |
 | `routing/role-selection.json` → `deliverableRoutes` | A new deliverable mapping when needed |
 | `routing/skill-selection.json` → `riskRoutes` | A new risk-to-method mapping only when relevant |
 | `PACKAGE-MANIFEST.json` → `deliverables` | Counts matching the resulting Role and Skill catalogs; workflow count remains accurate |
@@ -132,21 +131,7 @@ Append to `roles/catalog.json`'s `roles` array:
 }
 ```
 
-Add an `export-reviewer` property under `routing/model-routing.json`'s `roles` object:
-
-```json
-{
-  "chain": [
-    { "tier": "sonnet", "effort": "high" },
-    { "tier": "opus", "effort": "high" }
-  ],
-  "default": 1,
-  "floor": 0,
-  "taskTypes": ["Local export contract review"]
-}
-```
-
-`default` and `floor` are zero-based integer indexes: `0 <= floor <= default < chain.length`. Chains are nonempty and strictly increasing by the file's `modelLadder`, then `effortLevels`; repeated or descending steps fail. The set of routed Roles must equal the catalog set. Reuse existing tier vocabulary and request policy; this example chooses a policy, not proof that a host accepts or launches it. All workers remain `claude`; requested/effective model evidence and user-pinned choices retain their existing rules.
+Roles do not configure model routes. Select a usable Agent at launch and omit model/effort unless explicitly pinned by the user.
 
 For deliverable-driven selection, add `"export-contract-review": "export-reviewer"` to `routing/role-selection.json`'s `deliverableRoutes`. The Role default already recommends this Skill; a new `riskRoutes` entry is unnecessary for this example. In an existing project, record the selected Role and Skills explicitly in the Task rather than expecting registration to dispatch anything.
 
@@ -303,7 +288,7 @@ The shared helper parameters are mandatory `-ProjectRoot <string>` and `-Role <i
 | Symptom | Next check |
 | --- | --- |
 | Unknown Role/Skill or invalid path | Check native catalog IDs or explicit external registrations and the execution ProjectRoot; links/traversal are unsupported, but absolute external paths may be outside the root |
-| Count/routing failure | Align manifest counts and register the new Role's route |
+| Count/routing failure | Align manifest counts and register the new Role's deliverable route when needed |
 | `configured: true`, `availableForChild: false` | Look for an empty process override; do not print its value |
 | File exists only in coordinator worktree | Provision the intended file at the explicit execution-host root; no automatic copying occurs |
 | API presence passes but a real operation fails | Presence is not authentication or network verification; use separately authorized diagnostics |

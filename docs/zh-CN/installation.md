@@ -4,7 +4,7 @@
 
 版本 2 项目注册、混合绑定、解析后的依赖选择及原位置同级资源，见[已安装外部 Skill 演练](external-skills.md)。包内 Skill 不需要单独安装。
 
-本指南安装 `orca-project-delivery` 协调者 Skill，使 Claude Code 协调者会话能从控制工作树加载它。本包是一个普通文件目录 — 没有安装程序、没有包注册表，也没有构建步骤。
+本指南安装 `orca-project-delivery` 协调者 Skill，使 Orca 协调者会话能从控制工作树加载它。本包是一个普通文件目录 — 没有安装程序、没有包注册表，也没有构建步骤。
 
 本指南描述4.0.0 包（69 个 Skill / 18 个角色 / 5 个工作流）。安装完整且匹配的版本。运行示例前先做[教程中的版本及目录检查](professional-capability-tutorial.md#1-确认你安装的是什么)。版本不匹配就不是本版本。
 
@@ -15,7 +15,7 @@
 | Windows | 所有脚本只在 Windows 上运行过。其他平台未经测试。 |
 | PowerShell 7+（`pwsh`） | Windows PowerShell 5.1 不够。用 `pwsh -NoProfile -Command '$PSVersionTable.PSVersion'` 检查。 |
 | Git | 在 `PATH` 上；用于分支、工作树和合并。 |
-| Claude Code | 已安装、在 `PATH` 上，并且已认证。所有工作者都是 Claude Code 智能体。 |
+| Agent | 至少一个 Orca 支持且执行主机已配置可用的 Agent；模型和 effort 默认由 Agent 管理，除非用户明确指定。 |
 | Orca Runtime | `orca` CLI，加上已安装的全局 `orchestration`、`orca-cli` 和 `orca-per-workspace-env` Skill。它们拥有 Run / Task / Dispatch / Worker 生命周期；本包从不替代它们。 |
 | 专业 Skill | **随包附带** — 全部 69 个专业 Skill 位于本包 `skills/<skill-id>/SKILL.md`。无需单独安装。原有十六个追溯到 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills)；原有十六个的上游基线及后续原创方法的公开参考见 `skills/README.md`。 |
 
@@ -88,7 +88,7 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 
 ## 扩展与本地执行配置
 
-新增方法或职责时，按[扩展指南](extending.md)使用原生目录，包括清单数量与模型路由。原有十六个是维护中的 MIT 改编版，其后五十三个为原创方法；本项目的原创部分是 MIT，第三方 Skill 保留自己的许可证，有意修改须先审阅再合并。`verify-package.ps1 -MetadataOnly` 是快速结构检查，不能替代完整套件。上面的汇总描述你安装的修订；成功要求没有失败，不是永远固定数量。
+新增方法或职责时，按[扩展指南](extending.md)使用原生目录，包括清单数量与 Role/Skill 绑定。原有十六个是维护中的 MIT 改编版，其后五十三个为原创方法；本项目的原创部分是 MIT，第三方 Skill 保留自己的许可证，有意修改须先审阅再合并。`verify-package.ps1 -MetadataOnly` 是快速结构检查，不能替代完整套件。上面的汇总描述你安装的修订；成功要求没有失败，不是永远固定数量。
 
 能力版本为软件、本地资产、图像和音视频、文档新增了方法。安装它并不会运行其中任何一个。[能力教程](professional-capability-tutorial.md)检查安装并运行有界本地工具和依赖辅助脚本；它不调用提供方，包套件通过也不是关于生成产出的证据。
 
@@ -145,7 +145,7 @@ pwsh -NoProfile -Command '$PSVersionTable.PSVersion'
 
 症状：脚本失败，报 `fatal: missing config key GIT_CONFIG_KEY_0`，但 Git 在普通终端里正常。
 
-原因：有些宿主注入了 `GIT_CONFIG_COUNT`，同时剥离名称含 `KEY` / `TOKEN` / `SECRET` 的环境变量，留下一个孤立的计数，使每次 Git 调用都失败。引导、创建运行、对账、发布、运行校验和能力探测脚本会防护这种孤立计数。包套件会隔离其子进程的 Git 环境。对其他 Git 调用，检查并修复调用方环境；不要不加区分地清除仍然成对有效的配置。
+原因：有些宿主注入了 `GIT_CONFIG_COUNT`，同时剥离名称含 `KEY` / `TOKEN` / `SECRET` 的环境变量，留下一个孤立的计数，使每次 Git 调用都失败。引导、创建运行、对账、发布脚本会防护这种孤立计数。包套件会隔离其子进程的 Git 环境。对其他 Git 调用，检查并修复调用方环境；不要不加区分地清除仍然成对有效的配置。
 
 ```powershell
 # 在你自己的 shell 里检查并清除孤立变量

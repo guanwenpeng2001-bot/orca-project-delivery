@@ -26,7 +26,6 @@
 | `routing/skill-catalog.json` → `skills` | Skill ID、名称、描述、精确的包相对路径、可选 `requires` |
 | `roles/<category>/<id>.md` | Role 合同及匹配的 front matter |
 | `roles/catalog.json` → `roles` | ID、名称、类别、路径、`defaultSkills`、`optionalSkills`、可选 `requires` |
-| `routing/model-routing.json` → `roles` | 每个目录 Role 的链、默认索引和最低索引 |
 | `routing/role-selection.json` → `deliverableRoutes` | 需要时新增交付物映射 |
 | `routing/skill-selection.json` → `riskRoutes` | 仅在相关时新增风险到方法的映射 |
 | `PACKAGE-MANIFEST.json` → `deliverables` | 与最终 Role、Skill 目录匹配的数量；工作流数量保持准确 |
@@ -132,21 +131,7 @@ All assigned cases have evidence and a verdict. Follow the injected Worker Contr
 }
 ```
 
-在 `routing/model-routing.json` 的 `roles` 对象下增加 `export-reviewer` 属性，值为：
-
-```json
-{
-  "chain": [
-    { "tier": "sonnet", "effort": "high" },
-    { "tier": "opus", "effort": "high" }
-  ],
-  "default": 1,
-  "floor": 0,
-  "taskTypes": ["Local export contract review"]
-}
-```
-
-`default` 和 `floor` 是从零开始的整数索引：`0 <= floor <= default < chain.length`。链不能为空，并按文件中的 `modelLadder`、再按 `effortLevels` 严格递增；重复或降序步骤会失败。模型路由的 Role 集必须等于目录集。复用现有档位词汇与请求策略；此示例选择的是策略，并不证明主机接受或启动了该档位。所有工作者仍为 `claude`；requested/effective 模型证据与用户锁定规则保持不变。
+角色无需配置模型路由；启动时选择可用 Agent，默认省略 model/effort。
 
 要按交付物选择，在 `routing/role-selection.json` 的 `deliverableRoutes` 增加 `"export-contract-review": "export-reviewer"`。Role 默认值已推荐此 Skill，本例无需新增 `riskRoutes`。在已有项目中，应在 Task 中明确记录所选 Role 和 Skill，不要以为注册会自动触发派发。
 
@@ -303,7 +288,7 @@ foreach ($name in $demoNames) {
 | 症状 | 下一步检查 |
 | --- | --- |
 | 未知 Role/Skill 或无效路径 | 检查原生目录 ID 或显式外部注册及执行 ProjectRoot；不支持链接和路径穿越，但外部绝对路径可在根目录之外 |
-| 数量/路由失败 | 对齐清单数量，注册新 Role 的路由 |
+| 数量/路由失败 | 对齐清单数量，按需注册新 Role 的交付物路由 |
 | `configured: true`、`availableForChild: false` | 查找空进程覆盖，不打印它的值 |
 | 文件只在协调者工作树 | 在显式执行主机根目录准备目标文件；不存在自动复制 |
 | API 存在性检查通过但真实操作失败 | 存在性不等于认证或网络验证；使用另行授权的诊断 |

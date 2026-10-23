@@ -10,6 +10,22 @@ const verifier = fileURLToPath(new URL('../scripts/verification-runtime.ps1', im
 const helpers = fileURLToPath(new URL('../scripts/verification-common.ps1', import.meta.url));
 const requiredSuites = ['document-production.test.py', 'document-depth-office.test.py'];
 
+test('MetadataOnly accepts agent-neutral instructions without model routing or capability probes', (t) => {
+  const source = fileURLToPath(new URL('../', import.meta.url));
+  const copy = mkdtempSync(path.join(tmpdir(), 'package-agent-neutral-'));
+  t.after(() => rmSync(copy, { recursive: true, force: true }));
+  cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work', '.claude'].includes(path.basename(item)) });
+  for (const retired of ['routing/model-routing.json', 'scripts/query-routing.ps1', 'scripts/probe-claude-capabilities.ps1']) {
+    rmSync(path.join(copy, retired), { force: true });
+  }
+  writeFileSync(path.join(copy, 'references', 'agent-example.md'), 'A usable Orca agent such as codex executes the Task with its own model defaults.\n');
+  const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', path.join(copy, 'scripts/verify-package.ps1'), '-PackageRoot', copy, '-MetadataOnly'], {
+    encoding: 'utf8', timeout: 20000,
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
 const childTimeoutHarness = String.raw`
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -159,7 +175,7 @@ test('MetadataOnly rejects every missing required script and parses discovered e
   cpSync(source, copy, { recursive: true, filter: (item) => !['.git', '.dev-work'].includes(path.basename(item)) });
   const required = [
     'assemble-task.ps1', 'bootstrap-project.ps1', 'create-run.ps1', 'dispatch-task.ps1',
-    'probe-claude-capabilities.ps1', 'query-routing.ps1', 'reconcile-state.ps1', 'release-coordinator.ps1',
+    'reconcile-state.ps1', 'release-coordinator.ps1',
     'verify-package.ps1',
     'requirements-lib.ps1', 'check-requirements.ps1', 'invoke-with-requirements.ps1',
     'verify-requirements.ps1', 'project-common.ps1', 'verification-common.ps1',

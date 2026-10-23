@@ -7,12 +7,12 @@
 **What exactly does this package give me?**
 A coordinator Skill (`SKILL.md`) plus the routing tables, role contracts,
 schemas, templates, and PowerShell scripts needed to run software delivery
-with Claude Code workers: intake, dynamic reconnaissance, planning, a task
+with Orca-supported workers: intake, dynamic reconnaissance, planning, a task
 graph, isolated implementation, independent review, coordinator-checked
 integration into one delivery branch, and final verification.
 
-**Do I need Orca and Claude Code, or just Claude Code?**
-Both. Workers are Claude Code agents, and the Orca Runtime owns the
+**Do I need Orca and an Agent, or just an Agent?**
+Both. Workers use an Orca-supported Agent configured on the execution host, and the Orca Runtime owns the
 Run/Task/Dispatch/Worker lifecycle. This package supplies the delivery
 workflow on top; it is not a standalone orchestrator.
 
@@ -60,7 +60,7 @@ OpenMontage is AGPL-3.0 and is not included. `document-production` and
 ## Extensions and configuration
 
 **Can I add a Skill or Role, or edit a bundled method?**
-Yes. Use native catalogs, matching files and manifest counts; a new Role also needs a model route. The original sixteen are maintained MIT adaptations; the later fifty-three are original methods with public references. Follow [Extending](extending.md) and run both metadata and full verification.
+Yes. Use native catalogs, matching files and manifest counts; a new Role keeps its default Skill bindings; it does not select a model. The original sixteen are maintained MIT adaptations; the later fifty-three are original methods with public references. Follow [Extending](extending.md) and run both metadata and full verification.
 
 **Why does a configured API still show unavailable, or fail later?**
 `configured` only describes file presence. An empty process value overrides a nonempty file value and blocks the child. API checks never authenticate or access the network; a passing presence check says nothing about a real service's response.
@@ -108,10 +108,7 @@ Never describe unverifiable acceptance as READY.
 
 **The first `worker-start` receipt's effective model differs from what I
 requested. Do I downgrade?**
-Not automatically. Record `mismatch`, do not infer quota or model
-unavailability, and apply the model-tier rule from
-`routing/model-routing.json` — or, if the user pinned the choice, suspend the
-Task and ask. Requested values are never treated as effective.
+No. Model/effort is omitted by default, so unknown internal values do not block dispatch. For an explicit user pin, record a mismatch or missing evidence and ask the user before substituting. Requested values are never treated as effective.
 
 **A worker reports it cannot read its Skill path.**
 That is a `skill_unavailable` condition: repair the path, or switch to a

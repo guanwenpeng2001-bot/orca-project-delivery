@@ -8,7 +8,7 @@ On CHANGES_REQUIRED, create a scoped fix Task carrying the accepted findings, cu
 
 This is sequential continuation by the same writer, not writer replacement or a retry of an unresolved attempt. Confirm the prior Task/Dispatch settled and branch ownership still belongs to that writer before dispatching; never add a concurrent writer. Keep a fresh assignment record and review report for each round. Session reuse preserves Task isolation and the review/integration rules.
 
-Consult installed help for exact placement syntax. Explicit `--worktree` must identify the selected terminal's worktree; `current` would select the coordinator worktree. Reuse does not accept `--model` or `--effort`; changing route requires a cold session under the normal routing and recovery rules.
+Consult installed help for exact placement syntax. Explicit `--worktree` must identify the selected terminal's worktree; `current` would select the coordinator worktree. Reuse does not accept `--model` or `--effort`; honoring a new user pin that changes session configuration requires a cold session under the recovery rules. Default launches still omit model/effort.
 
 If the terminal is gone or reuse fails, record the reason and runtime evidence, then allow a cold session only after resolving the attempt's state. Unknown start outcomes, timeouts or silence do not authorize fallback. A different writer, or any writing retry after failure, must pass the unchanged [writer-replacement gate](recovery-and-idempotency.md#writer-replacement-hardened-gate) and the handoff procedure below; session reuse is not an exemption for recovery. Preserve the original reports and give each cold review attempt a unique report path.
 

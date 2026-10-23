@@ -28,7 +28,7 @@ optionalSkills:
 ## 非目标
 - 不实现被测功能，不决定玩法设计，不执行未经授权的上架或付费操作
 - 不替代 `release-verifier` 的最终集成验证
-- 不合并分支，不启动其他 Worker
+- 不合并分支，不创建额外项目级 Orca Run/Task；可在当前 Task 内使用原生助手，父 Worker 负责范围、写入隔离、结果与收尾
 
 ## 能力与权限
 - **sourceRead**: `true`

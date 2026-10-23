@@ -116,7 +116,7 @@ test('script validation follows the worker copy from stale control and delivery 
   const bare = assemble(data, { tests: ['worker-only.ps1 -Unknown'] });
   assert.equal(bare.code, 1, bare.diagnostics);
   assert.match(clean(bare.diagnostics), /no parameter '-Unknown'/);
-  const fallback = assemble(data, { tests: ['scripts/query-routing.ps1 -Role software-implementer'] });
+  const fallback = assemble(data, { tests: ['scripts/release-coordinator.ps1 -ConfirmRunClosed'] });
   assert.equal(fallback.code, 0, fallback.diagnostics);
 });
 
@@ -126,6 +126,15 @@ test('assembled lifecycle contract carries identity and reporting obligations', 
   for (const text of ['--type heartbeat', 'orca orchestration ask', '--task-id', '--dispatch-id', 'git show --stat', 'paraphrase']) {
     assert.ok(result.brief.includes(text), text);
   }
+});
+
+test('assembled worker contract permits native helpers while preserving Task ownership', (context) => {
+  const result = assemble(fixture(context));
+  assert.equal(result.code, 0, result.diagnostics);
+  assert.match(result.brief, /native internal helpers/i);
+  assert.match(result.brief, /parent.*scope.*isolation.*results.*cleanup/i);
+  assert.match(result.brief, /independent review/i);
+  assert.doesNotMatch(result.brief, /Do not create other workers unless/);
 });
 
 test('AGENTS selection accepts numbers and titles, preserves descendants and source order', (context) => {
@@ -244,7 +253,7 @@ test('read-only briefs remove the entire source commit clause and retain reporti
 
 test('acceptance and tests commands are checked against the real package scripts and parameters', (context) => {
   const data = fixture(context);
-  data.task.acceptance = ['Full gate: pwsh -NoProfile -File scripts/verify-package.ps1 -MetadataOnly', 'Routing check: pwsh scripts/query-routing.ps1 -Role software-implementer'];
+  data.task.acceptance = ['Full gate: pwsh -NoProfile -File scripts/verify-package.ps1 -MetadataOnly', 'Requirements check: pwsh scripts/check-requirements.ps1 -Role software-implementer -ProjectRoot .'];
   data.task.tests = ['node --test tests/task-brief-profiles.test.mjs', 'git merge --no-edit topic', 'pwsh -NoProfile -File scripts/verify-package.ps1'];
   const valid = assemble(data);
   assert.equal(valid.code, 0, valid.diagnostics);
@@ -253,7 +262,8 @@ test('acceptance and tests commands are checked against the real package scripts
   const rejected = [
     ['scripts/nonexistent-runner.ps1 -X', /does not exist/],
     ['pwsh -NoProfile -File scripts/verify-package.ps1 -Run nightly', /no parameter '-Run'/],
-    ['query-routing.ps1 -Force', /no parameter '-Force'/],
+    ['scripts/query-routing.ps1 -Role software-implementer', /does not exist/],
+    ['check-requirements.ps1 -Force', /no parameter '-Force'/],
   ];
   for (const [command, pattern] of rejected) {
     const negative = assemble(data, { tests: [command] });

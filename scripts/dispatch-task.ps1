@@ -226,8 +226,14 @@ $verificationNote = "Dispatch receipt $dispatchId has no launch.requested/effect
 $fallbackReason = $null
 if ($hasProfiles) {
   $differences = @()
+  $unknown = @()
   foreach ($field in @('agent', 'model', 'effort')) {
-    if ($requestedProfile[$field] -cne $effectiveProfile[$field]) {
+    # Agent-owned defaults are not requests. Compare model/effort only when supplied;
+    # an absent effective value cannot prove that an explicit request was honored.
+    if ([string]::IsNullOrWhiteSpace($requestedProfile[$field])) { continue }
+    if ([string]::IsNullOrWhiteSpace($effectiveProfile[$field])) {
+      $unknown += $field
+    } elseif ($requestedProfile[$field] -cne $effectiveProfile[$field]) {
       $differences += "$field requested=$($requestedProfile[$field]) effective=$($effectiveProfile[$field])"
     }
   }
@@ -236,11 +242,14 @@ if ($hasProfiles) {
     $verificationNote = "Worker-start receipt $dispatchId launch.effective differs from launch.requested: $($differences -join '; ')."
     $fallbackReason = $verificationNote
     $warnings += "Runtime launch differs from the request: $($differences -join '; ')."
-  } elseif ($null -ne $effectiveProfile['model'] -or $null -ne $effectiveProfile['effort']) {
+  } elseif ($unknown.Count) {
+    $verificationNote = "Worker-start receipt $dispatchId requested values not reported in launch.effective: $($unknown -join ', ')."
+    $warnings += $verificationNote
+  } elseif ($requestedProfile['agent'] -and $effectiveProfile['agent']) {
     $verificationStatus = 'verified'
-    $verificationNote = "Worker-start receipt $dispatchId launch.requested matches launch.effective."
+    $verificationNote = "Worker-start receipt $dispatchId launch.requested matches launch.effective for the agent and explicitly requested fields; omitted model/effort remain agent-owned."
   } else {
-    $verificationNote = "Dispatch receipt $dispatchId profiles present but carry no usable route values."
+    $verificationNote = "Dispatch receipt $dispatchId profiles present but carry no usable requested/effective agent identity."
     $warnings += "$verificationNote Runtime verification recorded as 'unverified'."
   }
 } else {

@@ -2,7 +2,7 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
+A coordinator-only Skill for Orca users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
 ![Version](https://img.shields.io/badge/version-4.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -14,11 +14,11 @@ These guides describe the **4.0.0 package: 69 Skills, 18 Roles, and 5 workflows*
 New in 4.0.0: the state-schema audit layer is removed; the delivery mechanism is unchanged. `validate-run.ps1` and the six state schemas are deleted — bootstrap refusal, dispatch placement checks, catalog cross-checks on every assembly, and the contract mutation tests carry the same load where it occurs. `dispatch-task.ps1` drops its pre-write schema gate and post-write re-validation (`-SkipPostValidation` is gone); `create-run.ps1` no longer creates the unread `dispatch-receipts/` directory; the worker report drops its runtime self-report section, since the dispatch assignment is the authoritative route record; and the project-rules template is rewritten to table density, 306 lines to 145, with every rule preserved. Bundled counts remain 69 Skills, 18 Roles, and 5 workflows; [Installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
 
 Orca Project Delivery is a coordinator-only Skill that runs a complete software
-delivery pipeline with Claude Code worker agents. It solves the problem of
+delivery pipeline with Orca-supported worker agents. It solves the problem of
 supervising many autonomous agents on one repository without losing branch
 discipline, independent review, or a verified result. It is written for the
 person who acts as coordinator: you already have Orca (a multi-agent IDE) and
-Claude Code, and you want large changes produced, reviewed, integrated, and
+a configured Agent, and you want large changes produced, reviewed, integrated, and
 final-verified by isolated workers under explicit contracts.
 
 - [What this is](#what-this-is)
@@ -53,14 +53,14 @@ from intake to final verification:
    delivery branch; the run is not closed until it passes or is explicitly
    marked unverifiable.
 
-Everything the coordinator asserts is backed by a written record: model
-routing (requested vs. effective), per-Task assignments, degradation events,
+Everything the coordinator asserts is backed by a written record: Agent launches
+(requested vs. effective), per-Task assignments, degradation events,
 and user decisions.
 
 ## What this is not
 
 - **Not a general-purpose orchestration framework.** It defines one business
-  workflow: project delivery with Claude Code workers. It does not manage
+  workflow: project delivery with Orca-supported workers. It does not manage
   arbitrary agent fleets or other agent runtimes.
 - **Not a replacement for the global Orca Skills.** The installed
   `orchestration`, `orca-cli`, and `orca-per-workspace-env` skills remain the
@@ -70,8 +70,8 @@ and user decisions.
 - **Coordinator-only.** Workers carrying a dispatch preamble must not run this
   Skill. A worker executes exactly its assigned Task, Role, professional
   Skills, branch, and report contract.
-- **Depends on Claude Code and the Orca Runtime.** All workers are Claude
-  Code agents launched through Orca; there is no standalone mode.
+- **Depends on a usable Agent and the Orca Runtime.** Workers are configured
+  agents supported and launched through Orca; there is no standalone mode.
 - **Windows only in practice.** Delivery helpers use PowerShell 7; capability tools also use Node.js and Python.
   Validation has only been performed on Windows. There is no installer for other platforms.
 - **Not distributed through a package registry.** There is no npm or pip
@@ -86,7 +86,7 @@ and user decisions.
 | Professional Skills | 69 bundled under package `skills/` | `routing/skill-catalog.json` |
 | Workflows | 5: feature-development, bug-fix, refactor, audit, game-development | `workflows/` |
 | Adaptive depth | light / standard / high-risk stage chains | `routing/workflow-selection.json` |
-| Model routing | per-role chains over haiku / sonnet / opus / fable with effort levels, defaults, floors | `routing/model-routing.json` |
+| Agent execution | Select a usable Agent; omit model/effort unless the user pins them; native helpers stay under parent Task ownership | `SKILL.md` |
 | Required invariants | 12 binding rules for isolation, review, evidence, and integration | `SKILL.md` |
 | Helper scripts | PowerShell bootstrap, assembly, dependency checks, scoped child execution, validation and release | `scripts/` |
 | Offline acceptance | Full synthetic package suite; require exit 0 and `FAIL=0` | `scripts/verify-package.ps1` |
@@ -95,7 +95,7 @@ and user decisions.
 
 ## Quick start
 
-Requirements: Windows, PowerShell 7+, Git, Claude Code, the Orca Runtime, and
+Requirements: Windows, PowerShell 7+, Git, a usable Agent, the Orca Runtime, and
 this package (professional Skills are included under `skills/`). The original
 sixteen trace to
 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills);
@@ -140,7 +140,7 @@ orca-project-delivery/
 │   └── zh-CN/                # Simplified Chinese translations of the guides above
 ├── references/               # 11 deep-dive references (runtime, branch model, handoff, ...)
 ├── roles/                    # 18 role contracts + catalog.json
-├── routing/                  # Model, role, skill, and workflow routing tables
+├── routing/                  # Role, Skill, and workflow selection tables
 ├── skills/                   # 69 maintained professional Skills + LICENSE + README
 ├── workflows/                # 5 workflow definitions
 ├── schemas/                  # Requirements, task and configuration input schemas
@@ -157,7 +157,7 @@ orca-project-delivery/
 | [Professional capabilities](docs/professional-capabilities.md) | All 53 later methods, including 23 game methods, and 6 enhancement groups: scope, evidence, licenses |
 | [Capability tutorial](docs/professional-capability-tutorial.md) | Offline checks, local-tool examples and dependency helpers; no provider calls |
 | [Extending and configuration](docs/extending.md) | Native Role/Skill recipes, dependency declarations, literal configuration, offline child-execution walkthrough |
-| [Usage](docs/usage.md) | Starting a delivery from the coordinator entry, the full stage sequence, role/model routing, branch and worktree rules, records and reports, worker receipts, Q&A |
+| [Usage](docs/usage.md) | Starting a delivery from the coordinator entry, the full stage sequence, Role/Agent selection, branch and worktree rules, records and reports, worker receipts, Q&A |
 | [Architecture](docs/architecture.md) | Control vs. delivery plane, authority sources, role/workflow/skill tables, coordinator lock, the 12 invariants |
 | [FAQ](docs/faq.md) | Common questions and failure-mode troubleshooting |
 | [简体中文](README.zh-CN.md) | Chinese README, with links to the Chinese guides under `docs/zh-CN/` |

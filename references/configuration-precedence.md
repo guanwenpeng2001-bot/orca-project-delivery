@@ -7,7 +7,7 @@ Highest to lowest:
 3. Task Contract.
 4. Role Contract.
 5. Required professional Skills.
-6. Package catalog selection and `routing/model-routing.json` policies.
+6. Package Role/Skill catalog selection; Agent-native execution defaults.
 7. Agent defaults.
 
 ## Skill configuration and delivery
@@ -71,7 +71,7 @@ evidence. These dependencies do not require provider credentials.
 
 ## Important consequences
 
-- A user-pinned model/effort allows no automatic upgrade or downgrade. If the choice is rejected or the receipt mismatches, suspend the Task and ask.
+- Omit model/effort by default; unknown Agent internals do not block a valid dispatch. A user-pinned Agent/model/effort allows no automatic substitution. If rejected, mismatched or unverified, suspend the affected choice and ask.
 - AGENTS project rules override fixed thresholds or technology assumptions in a generic Role/Skill.
 - Task scope overrides a Skill's broad checklist.
 - Runtime evidence overrides requested model names.

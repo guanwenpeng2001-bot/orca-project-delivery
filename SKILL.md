@@ -1,13 +1,13 @@
 ---
 name: orca-project-delivery
-description: 以 Claude Code 为唯一 Worker 的 Orca 项目交付协调：intake、动态侦察、fable 方案、sonnet 实施、独立审查按规模分档、合入 delivery_branch、最终验证、降级与收尾。仅协调者使用；worker 派发中不得调用。
+description: Orca 项目交付协调：intake、动态侦察、方案、实施、独立审查、合入 delivery_branch、最终验证与收尾。按 Task 选择可用 Agent，模型与 effort 默认由 Agent 自主管理。仅协调者使用；worker 派发中不得调用。
 ---
 
 # Orca Project Delivery
 
 ## Purpose
 
-This is the single coordinator entry point for project delivery with Claude Code workers.
+This is the single coordinator entry point for project delivery with Orca-supported workers available on the execution host.
 It defines the business workflow; it does not replace the global `orchestration`, `orca-cli`, or `orca-per-workspace-env` skills.
 Before any orchestration verb, load the installed global Skill and consult current `--help`; `references/orca-runtime.md` provides only business-to-runtime mappings.
 For installation or upgrade, read `references/installation.md`; for configuration conflicts, read `references/configuration-precedence.md`.
@@ -23,20 +23,20 @@ Normal workers execute only their assigned Task, Role, professional Skills, bran
 - `.dev-work/`: process state, reports, decisions and evidence, physically only in the coordinator control tree.
 - Git: source, branches, commits and integration truth.
 - Orca Runtime: Run, Task, Dispatch, Worker, Message, Gate and lifecycle truth.
-- This Skill: workflow, role/Skill/model routing, degradation and input assembly.
+- This Skill: workflow, Role/Skill selection, Task ownership, recovery and input assembly.
 Only the coordinator edits global process state; workers write only their assigned report paths. Store runtime identifiers and business mappings, never a second lifecycle database.
 When unsure where an artifact belongs, read `references/artifact-model.md`.
 
 ## Required invariants
 
-1. **Task isolation:** Every Task, including read-only work, has an isolated branch and worktree.
+1. **Task isolation:** Every top-level Orca Task, including read-only work, has an isolated branch and worktree. Native helpers within a Task follow the parent worker’s write-isolation contract.
 2. **Single writer:** One task branch has one writer at a time; replacement never creates a concurrent writer.
 3. **Independent review:** Self-check is not independent review; reviewers do not edit source; findings require fix Tasks and re-review.
 4. **Positive evidence:** Silence, empty waits and unverifiable observations do not prove failure, quota exhaustion or process exit.
 5. **Delivery target:** Each run has one `delivery_branch`: explicit user choice, otherwise `origin/HEAD` → existing `init.defaultBranch` → `main` → `master` → current branch; record the source and integrate directly there.
 6. **Process ownership:** `.dev-work/` exists only in the control tree; its global state belongs to the coordinator, not workers or a duplicate runtime database.
 7. **Coordinator lock:** One active coordinator holds the control-tree lock; use live/dead/unknown evidence, release by marking, never delete the lock or use orchestration reset.
-8. **Effective receipt:** Record requested and effective values separately; only the first launch receipt proves effective values.
+8. **Effective receipt:** Record Agent identity and requested/effective launch values separately; only the first launch receipt proves effective values. Unknown internal model/effort values do not block a default dispatch.
 9. **Runtime authority:** Installed global Orca Skills and current help govern commands; do not embed stale command lines.
 10. **Artifact exclusion:** Process artifacts never enter `delivery_branch`; inspect Git status and diff before commit or merge.
 11. **Control separation:** The control branch is neither development nor integration source; its HEAD may lag and is not current delivery evidence.
@@ -52,12 +52,9 @@ When unsure where an artifact belongs, read `references/artifact-model.md`.
 6. Resolve and record `delivery_branch` and its source using the invariant's chain; choose a distinct control branch before bootstrap. Detached HEAD and control=delivery are refused. The explicit override acknowledges a violation, not a normal integration path.
 7. Create or resume a run record using `scripts/create-run.ps1`; forced reuse archives prior state.
 8. Create or bind the Orca Run using current global Skill instructions.
-9. Run `scripts/probe-claude-capabilities.ps1` at bootstrap or after changing hosts; inspect the JSON and warnings, not merely its exit code.
-10. Record the coordinator, delivery branch, Orca Run id and probe evidence in the control tree.
+9. Select an Orca-supported Agent already configured and usable on the execution host; respect any user pin. Do not probe models or effort.
+10. Record the coordinator, delivery branch and Orca Run id in the control tree.
 
-The probe writes `.dev-work/runtime/claude-capabilities.json`; `accepted` proves only parameter acceptance, never actual model/effort effectiveness.
-Any `launched` verdict is an abnormal sentinel launch: stop probing and dispatch, mark unverified, inspect residual resources and escalate immediately. Exit 0 does not override this stop.
-Missing/unusable Claude CLI or unreadable routing is a hard failure; missing Orca produces unknown combinations. Unknown/rejected combinations are not verified routes; investigate before automatic routing.
 Use `scripts/assemble-task.ps1` to assemble definitions and `scripts/reconcile-state.ps1` to compare assignments with Git.
 Use `scripts/verify-package.ps1` for offline package acceptance and `scripts/release-coordinator.ps1 -ConfirmRunClosed` for safe closure.
 
@@ -87,20 +84,17 @@ Stop when remaining unknowns cannot change the approach, or explicitly record th
 2. Select 1–3 required Skills from `routing/skill-catalog.json` or explicit project external registrations, following effective Role defaults and `routing/skill-selection.json`; explain irrelevant defaults in the Task.
 3. Add 0–2 conditional Skills only for material risk.
 4. Derive capability, permission, scope, branch, input, output and completion contracts from the role and Task.
-5. Choose the role's model/effort route, then assemble the input.
-Role defines identity, Skill defines method, and Task defines this attempt's objective. Split conflicting design, implementation and independent-review identities into separate Tasks.
+5. Assign one responsible Agent that is supported by Orca and available on the execution host, then assemble the input.
+Role defines responsibility, Skill defines method, Task defines this attempt's bounded objective, and Agent is its runtime executor. Split conflicting design, implementation and independent-review identities into separate Tasks.
 
-## Model and effort routing
+## Agent execution
 
-All workers use Claude Code: haiku for reconnaissance, fable for planning/adjudication, sonnet for implementation. Independent review routes opus on standard and high-risk runs; lightweight runs route review to the code-reviewer `floor` tier, recording the offset from default as the dispatch's fallback reason per the routing policy.
-The sole routing authority is `routing/model-routing.json`: select the role's `chain`, start at `default`, never go below `floor`. For narrowly bounded read-only comparison, link-check and document Tasks with explicit output, apply `trivialTaskAdjustment`: move one step left from default, dispatching at the haiku floor when that step reaches it; never skip chain steps or override a pinned choice.
-Dispatch fresh sessions through `worker-start` with `--agent claude` and the selected `--model` / `--effort`; reused terminals keep their session route and omit those launch flags. Obtain exact syntax from installed help.
-Use the tier's request shape. Haiku prefers `claude-haiku-4-5` plus effort; on parameter rejection or first receipt mismatch, use alias `haiku` without effort and record the degradation, unless the user pinned the choice.
-A pinned model or effort forbids automatic changes, including the haiku fallback: suspend the affected Task and ask the user if rejected or mismatched.
-On every dispatch, apply **Effective receipt** and record the assignment with `scripts/dispatch-task.ps1`, even when an assembled brief exists; reconcile mismatches before declaring a verified route.
-The coordinator model is outside routing: do not choose, probe or validate it. Only record a user-reported value in `run-state.coordinatorModelReported`.
-Upgrade, downgrade, suspension, trivial read-only adjustment and user-pinned behavior follow this file's `policies`; do not recreate route tables in workflow or role files.
-`worker-start` has no permission flag; permission comes from actual Claude configuration and user Orca settings, which must be recorded rather than invented.
+Select a usable Orca Agent for each Task through current Orca support and actual host availability; respect a user-pinned Agent. A Role never selects a provider, model or reasoning tier.
+For a fresh session, pass the selected `--agent` and omit `--model` and `--effort` by default. The Agent owns its native configuration, model choices and internal execution methods. Only forward model/effort values explicitly pinned by the user, using installed Orca help; do not invent or probe values. Reused terminals retain their session configuration and omit launch flags.
+Record each assignment with `scripts/dispatch-task.ps1` from its first launch receipt, including Agent identity, Task/Dispatch, placement and the requested/effective values actually available. Omitted or unknown internal model/effort is not a mismatch and does not block a valid default dispatch. Do not claim an explicit user pin was honored without matching effective evidence; if rejected, mismatched or unverifiable, suspend only the affected choice and ask the user.
+Native subagents may assist inside a Task. The parent worker owns their scope, write isolation, combined result and cleanup before reporting; read-only helpers may share context, while concurrent writers use isolated branches and worktrees. They do not create extra project-level Orca Runs/Tasks and do not replace independent review.
+The coordinator does not select, probe or validate its own model. Only record a user-reported value in `run-state.coordinatorModelReported`.
+`worker-start` has no permission flag; permission comes from the selected Agent's configuration and user Orca settings, which are recorded rather than invented.
 
 ## Skill delivery
 
@@ -109,7 +103,7 @@ Read [Skill configuration and delivery](references/configuration-precedence.md#s
 ## Task and branch creation
 
 Read `references/branch-model.md` before choosing a branch or baseline.
-Every Task, including scout, audit, review and verification, receives its own branch/worktree; default base is `delivery_branch`.
+Every top-level Orca Task, including scout, audit, review and verification, receives its own branch/worktree; default base is `delivery_branch`.
 Override only for an explicit user base, a review of another branch, a true unintegrated prerequisite, or historical reproduction; record the reason.
 Prefer reviewing and merging prerequisites before creating dependent implementation Tasks. Encode only true dependencies; use parallel waves and avoid chains deeper than 3–4 steps.
 Workers commit authorized source changes on their task branches before reporting and never merge their own branches.
@@ -137,7 +131,7 @@ Use `taskKind` (`source` or `read-only`, default `source`), `briefProfile` (`sta
 3. Design: after reconnaissance closes, evaluate `routing/design-triggers.json`; record `required`/`skipped`, reason and evidence in run-state `stageDecisions`. If required, dispatch read-only design Tasks by deliverable key via `routing/role-selection.json`; if skipped, proceed to planning.
 4. Plan: use solution-planner, multiple plans plus plan-adjudicator when needed; resolve real product ambiguity with requirements-analyst first.
 5. Task graph: write task-definition and assemble input; record machine-readable assignments, true dependencies and parallel waves.
-6. Dispatch: launch all independent ready Tasks in parallel and record each assignment from its receipt; verify the first effective receipt. Follow [dispatch mechanics](references/execution-loop.md#dispatch-and-wait).
+6. Dispatch: launch all independent ready Tasks in parallel and record each assignment from its receipt; record the first effective receipt without requiring internal model/effort disclosure. Follow [dispatch mechanics](references/execution-loop.md#dispatch-and-wait).
 7. Wait and settle: process active-Dispatch messages, resolve terminal ownership and acknowledge; immediately dispatch newly ready work. Follow [wait mechanics](references/execution-loop.md#dispatch-and-wait).
 8. Empty waits: after three consecutive empty waits, inspect the fleet and its projected next action. Follow [inspection mechanics](references/execution-loop.md#dispatch-and-wait).
 9. Settle source: match each completion to its active Task/Dispatch and advance the assignment to `review`; for a source Task, immediately dispatch independent review alongside other implementation.
@@ -151,13 +145,11 @@ Before executing steps 6–12, read [Execution Loop](references/execution-loop.m
 
 Apply **Independent review**, **Control separation**, and **Current verification**. Verdicts are `APPROVED`, `CHANGES_REQUIRED`, or `UNVERIFIABLE`; fixes require re-review. Read [Review and integration mechanics](references/execution-loop.md#review-and-integration) before preparing review input, retaining or reusing sessions, selecting verification coverage, admitting a merge, resolving conflicts or reclaiming worktrees. It defines the approved-commit/clean-tree merge conditions, serial integration, full post-merge/final verification and terminal-ownership requirements.
 
-## Degradation and handoff
+## Recovery and handoff
 
-Before any failure recovery, abnormal-receipt action or route change, read `references/failure-taxonomy.md`; use `model-routing.json` policies without inventing extra fallback routes.
-Escalation follows the chain for demonstrated complexity or quality shortfalls. Explicit rate limiting allows at most two same-tier backoff retries; quota/model unavailability excludes that tier before searching leftward above floor.
-No available route above floor, an unavailable pinned choice, or repeated same-class failures reaching the circuit breaker (at most three recommended) suspends only the affected Task.
-Record time, Task/Dispatch, classification, evidence, original route and action in `degradation-events.json`; summarize pending decisions for the user.
-Authentication failures require diagnosis; silence and unknown observations do not trigger downgrades.
+Before failure recovery or abnormal-receipt action, read `references/failure-taxonomy.md` and the installed Orca recovery contract. Classify explicit evidence; do not infer failure, quota exhaustion or process exit from silence or unknown observations.
+The package maintains no model ladders or automatic upgrade/downgrade policy. Repair local execution problems within scope; if a user-pinned Agent/model/effort cannot be honored, suspend only the affected Task and ask the user. Keep unrelated ready Tasks running.
+Record time, Task/Dispatch, classification, evidence, prior Agent/available launch values and recovery action in `degradation-events.json`; summarize pending decisions for the user. This existing event file remains the recovery record, not a routing policy.
 Before replacing or retrying a writer, pass the [writer-replacement gate](references/recovery-and-idempotency.md#writer-replacement-hardened-gate) and follow [Writing Task handoff](references/worker-handoff.md#writing-task-handoff) for state capture and sequential takeover.
 For read-only retries, preserve each attempt under a unique report path; the coordinator synthesizes the result.
 

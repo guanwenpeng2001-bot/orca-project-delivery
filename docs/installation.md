@@ -4,8 +4,8 @@
 
 Use the [installed external Skill walkthrough](external-skills.md) for version 2 project registration, mixed bindings, resolved requirement selectors and original sibling resources. No separate installation is required for bundled Skills.
 
-This guide installs the `orca-project-delivery` coordinator Skill so a Claude
-Code coordinator session can load it from your control worktree. The package
+This guide installs the `orca-project-delivery` coordinator Skill so an Orca
+coordinator session can load it from your control worktree. The package
 is a plain directory of files — there is no installer, no package registry,
 and no build step.
 
@@ -18,7 +18,7 @@ This guide describes the 4.0.0 package (69 Skills / 18 Roles / 5 workflows). Ins
 | Windows | All scripts have only been exercised on Windows. Other platforms are untested. |
 | PowerShell 7+ (`pwsh`) | Windows PowerShell 5.1 is not sufficient. Check with `pwsh -NoProfile -Command '$PSVersionTable.PSVersion'`. |
 | Git | On `PATH`; used for branches, worktrees, and merges. |
-| Claude Code | Installed, on `PATH`, and authenticated. All workers are Claude Code agents. |
+| Agent | At least one Orca-supported Agent configured and usable on the execution host. Models and effort stay Agent-owned unless explicitly pinned by the user. |
 | Orca Runtime | The `orca` CLI plus the installed global `orchestration`, `orca-cli`, and `orca-per-workspace-env` Skills. They own Run/Task/Dispatch/Worker lifecycle; this package never replaces them. |
 | Professional Skills | **Bundled** — all 69 professional Skills ship inside this package under `skills/<skill-id>/SKILL.md`. No separate install step. The original sixteen trace to [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills); the original sixteen’s upstream baseline and the later original methods’ public references are in `skills/README.md`. |
 
@@ -120,7 +120,7 @@ removed at the end. The verdict is the `SUMMARY` line and the exit code; any
 
 ## Extensions and local execution configuration
 
-For new methods or responsibilities, use the native catalog recipe in [Extending](extending.md), including manifest counts and model routes. The original sixteen are maintained MIT adaptations and the later fifty-three are original methods; this project's original work is MIT, third-party Skills keep their own license, and intentional edits are reviewed before they merge. `verify-package.ps1 -MetadataOnly` is a quick structural check, not a substitute for the full suite. The summary above describes the revision you installed; success requires no failures, not a permanently fixed count.
+For new methods or responsibilities, use the native catalog recipe in [Extending](extending.md), including manifest counts and Role/Skill bindings. The original sixteen are maintained MIT adaptations and the later fifty-three are original methods; this project's original work is MIT, third-party Skills keep their own license, and intentional edits are reviewed before they merge. `verify-package.ps1 -MetadataOnly` is a quick structural check, not a substitute for the full suite. The summary above describes the revision you installed; success requires no failures, not a permanently fixed count.
 
 The capability release adds methods for software, local assets, images, and
 audio, video, and documents. Installing it does not run any of them. The
@@ -198,8 +198,7 @@ though Git works in an ordinary terminal.
 
 Cause: some hosts inject `GIT_CONFIG_COUNT` while stripping environment
 variables whose names contain `KEY`/`TOKEN`/`SECRET`, leaving an orphaned
-count that makes every Git call fail. The bootstrap, run creation, reconciliation, release, run validation, and
-capability-probe scripts guard against this orphaned count. The package
+count that makes every Git call fail. The bootstrap, run creation, reconciliation and release scripts guard against this orphaned count. The package
 suite isolates its child Git environment. For other Git invocations,
 inspect and repair the invoking environment; do not clear valid paired
 configuration indiscriminately.

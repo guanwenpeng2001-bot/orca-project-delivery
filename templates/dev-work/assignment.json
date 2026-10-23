@@ -8,9 +8,9 @@
   },
   "runtime": {
     "requested": {
-      "agent": "claude",
-      "model": "<requested-model>",
-      "effort": "<requested-effort>"
+      "agent": "<selected-agent>",
+      "model": null,
+      "effort": null
     },
     "effective": {
       "agent": null,
