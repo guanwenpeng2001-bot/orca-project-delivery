@@ -1,10 +1,10 @@
 {
   "name": "orca-project-delivery",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-23",
   "releasedAt": "2026-10-23",
-  "revisionNote": "Add 23 game-development methods, Game Designer and Game Test Engineer roles, and a game-development workflow with mandatory design, parallel gameplay/assets, layered tests and per-release publishing readiness. Register routing, consolidate provenance and update bilingual documentation and release checks for 69 Skills, 18 Roles and 5 workflows.",
+  "revisionNote": "Remove review ceremony and bound review effort: drop the review-report Commit Binding hash block (guarded by a structure assertion), scale review effort to run scale and delta with coordinator-precomputed mechanical checks, route lightweight-run review to the code-reviewer floor tier, require bounded worker commands, and replace byte-hash brief pins with behavioral assertions. Bundled counts remain 69 Skills, 18 Roles and 5 workflows.",
   "deliverables": {
     "roles": 18,
     "professionalSkills": 69,

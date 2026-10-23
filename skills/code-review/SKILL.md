@@ -57,6 +57,10 @@ Then look for damage in the code the diff passes through: an early return that s
 6. Write each finding with location, evidence, impact, and severity.
 7. Return APPROVED, CHANGES_REQUIRED, or UNVERIFIABLE.
 
+## Evidence economy
+
+Settle behavior questions with one decisive command, not derivation. If a question about what the code does can be answered by running it, run it once and accept the output; do not reason the answer out from first principles. Keep every single check on a budget: unresolved after roughly ten minutes, record it UNVERIFIABLE with the reason and move to the next item. Scale tracing depth to the risk of the delta — a scaffold, config, or docs change does not earn the same concurrency and failure-path tracing as a state machine. When the coordinator has attached mechanical-check evidence (scans, comparisons, status observations), audit that evidence instead of re-running it.
+
 ## Worked example
 
 When calibrating severity or distinguishing behavior defects from preferences, load [Order cancellation review](examples/order-cancellation.md) for concrete findings.
@@ -69,6 +73,7 @@ When calibrating severity or distinguishing behavior defects from preferences, l
 - Comments restate what a linter already reports.
 - The verdict is APPROVED while a requirement from the objective has no corresponding code or test.
 - The reviewer rewrites the code instead of describing the problem.
+- The review spends an order of magnitude more effort than the change warranted, or derives by pure reasoning what one command could have shown.
 
 ## Evaluation scenario
 

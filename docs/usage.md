@@ -9,7 +9,7 @@ summarizes the workflow defined in `SKILL.md` and its references; the Skill
 itself is the authority at runtime, and the installed global `orchestration`
 Skill plus current `--help` output are the authority for every Orca command.
 
-This guide targets 3.1.0: **69 Skills, 18 Roles, 5 workflows**. Select
+This guide targets 3.1.1: **69 Skills, 18 Roles, 5 workflows**. Select
 only the methods needed by the Task: shared tokens use `design-system`, domain
 invariants use `domain-modeling`, upgrades use `migration-upgrade`, and tool
 protocols use `mcp-server-development`. Diagrams, localization, Skill evaluation
@@ -128,7 +128,9 @@ dependencies; use parallel waves and avoid chains deeper than 3–4 steps.
 Assembly checks every acceptance/tests command against the real package
 scripts and their declared parameters and fails without writing a brief when
 a command cannot run. Review briefs take optional `reviewInput.deltaPaths`
-and scale re-verification by the delta; standard briefs name the minimum
+(scaling re-verification by the delta) and `reviewInput.coordinatorEvidence`
+(coordinator-precomputed mechanical checks the reviewer audits instead of
+re-running); standard briefs name the minimum
 relevant suites, with full gates at post-merge and final. Named suites run as
 `scripts/verify-package.ps1 -Suites '<name>'`; prerequisites are added automatically.
 `-SuiteTimeoutSeconds` budgets only the package runtime suite's child processes; other
@@ -195,9 +197,9 @@ under review.
 After a confirmed source `worker_done`, dispatch an independent review of the actual
 implementation branch in an isolated worktree, in parallel with other
 implementation. Reviewers report `APPROVED`, `CHANGES_REQUIRED`, or
-`UNVERIFIABLE`, never edit source, and record target/baseline SHAs. File
-completed review reports under `runs/<run>/reviews/`; the report's commit
-binding is the durable link between the verdict and the reviewed commit.
+`UNVERIFIABLE`, never edit source, and record the reviewed target as one observed
+line. File completed review reports under `runs/<run>/reviews/`; the coordinator
+re-checks the source HEAD itself before merging.
 Accepted findings become fix Tasks followed by re-review.
 
 ### 8. Integration

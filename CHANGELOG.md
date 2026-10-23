@@ -4,6 +4,14 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 3.1.1 — 2026-10-23
+
+- Removed review ceremony left over from the pre-3.0.0 apparatus: the Commit Binding hash block in `templates/review-report.md` is gone (the reviewed target is one plain observed line; merge-time HEAD checks stay with the coordinator), and a structure assertion keeps hash-binding vocabulary out of the template.
+- Review effort now scales with the run scale and the delta: lightweight-run reviews read the diff and map it to the acceptance criteria instead of re-running verification batteries, and the coordinator precomputes mechanical checks (credential scans, excluded-path sweeps, version-residue sweeps, file-set comparisons, HEAD/status observations) into the brief as evidence the reviewer audits rather than re-derives.
+- Lightweight runs route independent review to the code-reviewer floor tier instead of defaulting every review to opus.
+- The code-review Skill gains an evidence-economy section: settle behavior questions with one decisive command, budget each check (unresolved after roughly ten minutes is recorded UNVERIFIABLE), and scale tracing depth to delta risk.
+- The worker contract now requires bounded commands only: explicit timeouts, no watch/daemon/interactive or retry/poll loops, and no ad-hoc scripts re-deriving what one decisive command shows. The byte-hash pin on assembled briefs is replaced by behavioral assertions, ending the re-pin ritual on every contract edit.
+
 ## 3.1.0 — 2026-10-23
 
 - Added 23 game-development Skills covering gameplay/economy/level/3C design, engineering, six engine families, assets/audio/testing, publishing/build/live operations and IAA/IAP monetization; package totals are 69 Skills, 18 Roles and 5 workflows.

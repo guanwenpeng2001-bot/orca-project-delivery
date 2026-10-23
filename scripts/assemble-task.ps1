@@ -424,6 +424,11 @@ if ($isReview) {
 - Diff command: ``$($task.reviewInput.diffCommand)``
 
 "@
+  if ($task.reviewInput -and $task.reviewInput.PSObject.Properties['coordinatorEvidence'] -and @($task.reviewInput.coordinatorEvidence).Count) {
+    $inputSection += "Coordinator-precomputed evidence (audit, do not re-run):`n"
+    $inputSection += (($task.reviewInput.coordinatorEvidence | ForEach-Object { "- $_" }) -join "`n")
+    $inputSection += "`n`n"
+  }
   if ($includeRequirements -and $requirementBody) { $inputSection += "`n$requirementBody`n" }
 }
 # Verification obligations: worker-side rules that keep review effort proportional to the delta

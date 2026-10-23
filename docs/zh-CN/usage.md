@@ -6,7 +6,7 @@
 
 本走读从协调者的位置演示一次完整交付。它概括 `SKILL.md` 及其参考所定义的工作流；运行时以该 Skill 本身为权威，每一条 Orca 命令则以已安装的全局 `orchestration` Skill 加上当前 `--help` 输出为权威。
 
-本指南面向3.1.0：**69 个 Skill、18 个角色、5 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。加载 Skill 不会自行新增角色或扩大权限；两个游戏角色已显式注册。
+本指南面向3.1.1：**69 个 Skill、18 个角色、5 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。加载 Skill 不会自行新增角色或扩大权限；两个游戏角色已显式注册。
 
 ## 游戏开发交付
 
@@ -76,7 +76,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 为每个任务写任务定义，并用 `scripts/assemble-task.ps1` 组装其输入。每个任务携带：一个主角色、必需（以及可选的条件）Skill、允许与禁止范围、分支与工作树合同、一条 `.dev-work` 报告路径、验收条件，以及 Orca Worker Contract。即使已有 Markdown 简报，也要把机器可读的指派记在 `runs/<run>/assignments/<task>.json` 下 — 包括请求的和生效的运行时值。只编码真实依赖；使用并行波次，避免深于 3–4 步的链。
 
-组装会对照包内真实脚本及其声明参数逐条校验验收与测试命令，命令不可执行时组装失败、不写简报。审查简报可带 `reviewInput.deltaPaths` 并按 delta 缩放重验范围；标准简报点名最小相关套件，全量门禁留在合并后与终态验证。点名套件用 `scripts/verify-package.ps1 -Suites '<name>'` 运行，前置套件会自动补齐。`-SuiteTimeoutSeconds` 只为 package runtime 套件的子进程计时，其余检查沿用每子进程 60 秒的默认预算。
+组装会对照包内真实脚本及其声明参数逐条校验验收与测试命令，命令不可执行时组装失败、不写简报。审查简报可带 `reviewInput.deltaPaths`（按 delta 缩放重验范围）与 `reviewInput.coordinatorEvidence`（协调者预跑的机械检查结果，审查者审计而非重跑）；标准简报点名最小相关套件，全量门禁留在合并后与终态验证。点名套件用 `scripts/verify-package.ps1 -Suites '<name>'` 运行，前置套件会自动补齐。`-SuiteTimeoutSeconds` 只为 package runtime 套件的子进程计时，其余检查沿用每子进程 60 秒的默认预算。
 
 随包专业 Skill 从本包的 `skills/<skill-id>/SKILL.md` 解析。外部 Skill 必须在版本 2 项目配置中显式注册，见[外部 Skill](external-skills.md)。组装交付解析后的路径（`explicit-path`），或内联同一正文（`inline-extract`）。随包文件缺失时组装失败，不会静默回退到 `~/.agents/skills` 下的同级安装。随包 Skill 的出处写在 `skills/README.md`。见 [professional-skills.md](professional-skills.md)、[professional-capabilities.md](professional-capabilities.md) 和 [installation.md](installation.md)。检查安装、运行本地工具和依赖辅助脚本而不调用提供方的走读在 [professional-capability-tutorial.md](professional-capability-tutorial.md)。
 
@@ -100,7 +100,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 ### 7. 审查
 
-源码任务 `worker_done` 确认之后，在隔离工作树中对实际实现分支做独立审查，与其他实施并行。审查者报告 `APPROVED`、`CHANGES_REQUIRED` 或 `UNVERIFIABLE`，从不编辑源码，并记录目标 / 基线 SHA。完成的审查报告归档到 `runs/<run>/reviews/`；报告中的提交绑定是裁决与受审提交之间的持久链接。被接受的发现项变成修复任务，随后重新审查。
+源码任务 `worker_done` 确认之后，在隔离工作树中对实际实现分支做独立审查，与其他实施并行。审查者报告 `APPROVED`、`CHANGES_REQUIRED` 或 `UNVERIFIABLE`，从不编辑源码，并以一行观察记录注明受审提交。完成的审查报告归档到 `runs/<run>/reviews/`；合并前由协调者亲自复核源码 HEAD。被接受的发现项变成修复任务，随后重新审查。
 
 ### 8. 集成
 

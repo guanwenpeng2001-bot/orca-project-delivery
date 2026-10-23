@@ -202,6 +202,10 @@ function Test-PackageStructure {
   Invoke-Check 'metadata/skills-readme' {
     Assert-Condition (Test-Path -LiteralPath (Join-Path $root 'skills/README.md') -PathType Leaf) 'Missing skills/README.md: per-Skill provenance and license record'
   }
+  Invoke-Check 'metadata/review-report-no-hash-binding' {
+    $template = [IO.File]::ReadAllText((Join-Path $root 'templates/review-report.md'))
+    Assert-Condition ($template -notmatch 'commitSha|Commit Binding|"dirty"') 'review-report template must not reintroduce hash-binding bookkeeping'
+  }
   Invoke-Check 'metadata/skill-paths' {
     $missing = [Collections.Generic.List[string]]::new()
     foreach ($skill in (Read-PackageJson 'routing/skill-catalog.json').skills) {
