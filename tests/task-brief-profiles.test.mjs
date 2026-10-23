@@ -66,7 +66,7 @@ test('game roles assemble their registered methods in both delivery modes', (con
 
 test('legacy bundled briefs retain their exact normalized bytes in both modes', (context) => {
   const data = fixture(context);
-  for (const [mode, expected] of Object.entries({ 'explicit-path': '22c80922843a30168d379bbffcd68e9e21c8d733beb88eebf8a426d014417bdf', 'inline-extract': '6d20df6c988a6607493390d958cb2b1afb2a7c5837b02423750f1c9b520a2904' })) {
+  for (const [mode, expected] of Object.entries({ 'explicit-path': 'f4bb56fbca34d5db63fded91d2ed824c535c9ed21341dfb10b5b00569eb8b7ae', 'inline-extract': '33904cca14137dfcd053c2ec6f6e86ce02db149c78aadf751c64080161b7d1fd' })) {
     const result = assemble(data, { skills: { required: ['test-driven-development', 'test-driven-development'], conditional: ['integration-verification'] }, skillDeliveryMode: mode });
     assert.equal(result.code, 0, result.diagnostics);
     let normalized = result.brief.replaceAll('\\', '/');

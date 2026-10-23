@@ -14,6 +14,10 @@
 - Run the verification this Task names before reporting, and never present an unfinished check as
   verified. The full package suite at post-merge integration and final verification belongs to the
   coordinator; do not park them as "verification pending".
+- Run bounded commands only: every command carries an explicit timeout and a bounded scope — no
+  watch modes, daemons, interactive prompts, or retry/poll loops. A command that outlives its
+  budget is killed, recorded with its output, and the Task moves on; it is never re-run in a loop.
+  Do not write ad-hoc scripts to re-derive what one decisive command shows.
 - Source/deliverable Tasks: commit your work within the authorized scope on your task branch before
   reporting; the coordinator reviews and merges the committed deliverable.
 - Read-only Tasks: produce no commits and write only the assigned report path.

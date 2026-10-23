@@ -1,6 +1,6 @@
 ---
 name: orca-project-delivery
-description: 以 Claude Code 为唯一 Worker 的 Orca 项目交付协调：intake、动态侦察、fable 方案、sonnet 实施、opus 独立审查、合入 delivery_branch、最终验证、降级与收尾。仅协调者使用；worker 派发中不得调用。
+description: 以 Claude Code 为唯一 Worker 的 Orca 项目交付协调：intake、动态侦察、fable 方案、sonnet 实施、独立审查按规模分档、合入 delivery_branch、最终验证、降级与收尾。仅协调者使用；worker 派发中不得调用。
 ---
 
 # Orca Project Delivery
@@ -92,7 +92,7 @@ Role defines identity, Skill defines method, and Task defines this attempt's obj
 
 ## Model and effort routing
 
-All workers use Claude Code: haiku for reconnaissance, fable for planning/adjudication, sonnet for implementation, opus for independent review/verification.
+All workers use Claude Code: haiku for reconnaissance, fable for planning/adjudication, sonnet for implementation. Independent review routes opus on standard and high-risk runs; lightweight runs route review to the code-reviewer `floor` tier.
 The sole routing authority is `routing/model-routing.json`: select the role's `chain`, start at `default`, never go below `floor`. For narrowly bounded read-only comparison, link-check and document Tasks with explicit output, apply `trivialTaskAdjustment`: move one step left from default, dispatching at the haiku floor when that step reaches it; never skip chain steps or override a pinned choice.
 Dispatch fresh sessions through `worker-start` with `--agent claude` and the selected `--model` / `--effort`; reused terminals keep their session route and omit those launch flags. Obtain exact syntax from installed help.
 Use the tier's request shape. Haiku prefers `claude-haiku-4-5` plus effort; on parameter rejection or first receipt mismatch, use alias `haiku` without effort and record the degradation, unless the user pinned the choice.
