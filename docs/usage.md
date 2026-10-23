@@ -9,13 +9,19 @@ summarizes the workflow defined in `SKILL.md` and its references; the Skill
 itself is the authority at runtime, and the installed global `orchestration`
 Skill plus current `--help` output are the authority for every Orca command.
 
-This guide targets 3.0.0: **46 Skills, 16 Roles, 4 workflows**. Select
+This guide targets 3.1.0: **69 Skills, 18 Roles, 5 workflows**. Select
 only the methods needed by the Task: shared tokens use `design-system`, domain
 invariants use `domain-modeling`, upgrades use `migration-upgrade`, and tool
 protocols use `mcp-server-development`. Diagrams, localization, Skill evaluation
 and subtitle conversion have dedicated Skills. See the [capability guide](professional-capabilities.md)
 and [offline tutorial](professional-capability-tutorial.md) for inputs, commands,
-and verification limits. New Skills do not create new Roles or expand authority.
+and verification limits. Loading a Skill does not create a Role or expand authority; the two game Roles are explicitly registered.
+
+## Game-development delivery
+
+Choose [game-development](../workflows/game-development.md) when developing a game or game feature. Intake records target platforms, engine or selection-needed, genre, IAA/IAP/both/none, and novice/veteran familiarity. These probes select Skills and beginner versus core-method chapters for each brief. Game design is mandatory; upgrade light depth to standard. `game-designer` produces gameplay, applicable level/3C and economy specifications (economy is mandatory for IAA/IAP).
+
+Run gameplay implementation (`software-implementer`) and asset production (`media-producer`) in parallel once their real design dependencies settle; monetization implementation depends on economy design. `game-test-engineer` applies smoke, story, regression, soak, real-device and certification checks, then checks `game-publishing` platform and applicable China compliance lists for every release before final verification. Final verification still belongs to `release-verifier`; successful completion supplies a `game-live-ops` handoff. Engine/platform operations stay in project-side guidance and external Skills, and publication needs explicit authorization.
 
 ## Starting a delivery (coordinator entry)
 
@@ -83,7 +89,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 Record in run-state: the objective, the scale, the delivery branch, any
 user-pinned Agent/model choices, and side-effect boundaries. Choose the
-workflow (`feature-development`, `bug-fix`, `refactor`, or `audit`) with
+workflow (`feature-development`, `game-development`, `bug-fix`, `refactor`, or `audit`) with
 `routing/workflow-selection.json`, and the depth — light, standard, or
 high-risk — recording the reasons if you reduce scale. After reconnaissance,
 record the design verdict (`required` or `skipped`), with reason and evidence,
@@ -253,8 +259,10 @@ Default routes (chain index 1 of each role's chain):
 | browser-test-engineer | sonnet / high |
 | media-producer | sonnet / high |
 | document-specialist | sonnet / high |
+| game-designer | sonnet / high |
+| game-test-engineer | sonnet / high |
 
-The last four are current routes for the Roles added in 2.3.0. The routing file
+The table includes the four Roles added in 2.3.0 and two game Roles added in 3.1.0. The routing file
 is the authority; if it disagrees with this table, the file wins. What each new
 Role does and refuses is in
 [Professional capabilities](professional-capabilities.md).
@@ -318,7 +326,7 @@ residual resources using `references/failure-taxonomy.md`.
 
 **How do I pick the workflow?**
 Match the objective: defect correction → `bug-fix`; assessment/findings →
-`audit`; behavior-preserving structure work → `refactor`; new or changed
+`audit`; behavior-preserving structure work → `refactor`; game or gameplay-feature development → `game-development`; other new or changed
 behavior → `feature-development` (the default). Depth (light / standard /
 high-risk) follows evidence; record reasons when reducing scale.
 

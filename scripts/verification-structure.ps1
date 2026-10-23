@@ -143,6 +143,13 @@ function Test-PackageStructure {
   Invoke-Check 'routing/role-selection-valid' {
     Assert-RoleSelection (Read-PackageJson 'routing/role-selection.json') (Read-PackageJson 'roles/catalog.json')
   }
+  Invoke-Check 'routing/workflow-paths' {
+    $selection = Read-PackageJson 'routing/workflow-selection.json'
+    foreach ($name in @($selection.default) + @($selection.rules.workflow)) {
+      Assert-Condition ($name -is [string] -and $name -cmatch '^[a-z0-9][a-z0-9-]*$') 'workflow: invalid name'
+      Assert-Condition (Test-Path -LiteralPath (Join-Path $root "workflows/$name.md") -PathType Leaf) "workflow: missing definition $name"
+    }
+  }
   Invoke-Check 'routing/design-triggers-valid' {
     Assert-DesignTriggers (Read-PackageJson 'routing/design-triggers.json') (Read-PackageJson 'routing/role-selection.json')
   }

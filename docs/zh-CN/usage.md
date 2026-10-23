@@ -6,7 +6,13 @@
 
 本走读从协调者的位置演示一次完整交付。它概括 `SKILL.md` 及其参考所定义的工作流；运行时以该 Skill 本身为权威，每一条 Orca 命令则以已安装的全局 `orchestration` Skill 加上当前 `--help` 输出为权威。
 
-本指南面向3.0.0：**46 个 Skill、16 个角色、4 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。新增 Skill 不新增角色，也不扩大权限。
+本指南面向3.1.0：**69 个 Skill、18 个角色、5 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。加载 Skill 不会自行新增角色或扩大权限；两个游戏角色已显式注册。
+
+## 游戏开发交付
+
+开发游戏或游戏功能时选择 [game-development](../../workflows/game-development.md)。受理记录目标平台、引擎或待选型、品类、IAA/IAP/两者/无以及新手/资深熟悉度。这些探针决定任务 Skill 及简介引用的新手导航或核心方法章节。玩法设计为必经阶段，light 深度升级到 standard。`game-designer` 产出玩法、适用关卡/3C 和经济规格（IAA/IAP 必须有经济设计）。
+
+真实设计依赖满足后，玩法实施（`software-implementer`）与素材制作（`media-producer`）并行；变现实施依赖经济设计。`game-test-engineer` 按冒烟、故事、回归、长时、真机和认证阶梯验证，并在每次发布、最终验证之前执行 `game-publishing` 平台及适用中国合规清单。最终验证仍归 `release-verifier`，通过后提供 `game-live-ops` 交接。引擎/平台操作归项目侧资料与外部 Skill，发布仍需明确授权。
 
 ## 开始一次交付（协调者入口）
 
@@ -54,7 +60,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 ### 1. 受理（Intake）
 
-在运行状态中记录：目标、规模、交付分支、任何用户锁定的 Agent / 模型选择，以及副作用边界。用 `routing/workflow-selection.json` 选择工作流（`feature-development`、`bug-fix`、`refactor` 或 `audit`），以及深度 — light、standard 或 high-risk — 若缩小规模，记下原因。侦察结束后、规划开始前，将设计判断（`required` 或 `skipped`）及其原因和证据记录在运行状态的 `stageDecisions.design` 中。
+在运行状态中记录：目标、规模、交付分支、任何用户锁定的 Agent / 模型选择，以及副作用边界。用 `routing/workflow-selection.json` 选择工作流（`feature-development`、`game-development`、`bug-fix`、`refactor` 或 `audit`），以及深度 — light、standard 或 high-risk — 若缩小规模，记下原因。侦察结束后、规划开始前，将设计判断（`required` 或 `skipped`）及其原因和证据记录在运行状态的 `stageDecisions.design` 中。
 
 ### 2. 侦察
 
@@ -134,8 +140,10 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 | browser-test-engineer | sonnet / high |
 | media-producer | sonnet / high |
 | document-specialist | sonnet / high |
+| game-designer | sonnet / high |
+| game-test-engineer | sonnet / high |
 
-最后四个是 2.3.0 新增角色的当前路由。路由文件是权威；如果它与本表不一致，以文件为准。每个新角色做什么、拒绝什么，见[专业能力](professional-capabilities.md)。
+本表包含 2.3.0 新增的四个角色与 3.1.0 新增的两个游戏角色。路由文件是权威；如果它与本表不一致，以文件为准。每个新角色做什么、拒绝什么，见[专业能力](professional-capabilities.md)。
 
 升档沿链向右一步（先提推理档，再提档位）；降档只在有明确的速率限制、配额或模型不可用证据时发生，绝不因沉默而降。haiku 档优先使用带推理档的完整模型 id，被拒绝或不匹配时回退到不带推理档的别名。用户锁定的选择禁止一切自动变更。
 
@@ -178,7 +186,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 ## 常见使用问题
 
 **如何选择工作流？**
-按目标匹配：缺陷修正 → `bug-fix`；评估 / 发现项 → `audit`；保持行为不变的结构调整 → `refactor`；新增或改变的行为 → `feature-development`（默认）。深度（light / standard / high-risk）跟着证据走；缩小规模时记录原因。
+按目标匹配：缺陷修正 → `bug-fix`；评估 / 发现项 → `audit`；保持行为不变的结构调整 → `refactor`；游戏或游戏功能开发 → `game-development`；其他新增或改变的行为 → `feature-development`（默认）。深度（light / standard / high-risk）跟着证据走；缩小规模时记录原因。
 
 **如何知道任务已可派发？**
 它的真实依赖已通过各自的门成功结算（源码依赖需要审查*和*集成，而不只是 `worker_done`），写入范围与在途任务不相交，并且基线与路由可用。任务一就绪就派发。

@@ -20,6 +20,11 @@
       "id": "ui-or-interaction",
       "when": ["new user flows, interaction states, or visual hierarchy must be specified"],
       "instantiates": ["user-flow-and-interaction", "visual-design-spec"]
+    },
+    {
+      "id": "game-development",
+      "when": ["the objective is developing a game or game feature"],
+      "instantiates": ["game-design-spec"]
     }
   ]
 }

@@ -4,7 +4,7 @@
 
 版本 2 项目注册、混合绑定、解析后的依赖选择及原位置同级资源，见[已安装外部 Skill 演练](external-skills.md)。包内 Skill 不需要单独安装。
 
-Orca Project Delivery 协调的工作者会加载**专业 Skill** — 提供专业方法的说明包（`SKILL.md`），覆盖侦察、产品工作、架构、实施、审查和验证，以及软件交付、本地资产、图像和音视频、文档的方法。3.0.0 版本中，全部四十六个 Skill **随本包**放在 `skills/<skill-id>/SKILL.md`。部分方法还附带本地脚本或提供方连接器；执行证据与加载说明分开。安装完整且匹配的版本，并按[教程](professional-capability-tutorial.md)核对版本和目录。版本不匹配就不是本版本。
+Orca Project Delivery 协调的工作者会加载**专业 Skill** — 提供专业方法的说明包（`SKILL.md`），覆盖侦察、产品工作、架构、实施、审查和验证，以及软件交付、本地资产、图像和音视频、文档的方法。3.1.0 版本中，全部六十九个 Skill **随本包**放在 `skills/<skill-id>/SKILL.md`。部分方法还附带本地脚本或提供方连接器；执行证据与加载说明分开。安装完整且匹配的版本，并按[教程](professional-capability-tutorial.md)核对版本和目录。版本不匹配就不是本版本。
 
 ## 上游来源
 
@@ -85,6 +85,38 @@ Orca Project Delivery 协调的工作者会加载**专业 Skill** — 提供专�
 | `technical-diagrams` | 可读且有可访问描述的 SVG 与 Mermaid 源码。 |
 | `localization` | 术语表、ICU 占位符、文本膨胀与从右到左布局。 |
 | `subtitle-production` | SRT 与 WebVTT 纯文本字幕离线互转。 |
+
+## 3.1.0 新增的二十三个 Skill
+
+这些是方法，不是引擎运行时或发布工具。每个包含新手导航、核心决策、失败判据及项目侧平台边界。逐项来源、提交、许可和验证限制见[溯源记录](../../skills/README.md#game-family-provenance-310)。
+
+| Skill | 用途 |
+| --- | --- |
+| `game-design` | 核心循环、选择、规则、反馈与成长假设。 |
+| `game-economy-design` | 来源、消耗、存量与奖励/购买平衡。 |
+| `game-level-design` | 移动指标、可达性与挑战顺序。 |
+| `game-3c-design` | 角色、控制、镜头的耦合设计。 |
+| `gameplay-programming` | 可测规则、行为、输入与版本化存档。 |
+| `game-physics` | 时序、碰撞与接触诊断。 |
+| `game-content-pipeline` | 稳定内容标识与可复现转换。 |
+| `game-performance` | 实测瓶颈与设备预算。 |
+| `game-multiplayer` | 权威、同步、预测与恢复。 |
+| `engine-urhox` | Maker 项目文档、预览与构建边界。 |
+| `engine-cocos-creator` | Cocos 平台、工具与编辑器许可决策。 |
+| `engine-unity` | 全球 Unity 与团结引擎分开的交付路径。 |
+| `engine-godot` | 匹配版本的文档、导出与工具限制。 |
+| `engine-unreal` | 打包、Blueprint/C++ 边界与版税快照。 |
+| `engine-web-canvas` | 浏览器优先交付及包装/云服务限制。 |
+| `game-asset-pipeline` | 素材制作、稳定标识与引擎验收。 |
+| `game-audio` | 混音图、自适应音乐、增益与时序。 |
+| `game-testing-ladders` | 从冒烟到真机和认证的分层证据。 |
+| `game-publishing` | 平台就绪与每次发布的政策复核。 |
+| `game-build-release` | 可复现构建、候选、补丁与回滚。 |
+| `game-live-ops` | 赛季、活动、分群、经济与恢复。 |
+| `game-monetization-iaa` | 意图驱动广告与经济约束奖励。 |
+| `game-monetization-iap` | 商品、购买、收入、权益与退款。 |
+
+游戏或游戏功能目标使用 [game-development](../../workflows/game-development.md)；`game-designer` 负责设计，`game-test-engineer` 负责分层测试证据与发布就绪。实施和素材制作仍归现有角色。来源审阅不等于游戏运行成功或政策审批通过。
 
 ## 安装
 

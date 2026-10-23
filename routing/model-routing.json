@@ -32,6 +32,28 @@
     "recording": "每次派发在 assignments/<task>.json 的 runtime 块记录 requested（实际字面值）与 effective（首次回执 launch.effective）；无法核对记 null，verification.status ∈ verified|mismatch|unverified；换档原因记入顶层 fallbackReason。任何不在角色 chain 的 default 索引起派的 Task 都必须记录原因：路由偏移原因写入 assignment 顶层 fallbackReason，协调者判断还须记入 decisions.md；默认路由派发只需上述 runtime 块。"
   },
   "roles": {
+    "game-designer": {
+      "chain": [
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "opus", "effort": "medium" },
+        { "tier": "opus", "effort": "high" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["玩法、经济、关卡与3C设计", "变现设计与运营计划"]
+    },
+    "game-test-engineer": {
+      "chain": [
+        { "tier": "sonnet", "effort": "medium" },
+        { "tier": "sonnet", "effort": "high" },
+        { "tier": "sonnet", "effort": "xhigh" },
+        { "tier": "opus", "effort": "medium" }
+      ],
+      "default": 1,
+      "floor": 0,
+      "taskTypes": ["游戏分层测试", "性能与发布就绪核验"]
+    },
     "codebase-scout": {
       "chain": [
         { "tier": "haiku", "effort": "low" },

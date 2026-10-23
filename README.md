@@ -4,14 +4,14 @@
 
 A coordinator-only Skill for Orca and Claude Code users, turning software objectives into isolated, independently reviewed, integrated, and verified changes.
 
-![Version](https://img.shields.io/badge/version-3.0.0-blue)
+![Version](https://img.shields.io/badge/version-3.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-These guides describe the **3.0.0 package: 46 Skills, 16 Roles, and 4 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
+These guides describe the **3.1.0 package: 69 Skills, 18 Roles, and 5 workflows**. Install the complete matching release, and check `VERSION`, both catalogs, and the manifest before following the [capability tutorial](docs/professional-capability-tutorial.md). A version that does not match is not this release.
 
-New in 3.0.0: the delivery flow is reduced to its load-bearing stages. The six-phase Git-evidence validator, its schema and templates, the dispatch-wave ledger, the brief digest and the bundled-Skill hash table are removed; integration safety rests where it actually came from — task isolation, one writer per branch, an independent reviewer who is not the implementer, a clean-tree/approved-commit check the coordinator runs directly before merging, and a full verification suite at the integrated HEAD and again at the latest delivery before closure. Machine-readable assignments, model-routing receipts, the coordinator lock and the writer-replacement gate remain. Bundled counts stay 46 Skills, 16 Roles, and 4 workflows; [installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
+New in 3.1.0: 23 game-development Skills, Game Designer and Game Test Engineer roles, and the game-development workflow bring the package to 69 Skills, 18 Roles and 5 workflows. Mandatory gameplay design, parallel gameplay and asset production, layered testing and publishing-readiness checks connect the methods to delivery. Every release rechecks applicable compliance; engine APIs and platform operations stay in project-side guidance. [Installed external Skills](docs/external-skills.md) remain available through explicit project configuration.
 
 Orca Project Delivery is a coordinator-only Skill that runs a complete software
 delivery pipeline with Claude Code worker agents. It solves the problem of
@@ -82,16 +82,16 @@ and user decisions.
 
 | Capability | Detail | Source |
 | --- | --- | --- |
-| Roles | 16 (research, product, architecture, engineering, quality, media) | `roles/catalog.json` |
-| Professional Skills | 46 bundled under package `skills/` | `routing/skill-catalog.json` |
-| Workflows | 4: feature-development, bug-fix, refactor, audit | `workflows/` |
+| Roles | 18 (research, product, architecture, engineering, quality, media) | `roles/catalog.json` |
+| Professional Skills | 69 bundled under package `skills/` | `routing/skill-catalog.json` |
+| Workflows | 5: feature-development, bug-fix, refactor, audit, game-development | `workflows/` |
 | Adaptive depth | light / standard / high-risk stage chains | `routing/workflow-selection.json` |
 | Model routing | per-role chains over haiku / sonnet / opus / fable with effort levels, defaults, floors | `routing/model-routing.json` |
 | Required invariants | 12 binding rules for isolation, review, evidence, and integration | `SKILL.md` |
 | Helper scripts | PowerShell bootstrap, assembly, dependency checks, scoped child execution, validation and release | `scripts/` |
 | Offline acceptance | Full synthetic package suite; require exit 0 and `FAIL=0` | `scripts/verify-package.ps1` |
 | Native extensions | Register Roles and Skills, declare optional CLI/env/API requirements | [Extension guide](docs/extending.md) |
-| Professional capabilities | 8 new Skills and 6 enhancement groups in 2.4.0; 16 Roles and 4 workflows retained | [Capability guide](docs/professional-capabilities.md) |
+| Professional capabilities | 23 game Skills, 2 game Roles and the game-development workflow added in 3.1.0 | [Capability guide](docs/professional-capabilities.md) |
 
 ## Quick start
 
@@ -99,7 +99,7 @@ Requirements: Windows, PowerShell 7+, Git, Claude Code, the Orca Runtime, and
 this package (professional Skills are included under `skills/`). The original
 sixteen trace to
 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills);
-the later thirty are original MIT methods with public references, per
+the later fifty-three are original MIT methods with public references, per
 [docs/professional-capabilities.md](docs/professional-capabilities.md).
 Full details and troubleshooting:
 [docs/installation.md](docs/installation.md).
@@ -123,7 +123,7 @@ integrate, and close. The walkthrough lives in
 orca-project-delivery/
 ├── SKILL.md                  # Coordinator entry point (17 sections, <= 250 lines)
 ├── LICENSE                   # MIT
-├── VERSION                   # 3.0.0
+├── VERSION                   # 3.1.0
 ├── PACKAGE-MANIFEST.json     # Package metadata and deliverable counts
 ├── CHANGELOG.md
 ├── README.md                 # English (default)
@@ -139,10 +139,10 @@ orca-project-delivery/
 │   ├── faq.md                # FAQ and troubleshooting
 │   └── zh-CN/                # Simplified Chinese translations of the guides above
 ├── references/               # 11 deep-dive references (runtime, branch model, handoff, ...)
-├── roles/                    # 16 role contracts + catalog.json
+├── roles/                    # 18 role contracts + catalog.json
 ├── routing/                  # Model, role, skill, and workflow routing tables
-├── skills/                   # 46 maintained professional Skills + LICENSE + README
-├── workflows/                # 4 workflow definitions
+├── skills/                   # 69 maintained professional Skills + LICENSE + README
+├── workflows/                # 5 workflow definitions
 ├── schemas/                  # State, requirements and configuration schemas
 ├── scripts/                  # Delivery and configuration PowerShell helpers
 └── templates/                # AGENTS.md, task/review/report templates, .dev-work seeds
@@ -153,8 +153,8 @@ orca-project-delivery/
 | Document | Contents |
 | --- | --- |
 | [Installation](docs/installation.md) | Prerequisites, directory conventions, install steps, verification, upgrade, uninstall, common install failures |
-| [Professional Skills](docs/professional-skills.md) | All 46 worker Skills, per-Skill sources, install layout, and troubleshooting |
-| [Professional capabilities](docs/professional-capabilities.md) | All 30 later methods and 6 enhancement groups: scope, evidence, licenses |
+| [Professional Skills](docs/professional-skills.md) | All 69 worker Skills, per-Skill sources, install layout, and troubleshooting |
+| [Professional capabilities](docs/professional-capabilities.md) | All 53 later methods, including 23 game methods, and 6 enhancement groups: scope, evidence, licenses |
 | [Capability tutorial](docs/professional-capability-tutorial.md) | Offline checks, local-tool examples and dependency helpers; no provider calls |
 | [Extending and configuration](docs/extending.md) | Native Role/Skill recipes, dependency declarations, literal configuration, offline child-execution walkthrough |
 | [Usage](docs/usage.md) | Starting a delivery from the coordinator entry, the full stage sequence, role/model routing, branch and worktree rules, records and reports, worker receipts, Q&A |

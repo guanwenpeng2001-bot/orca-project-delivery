@@ -8,7 +8,7 @@ param(
   [string]$Objective,
 
   [Parameter(Mandatory = $false)]
-  [ValidateSet("feature-development", "bug-fix", "refactor", "audit")]
+  [ValidateSet("feature-development", "bug-fix", "refactor", "audit", "game-development")]
   [string]$Workflow = "feature-development",
 
   [Parameter(Mandatory = $false)]
