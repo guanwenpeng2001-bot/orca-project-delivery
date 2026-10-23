@@ -2,9 +2,9 @@
 
 [English](../professional-capabilities.md) | **简体中文**
 
-3.1.0 在现有交付、工程和媒体方法上新增游戏开发能力。本包共有 **69 个专业 Skill**、**18 个角色**和 **5 个工作流**。本指南说明各项能力的范围与验证限制。
+3.1.1 在现有交付、工程和媒体方法上新增游戏开发能力。本包共有 **69 个专业 Skill**、**18 个角色**和 **5 个工作流**。本指南说明各项能力的范围与验证限制。
 
-本指南描述3.1.0 包：69 个 Skill、18 个角色、5 个工作流。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `3.1.0`、`routing/skill-catalog.json` 有 69 个 Skill、`roles/catalog.json` 有 18 个角色、`workflows/` 有 5 份定义，且 `PACKAGE-MANIFEST.json` 与之相符。教程会拒绝版本不匹配的安装。
+本指南描述3.1.1 包：69 个 Skill、18 个角色、5 个工作流。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `3.1.1`、`routing/skill-catalog.json` 有 69 个 Skill、`roles/catalog.json` 有 18 个角色、`workflows/` 有 5 份定义，且 `PACKAGE-MANIFEST.json` 与之相符。教程会拒绝版本不匹配的安装。
 
 ## 游戏开发方法
 

@@ -6,7 +6,7 @@
 
 本走读从协调者的位置演示一次完整交付。它概括 `SKILL.md` 及其参考所定义的工作流；运行时以该 Skill 本身为权威，每一条 Orca 命令则以已安装的全局 `orchestration` Skill 加上当前 `--help` 输出为权威。
 
-本指南面向3.1.0：**69 个 Skill、18 个角色、5 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。加载 Skill 不会自行新增角色或扩大权限；两个游戏角色已显式注册。
+本指南面向3.1.1：**69 个 Skill、18 个角色、5 个工作流**。按任务选择方法：共享 token 使用 `design-system`，领域不变量使用 `domain-modeling`，升级使用 `migration-upgrade`，工具协议使用 `mcp-server-development`。图示、本地化、Skill 评估和字幕各有专门 Skill。输入、命令与验证边界见[能力指南](professional-capabilities.md)和[离线教程](professional-capability-tutorial.md)。加载 Skill 不会自行新增角色或扩大权限；两个游戏角色已显式注册。
 
 ## 游戏开发交付
 

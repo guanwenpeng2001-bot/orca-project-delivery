@@ -9,7 +9,7 @@ summarizes the workflow defined in `SKILL.md` and its references; the Skill
 itself is the authority at runtime, and the installed global `orchestration`
 Skill plus current `--help` output are the authority for every Orca command.
 
-This guide targets 3.1.0: **69 Skills, 18 Roles, 5 workflows**. Select
+This guide targets 3.1.1: **69 Skills, 18 Roles, 5 workflows**. Select
 only the methods needed by the Task: shared tokens use `design-system`, domain
 invariants use `domain-modeling`, upgrades use `migration-upgrade`, and tool
 protocols use `mcp-server-development`. Diagrams, localization, Skill evaluation
