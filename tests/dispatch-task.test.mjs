@@ -121,7 +121,7 @@ function writeInputs(t, project, mutate = {}) {
   return { definitionPath, briefPath, receiptPath, worktree };
 }
 
-function runDispatch(project, paths, args = ['-SkipPostValidation']) {
+function runDispatch(project, paths, args = []) {
   const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-File', script,
     '-ProjectRoot', project, '-TaskDefinitionPath', paths.definitionPath,
     '-BriefPath', paths.briefPath, '-ReceiptPath', paths.receiptPath, ...args], {
@@ -180,7 +180,6 @@ test('records a successful dispatch receipt as the run record', (t) => {
   assert.equal(output.ok, true);
   assert.equal(output.runtimeVerification, 'verified');
   assert.equal(output.stage, 'task-graph');
-  assert.deepEqual(output.postValidation, { executed: true, ok: true, exitCode: 0 }, result.stdout);
   assert.deepEqual(output.warnings, []);
 
   const assignmentPath = path.join(runDir, 'assignments', 'fixture-task.json');
@@ -290,7 +289,7 @@ test('refuses a second live dispatch until it is forced, then keeps the history'
   assert.equal(refused.status, 1, refused.stdout + refused.stderr);
   assert.match(clean(refused.stdout + refused.stderr), /already has a live dispatch/);
 
-  const forced = runDispatch(project, second, ['-ForceReDispatch', '-SkipPostValidation']);
+  const forced = runDispatch(project, second, ['-ForceReDispatch']);
   assert.equal(forced.status, 0, forced.stdout + forced.stderr);
   const output = parseOutput(forced);
   assert.equal(output.runtimeVerification, 'mismatch');
@@ -310,7 +309,7 @@ test('rejects an unknown status and incomplete inputs without writing anything',
   const assignmentPath = path.join(runDir, 'assignments', 'fixture-task.json');
 
   const badStatus = writeInputs(t, project);
-  const statusResult = runDispatch(project, badStatus, ['-SkipPostValidation', '-Status', 'dispatched']);
+  const statusResult = runDispatch(project, badStatus, ['-Status', 'dispatched']);
   assert.equal(statusResult.status, 1, statusResult.stdout + statusResult.stderr);
   assert.match(clean(statusResult.stderr), /ValidateSet|dispatched/);
 
@@ -346,31 +345,6 @@ test('warns about task-map drift and keeps unfamiliar top-level keys intact', (t
   assert.equal(taskMap.tasks['fixture-task'].taskId, 'task_abcdef123456');
 });
 
-test('a post-validation failure reports ok=false and exits non-zero with the records written', (t) => {
-  const { project, runDir, devWork } = createProject(t);
-  const paths = writeInputs(t, project);
-  // Break a state input validate-run.ps1 checks: an invalid run-state schema.
-  writeJson(path.join(runDir, 'run-state.json'), {
-    schemaVersion: 1, runSlug: 'fixture-run', objective: 'dispatch fixture', workflow: 'no-such-workflow',
-    status: 'active', stage: 'task-graph', deliveryBranch: 'main', deliveryBranchSource: 'user',
-    coordinatorControlBranch: 'control', coordinatorWorktree: project, orcaRunId,
-    completedStages: ['intake'], pendingUserDecisions: [],
-    createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-  });
-  const result = runDispatch(project, paths, []);
-  assert.notEqual(result.status, 0, result.stdout + result.stderr);
-  const output = parseOutput(result);
-  assert.equal(output.ok, false);
-  assert.equal(output.postValidation.executed, true);
-  assert.equal(output.postValidation.ok, false);
-  assert.equal(output.postValidation.exitCode, 1);
-  assert.ok(output.warnings.some((warning) => /validate-run\.ps1 reports problems/.test(warning)), result.stdout);
-  // The dispatch itself completed: the records were written and stay valid JSON.
-  const assignment = readJson(path.join(runDir, 'assignments', 'fixture-task.json'));
-  assert.equal(assignment.taskKey, 'fixture-task');
-  assert.equal(readJson(path.join(devWork, 'coordinator-lock.json')).activeRun, 'fixture-run');
-});
-
 test('all five state files are replaced without modifying their previous file objects', (t) => {
   const { project, runDir, devWork } = createProject(t);
   const paths = writeInputs(t, project);
@@ -387,7 +361,7 @@ test('all five state files are replaced without modifying their previous file ob
     return { alias, bytes: readFileSync(alias) };
   });
   const second = writeInputs(t, project, { dispatchId: 'ctx_second123456' });
-  const result = runDispatch(project, second, ['-ForceReDispatch', '-SkipPostValidation']);
+  const result = runDispatch(project, second, ['-ForceReDispatch']);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   for (const { alias, bytes } of snapshots) assert.deepEqual(readFileSync(alias), bytes);
   for (const file of files) assert.doesNotThrow(() => readJson(file));
@@ -406,7 +380,7 @@ $null = Set-PSBreakpoint -Script $env:DISPATCH_SCRIPT -Line $line -Action {
   Remove-Item -LiteralPath $env:COLLISION_PATH
   $null = New-Item -ItemType Directory -Path $env:COLLISION_PATH
 }
-& $env:DISPATCH_SCRIPT -ProjectRoot $env:FIXTURE_PROJECT -TaskDefinitionPath $env:DEFINITION_PATH -BriefPath $env:BRIEF_PATH -ReceiptPath $env:RECEIPT_PATH -SkipPostValidation
+& $env:DISPATCH_SCRIPT -ProjectRoot $env:FIXTURE_PROJECT -TaskDefinitionPath $env:DEFINITION_PATH -BriefPath $env:BRIEF_PATH -ReceiptPath $env:RECEIPT_PATH
 `;
   const result = spawnSync('pwsh', ['-NoProfile', '-NonInteractive', '-Command', harness], {
     encoding: 'utf8', timeout: 60000,

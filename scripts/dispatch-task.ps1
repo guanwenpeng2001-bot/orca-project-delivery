@@ -24,10 +24,7 @@ param(
   [string]$Stage,
 
   [Parameter(Mandatory = $false)]
-  [switch]$ForceReDispatch,
-
-  [Parameter(Mandatory = $false)]
-  [switch]$SkipPostValidation
+  [switch]$ForceReDispatch
 )
 
 $ErrorActionPreference = 'Stop'
@@ -376,18 +373,6 @@ $assignment = [ordered]@{
 }
 if ($previousDispatches.Count) { $assignment['runtime']['previousDispatches'] = @($previousDispatches) }
 
-# Schema gate before any write: a document the state consumers cannot parse must never
-# reach assignments/, because a skipped assignment silently disables later coverage checks.
-$assignmentJson = $assignment | ConvertTo-Json -Depth 30
-$schemaPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'schemas/assignment.schema.json'
-$schemaText = [IO.File]::ReadAllText($schemaPath)
-$schemaErrors = @()
-$valid = Test-Json -Json $assignmentJson -Schema $schemaText -ErrorAction SilentlyContinue -ErrorVariable schemaErrors
-if (-not $valid) {
-  throw "Generated assignment for '$taskKey' failed schema validation ($schemaPath): $((@($schemaErrors) | ForEach-Object { $_.ToString() }) -join ' | ')"
-}
-$null = ConvertFrom-Json -InputObject $assignmentJson -ErrorAction Stop
-
 # task-map drift: entries outside 'tasks' are the fingerprint of an improvised dispatch record
 # and are never read by the run contract.
 $strayKeys = @($taskMap.PSObject.Properties.Name | Where-Object { $_ -cnotin @('schemaVersion', 'tasks') })
@@ -427,25 +412,8 @@ Write-AtomicJsonFile -Path $statePath -Value $state -Depth 30
 $lock.updatedAt = $now
 Write-AtomicJsonFile -Path $lockPath -Value $lock -Depth 30
 
-$postValidation = [ordered]@{ executed = $false; ok = $null; exitCode = $null }
-if (-not $SkipPostValidation) {
-  $validator = Join-Path $PSScriptRoot 'validate-run.ps1'
-  try {
-    $postOutput = & pwsh -NoProfile -NonInteractive -File $validator -ProjectRoot $gitRoot -SkipPackageChecks 2>&1
-    $postExit = $LASTEXITCODE
-    $postValidation = [ordered]@{ executed = $true; ok = ($postExit -eq 0); exitCode = $postExit }
-    if ($postExit -ne 0) {
-      $warnings += "Post-write validate-run.ps1 reports problems (exit $postExit): $((@($postOutput) | Out-String).Trim())"
-    }
-  } catch {
-    $postValidation = [ordered]@{ executed = $false; ok = $false; exitCode = $null }
-    $warnings += "Post-write validate-run.ps1 could not run: $($_.Exception.Message)"
-  }
-}
-
-$dispatchOk = $SkipPostValidation -or $postValidation.ok -eq $true
 $output = [ordered]@{
-  ok = $dispatchOk
+  ok = $true
   run = $runSlug
   taskKey = $taskKey
   status = $Status
@@ -455,9 +423,7 @@ $output = [ordered]@{
   runtimeVerification = $verificationStatus
   assignmentPath = $assignmentPath
   briefPath = $recordedBriefPath
-  postValidation = $postValidation
   warnings = @($warnings)
 }
 $output | ConvertTo-Json -Depth 10
-if (-not $dispatchOk) { exit 1 }
 exit 0

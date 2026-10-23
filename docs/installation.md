@@ -147,7 +147,7 @@ back up the old directory before replacing package files. Project-local state
 is unaffected.
 
 Old runs remain readable as local history; an upgrade does not migrate run
-records. Validate project state with `scripts/validate-run.ps1`.
+records.
 
 ## Uninstall
 

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const changedScripts = ['assemble-task', 'bootstrap-project', 'create-run', 'reconcile-state', 'release-coordinator', 'probe-claude-capabilities', 'project-common'];
-const entryScripts = [...changedScripts, 'dispatch-task', 'validate-run', 'verify-package', 'check-requirements', 'invoke-with-requirements', 'query-routing', 'verify-requirements'];
+const entryScripts = [...changedScripts, 'dispatch-task', 'verify-package', 'check-requirements', 'invoke-with-requirements', 'query-routing', 'verify-requirements'];
 const legacy = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.Major'], { encoding: 'utf8', timeout: 15000 });
 
 for (const name of entryScripts) {

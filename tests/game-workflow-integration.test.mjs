@@ -38,9 +38,6 @@ test('all five workflows create runs and persist the selected workflow', (contex
     assert.equal(state.workflow, workflow);
     assert.equal(state.stage, 'intake');
     assert.equal(state.deliveryBranch, 'main');
-    const validation = run('pwsh', ['-NoProfile', '-NonInteractive', '-File', path.join(root, 'scripts/validate-run.ps1'),
-      '-ProjectRoot', project, '-SkipPackageChecks'], project);
-    assert.equal(validation.status, 0, validation.text);
   }
 });
 

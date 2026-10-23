@@ -106,7 +106,7 @@ pwsh -NoProfile -File scripts\verify-package.ps1
 
 更新前先看 `git status --short`，保留本地改动；不要覆盖已定制的安装。基于复制的安装，替换包文件前先备份旧目录。项目本地状态不受影响。
 
-旧运行作为本地历史仍可读；升级不会自动迁移运行记录。用 `scripts/validate-run.ps1` 校验项目状态。
+旧运行作为本地历史仍可读；升级不会自动迁移运行记录。
 
 ## 卸载
 

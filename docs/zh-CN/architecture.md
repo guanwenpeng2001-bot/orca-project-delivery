@@ -139,7 +139,7 @@ Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json
 
 ## 派发记录与集成检查
 
-协调者用 `scripts/dispatch-task.ps1` 依据捕获的 `worker-start` 回执写每次指派；脚本拒绝控制树落点和同一任务的重复在途派发，写盘前先按 `schemas/assignment.schema.json` 校验指派。
+协调者用 `scripts/dispatch-task.ps1` 依据捕获的 `worker-start` 回执写每次指派；脚本拒绝控制树落点和同一任务的重复在途派发。
 
 集成安全来自流程本身，由协调者在行动那一刻直接核对：
 

@@ -1,6 +1,6 @@
 function Test-ProjectLifecycle {
   $script:healthyRepository = $null
-  Invoke-Check 'runtime/bootstrap-create-validate-templates' {
+  Invoke-Check 'runtime/bootstrap-create-templates' {
     $script:healthyRepository = New-FixtureRepository 'healthy-repository'
     Assert-OkResult (Invoke-PackageScript 'bootstrap-project.ps1' @('-ProjectRoot', $healthyRepository))
     foreach ($name in @('.env.example', 'project-config.example.json')) {
@@ -17,7 +17,6 @@ function Test-ProjectLifecycle {
       Assert-Condition (Test-Path -LiteralPath (Join-Path $healthyRepository ".dev-work/runs/package-verification/$directory") -PathType Container) "Run directory missing: $directory"
       Write-Host "DIRECTORY PASS $directory"
     }
-    Assert-OkResult (Invoke-PackageScript 'validate-run.ps1' @('-ProjectRoot', $healthyRepository, '-IncludeTemplates'))
   }
   Invoke-Check 'regression/assemble-task-skill-paths' {
     Assert-Condition ([bool]$healthyRepository) 'Healthy fixture unavailable'
@@ -113,49 +112,5 @@ function Test-ProjectLifecycle {
     # Check diagnostic topics independently of word order, quotes, or resolution details.
     $diagnostic = $result.Stdout + $result.Stderr
     Assert-Condition ($diagnostic -imatch '\bcontrol\s+branch\b' -and $diagnostic -imatch '\bdelivery\s+branch\b') 'Bootstrap refusal must name both the control branch and delivery branch'
-  }
-  Invoke-Check 'runtime/package-routing-negative-cases' {
-    $cases = @(
-      @{ Path = 'routing/model-routing.json'; Change = { param($document) $document.roles.Remove('codebase-scout') }; Diagnostic = "Catalog role 'codebase-scout'" },
-      @{ Path = 'routing/model-routing.json'; Change = { param($document) $document.roles['unknown-role'] = $document.roles['codebase-scout'] }; Diagnostic = "Routing role 'unknown-role'" },
-      @{ Path = 'routing/role-selection.json'; Change = { param($document) $document.deliverableRoutes['unknown-deliverable'] = 'unknown-role' }; Diagnostic = "unknown role 'unknown-role'" },
-      @{ Path = 'roles/catalog.json'; Change = { param($document) $document.roles[0].path = 'missing-role.md' }; Diagnostic = 'path not found' },
-      @{ Path = 'roles/catalog.json'; Change = { param($document) $document.roles[0].defaultSkills = @('unknown-skill') }; Diagnostic = "unknown skill 'unknown-skill'" }
-    )
-    foreach ($case in $cases) {
-      $path = Join-Path $stagedPackage $case.Path
-      $original = [IO.File]::ReadAllBytes($path)
-      try {
-        $document = [IO.File]::ReadAllText($path) | ConvertFrom-Json -AsHashtable
-        $null = & $case.Change $document
-        [IO.File]::WriteAllText($path, ($document | ConvertTo-Json -Depth 100), $utf8)
-        $result = Invoke-PackageScript 'validate-run.ps1' @('-ProjectRoot', $healthyRepository)
-        Assert-Condition ($result.ExitCode -eq 1) 'Expected package contract failure exit 1'
-        $validation = $result.Stdout | ConvertFrom-Json
-        Assert-Condition ($validation.ok -eq $false -and ($validation.errors -join ';').Contains($case.Diagnostic)) "Expected diagnostic $($case.Diagnostic)"
-        Write-Host "REJECTED runtime $($case.Diagnostic)"
-      } finally { [IO.File]::WriteAllBytes($path, $original) }
-    }
-    Assert-OkResult (Invoke-PackageScript 'validate-run.ps1' @('-ProjectRoot', $healthyRepository))
-  }
-  Invoke-Check 'runtime/schema-missing-evidence-path' {
-    Assert-Condition ([bool]$healthyRepository) 'Healthy fixture unavailable'
-    $definition = Read-PackageJson 'templates/task-definition.json'
-    $assignment = Read-PackageJson 'templates/dev-work/assignment.json'
-    $assignment.taskKey = 'schema-verification'
-    $assignment.role = $definition.role
-    $assignment.skills = $definition.skills
-    $assignment.branch = $definition.branch
-    $assignment.artifacts = $definition.artifacts
-    $assignmentPath = Join-Path $healthyRepository '.dev-work/runs/package-verification/assignments/schema-verification.json'
-    [IO.File]::WriteAllText($assignmentPath, ($assignment | ConvertTo-Json -Depth 100), $utf8)
-    # First prove the identical fixture is valid; then remove exactly one field.
-    Assert-OkResult (Invoke-PackageScript 'validate-run.ps1' @('-ProjectRoot', $healthyRepository, '-IncludeTemplates'))
-    $assignment.artifacts.Remove('evidencePath')
-    [IO.File]::WriteAllText($assignmentPath, ($assignment | ConvertTo-Json -Depth 100), $utf8)
-    $result = Invoke-PackageScript 'validate-run.ps1' @('-ProjectRoot', $healthyRepository, '-IncludeTemplates')
-    Assert-Condition ($result.ExitCode -eq 1) "Expected schema failure exit 1, got $($result.ExitCode)"
-    $document = $result.Stdout | ConvertFrom-Json
-    Assert-Condition ($document.ok -eq $false -and ($document.errors -join '\n') -match 'artifacts\.evidencePath') "Missing evidence-path diagnostic: $($result.Stdout)"
   }
 }

@@ -116,7 +116,7 @@ test('script validation follows the worker copy from stale control and delivery 
   const bare = assemble(data, { tests: ['worker-only.ps1 -Unknown'] });
   assert.equal(bare.code, 1, bare.diagnostics);
   assert.match(clean(bare.diagnostics), /no parameter '-Unknown'/);
-  const fallback = assemble(data, { tests: ['scripts/validate-run.ps1 -SkipPackageChecks'] });
+  const fallback = assemble(data, { tests: ['scripts/query-routing.ps1 -Role software-implementer'] });
   assert.equal(fallback.code, 0, fallback.diagnostics);
 });
 
@@ -244,7 +244,7 @@ test('read-only briefs remove the entire source commit clause and retain reporti
 
 test('acceptance and tests commands are checked against the real package scripts and parameters', (context) => {
   const data = fixture(context);
-  data.task.acceptance = ['Full gate: pwsh -NoProfile -File scripts/verify-package.ps1 -MetadataOnly', 'State check: pwsh scripts/validate-run.ps1 -projectroot . -SkipPackageChecks'];
+  data.task.acceptance = ['Full gate: pwsh -NoProfile -File scripts/verify-package.ps1 -MetadataOnly', 'Routing check: pwsh scripts/query-routing.ps1 -Role software-implementer'];
   data.task.tests = ['node --test tests/task-brief-profiles.test.mjs', 'git merge --no-edit topic', 'pwsh -NoProfile -File scripts/verify-package.ps1'];
   const valid = assemble(data);
   assert.equal(valid.code, 0, valid.diagnostics);
@@ -252,8 +252,8 @@ test('acceptance and tests commands are checked against the real package scripts
 
   const rejected = [
     ['scripts/nonexistent-runner.ps1 -X', /does not exist/],
-    ['pwsh -NoProfile -File scripts/validate-run.ps1 -Run nightly', /no parameter '-Run'/],
-    ['validate-run.ps1 -Force', /no parameter '-Force'/],
+    ['pwsh -NoProfile -File scripts/verify-package.ps1 -Run nightly', /no parameter '-Run'/],
+    ['query-routing.ps1 -Force', /no parameter '-Force'/],
   ];
   for (const [command, pattern] of rejected) {
     const negative = assemble(data, { tests: [command] });
@@ -262,7 +262,7 @@ test('acceptance and tests commands are checked against the real package scripts
   }
   assert.equal(existsSync(path.join(data.root, 'brief.md')), true, 'the earlier valid brief stays; failed runs must not overwrite it');
   const fresh = fixture(context);
-  const refused = assemble(fresh, { acceptance: ['pwsh -NoProfile -File scripts/validate-run.ps1 -Run nightly'] });
+  const refused = assemble(fresh, { acceptance: ['pwsh -NoProfile -File scripts/verify-package.ps1 -Run nightly'] });
   assert.equal(refused.code, 1, refused.diagnostics);
   assert.equal(existsSync(path.join(fresh.root, 'brief.md')), false, 'a failed assembly writes no brief');
 });

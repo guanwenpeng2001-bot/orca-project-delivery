@@ -44,7 +44,6 @@ $package = Join-Path $env:USERPROFILE '.agents/skills/orca-project-delivery'
 pwsh -NoProfile -File "$package/scripts/bootstrap-project.ps1" -ProjectRoot '<project>' -DeliveryBranch main
 pwsh -NoProfile -File "$package/scripts/create-run.ps1" -ProjectRoot '<project>' -Objective 'Validate configuration behavior' -Workflow feature-development -RunSlug configuration-validation -DeliveryBranch main
 pwsh -NoProfile -File "$package/scripts/probe-claude-capabilities.ps1" -ProjectRoot '<project>'
-pwsh -NoProfile -File "$package/scripts/validate-run.ps1" -ProjectRoot '<project>'
 ```
 
 通过已安装的全局 Skill 绑定真正的 Orca Run，并记录该绑定。绝不要把模板占位符当作观察结果抄进活动记录。
@@ -88,7 +87,7 @@ intake -> reconnaissance -> design (conditional, verdict recorded) -> plan -> ta
 
 每次派发都走运行时的 worker-start 动词，使用 Claude 智能体，以及从 `routing/model-routing.json` 选出的路由。派发没有权限旗标：权限来自实际的 Claude 配置和用户的 Orca 设置，只记录，不臆造。
 
-用 `scripts/dispatch-task.ps1` 从协调者捕获的 `worker-start --json` 回执（`-ReceiptPath`）记录本次派发：脚本推导请求值 / 生效值的核对结论，拒绝落点在协调者控制树或与任务定义矛盾的回执，写盘前先用 `schemas/assignment.schema.json` 校验指派，并且同一任务的重复在途派发默认被拒 — 除非 `-ForceReDispatch` 把先前派发记入 `runtime.previousDispatches`。记录 `runtime.mode` 与终端 `surface`；`structured` 工作者属于后台会话，下一次里程碑汇报必须明说。
+用 `scripts/dispatch-task.ps1` 从协调者捕获的 `worker-start --json` 回执（`-ReceiptPath`）记录本次派发：脚本推导请求值 / 生效值的核对结论，拒绝落点在协调者控制树或与任务定义矛盾的回执，并且同一任务的重复在途派发默认被拒 — 除非 `-ForceReDispatch` 把先前派发记入 `runtime.previousDispatches`。记录 `runtime.mode` 与终端 `surface`；`structured` 工作者属于后台会话，下一次里程碑汇报必须明说。
 
 执行循环和审查 / 集成的操作细节位于[执行循环参考](../../references/execution-loop.md)；派发和处理工作者前先阅读该参考。
 

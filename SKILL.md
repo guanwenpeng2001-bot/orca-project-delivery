@@ -58,7 +58,7 @@ When unsure where an artifact belongs, read `references/artifact-model.md`.
 The probe writes `.dev-work/runtime/claude-capabilities.json`; `accepted` proves only parameter acceptance, never actual model/effort effectiveness.
 Any `launched` verdict is an abnormal sentinel launch: stop probing and dispatch, mark unverified, inspect residual resources and escalate immediately. Exit 0 does not override this stop.
 Missing/unusable Claude CLI or unreadable routing is a hard failure; missing Orca produces unknown combinations. Unknown/rejected combinations are not verified routes; investigate before automatic routing.
-Use `scripts/assemble-task.ps1` to assemble definitions, `scripts/validate-run.ps1` for schemas and invariants, and `scripts/reconcile-state.ps1` to compare assignments with Git.
+Use `scripts/assemble-task.ps1` to assemble definitions and `scripts/reconcile-state.ps1` to compare assignments with Git.
 Use `scripts/verify-package.ps1` for offline package acceptance and `scripts/release-coordinator.ps1 -ConfirmRunClosed` for safe closure.
 
 ## Workflow selection
@@ -166,7 +166,7 @@ For read-only retries, preserve each attempt under a unique report path; the coo
 Close only after required Tasks settle, accepted source enters delivery, final verification completes or is explicitly marked unverifiable, and reports/decisions are stored.
 Ensure the fleet has zero reclaimable resources; `retained`/`user_owned` terminals require recorded ownership decisions and are not leaks.
 Write `final-report.md` linked to the final-verification report and the delivery commit it verified, plus a separate user-decision report: what needs deciding, consequence of deferral, options and recommendation.
-Before closure, confirm every intended Task is accounted for in the run records and final verification ran at the current delivery HEAD; run `scripts/validate-run.ps1` as the structural check.
+Before closure, confirm every intended Task is accounted for in the run records and final verification ran at the current delivery HEAD.
 Recheck status/diff for process-artifact exclusion, then use `scripts/release-coordinator.ps1 -ConfirmRunClosed`; it archives active state and marks the lock released.
 Keep `.dev-work/runs/<run>/` as local history. Unverifiable acceptance must not be described as READY.
 
