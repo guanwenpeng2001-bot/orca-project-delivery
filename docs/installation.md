@@ -9,7 +9,7 @@ Code coordinator session can load it from your control worktree. The package
 is a plain directory of files — there is no installer, no package registry,
 and no build step.
 
-This guide describes the 3.0.0 package (46 Skills / 16 Roles / 4 workflows). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
+This guide describes the 3.1.0 package (69 Skills / 18 Roles / 5 workflows). Install the complete matching release. Use the [tutorial's version and catalog checks](professional-capability-tutorial.md#1-confirm-what-you-installed) before running its examples. A version that does not match is not this release.
 
 ## Prerequisites
 
@@ -20,10 +20,10 @@ This guide describes the 3.0.0 package (46 Skills / 16 Roles / 4 workflows). Ins
 | Git | On `PATH`; used for branches, worktrees, and merges. |
 | Claude Code | Installed, on `PATH`, and authenticated. All workers are Claude Code agents. |
 | Orca Runtime | The `orca` CLI plus the installed global `orchestration`, `orca-cli`, and `orca-per-workspace-env` Skills. They own Run/Task/Dispatch/Worker lifecycle; this package never replaces them. |
-| Professional Skills | **Bundled** — all 46 professional Skills ship inside this package under `skills/<skill-id>/SKILL.md`. No separate install step. The original sixteen trace to [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills); the original sixteen’s upstream baseline and the later original methods’ public references are in `skills/README.md`. |
+| Professional Skills | **Bundled** — all 69 professional Skills ship inside this package under `skills/<skill-id>/SKILL.md`. No separate install step. The original sixteen trace to [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills); the original sixteen’s upstream baseline and the later original methods’ public references are in `skills/README.md`. |
 
 The Skills referenced by `routing/skill-catalog.json` are the original sixteen
-plus the twenty-two added in 2.3.0 and eight added in 2.4.0. The original sixteen are
+plus the twenty-two added in 2.3.0, eight added in 2.4.0 and twenty-three game methods added in 3.1.0. The original sixteen are
 codebase-reconnaissance, technical-research, product-discovery,
 product-design, requirements-analysis, solution-architecture, api-design,
 database-design, implementation-planning, test-driven-development,
@@ -106,7 +106,7 @@ Expected shape of the output on a healthy install:
 
 - many `PASS <check>` lines (parse, encoding, routing, metadata, runtime
   fixtures, ...);
-- a `skills: N/N resolved (... package-bundled)` summary line, where N is the Skill count of the revision you installed (46 for the 3.0.0 release);
+- a `skills: N/N resolved (... package-bundled)` summary line, where N is the Skill count of the revision you installed (69 for the 3.1.0 release);
 - a final line of the form `SUMMARY PASS=<n> FAIL=0`;
 - process exit code 0.
 
@@ -120,7 +120,7 @@ removed at the end. The verdict is the `SUMMARY` line and the exit code; any
 
 ## Extensions and local execution configuration
 
-For new methods or responsibilities, use the native catalog recipe in [Extending](extending.md), including manifest counts and model routes. The original sixteen are maintained MIT adaptations and the later thirty are original methods; this project's original work is MIT, third-party Skills keep their own license, and intentional edits are reviewed before they merge. `verify-package.ps1 -MetadataOnly` is a quick structural check, not a substitute for the full suite. The summary above describes the revision you installed; success requires no failures, not a permanently fixed count.
+For new methods or responsibilities, use the native catalog recipe in [Extending](extending.md), including manifest counts and model routes. The original sixteen are maintained MIT adaptations and the later fifty-three are original methods; this project's original work is MIT, third-party Skills keep their own license, and intentional edits are reviewed before they merge. `verify-package.ps1 -MetadataOnly` is a quick structural check, not a substitute for the full suite. The summary above describes the revision you installed; success requires no failures, not a permanently fixed count.
 
 The capability release adds methods for software, local assets, images, and
 audio, video, and documents. Installing it does not run any of them. The
@@ -128,7 +128,7 @@ audio, video, and documents. Installing it does not run any of them. The
 and bounded local tools and dependency helpers; it makes no provider call, and a passing
 package suite is not evidence about generated output.
 
-Bootstrap creates `.env.example` and `project-config.example.json` only when missing, preserving existing files. It adds `/.env` to local Git `info/exclude`, shared by this clone's worktrees. Keep populated `.env` untracked on the actual execution host. Workers must supply their own explicit `ProjectRoot`; helpers neither copy coordinator config nor create worker `.dev-work/` state. The original sixteen declare no credential requirements. A 3.0.0 Skill declares a credential only when it names one, and an online connector named in the docs is an example, not a provider you have selected. No real key belongs in the repository.
+Bootstrap creates `.env.example` and `project-config.example.json` only when missing, preserving existing files. It adds `/.env` to local Git `info/exclude`, shared by this clone's worktrees. Keep populated `.env` untracked on the actual execution host. Workers must supply their own explicit `ProjectRoot`; helpers neither copy coordinator config nor create worker `.dev-work/` state. The original sixteen declare no credential requirements. A 3.1.0 Skill declares a credential only when it names one, and an online connector named in the docs is an example, not a provider you have selected. No real key belongs in the repository.
 
 ## Upgrade
 

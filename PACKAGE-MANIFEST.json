@@ -1,14 +1,14 @@
 {
   "name": "orca-project-delivery",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "generatedAt": "2026-10-02",
   "revisedAt": "2026-10-23",
   "releasedAt": "2026-10-23",
-  "revisionNote": "Remove the redundant evidence and hash apparatus: the six-phase Git-evidence validator, its schema and templates, the dispatch-wave ledger, the per-brief SHA256 digest and the bundled-Skill hash table are gone. Integration safety rests on task isolation, one writer per branch, independent review, a clean-tree/approved-commit pre-merge check run directly by the coordinator, and the full verification suite at the integrated HEAD and at the latest delivery before closure. Machine-readable assignments, raw dispatch receipts, model routing, the coordinator lock and the writer-replacement gate remain. Bundled counts stay 46 Skills, 16 Roles and 4 workflows; English and Chinese guidance move together.",
+  "revisionNote": "Add 23 game-development methods, Game Designer and Game Test Engineer roles, and a game-development workflow with mandatory design, parallel gameplay/assets, layered tests and per-release publishing readiness. Register routing, consolidate provenance and update bilingual documentation and release checks for 69 Skills, 18 Roles and 5 workflows.",
   "deliverables": {
-    "roles": 16,
-    "professionalSkills": 46,
-    "workflows": 4
+    "roles": 18,
+    "professionalSkills": 69,
+    "workflows": 5
   },
   "entrySkill": "orca-project-delivery/SKILL.md",
   "coordinatorOnly": true,

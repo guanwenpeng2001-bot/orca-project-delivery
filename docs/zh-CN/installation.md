@@ -6,7 +6,7 @@
 
 本指南安装 `orca-project-delivery` 协调者 Skill，使 Claude Code 协调者会话能从控制工作树加载它。本包是一个普通文件目录 — 没有安装程序、没有包注册表，也没有构建步骤。
 
-本指南描述3.0.0 包（46 个 Skill / 16 个角色 / 4 个工作流）。安装完整且匹配的版本。运行示例前先做[教程中的版本及目录检查](professional-capability-tutorial.md#1-确认你安装的是什么)。版本不匹配就不是本版本。
+本指南描述3.1.0 包（69 个 Skill / 18 个角色 / 5 个工作流）。安装完整且匹配的版本。运行示例前先做[教程中的版本及目录检查](professional-capability-tutorial.md#1-确认你安装的是什么)。版本不匹配就不是本版本。
 
 ## 前置条件
 
@@ -17,9 +17,9 @@
 | Git | 在 `PATH` 上；用于分支、工作树和合并。 |
 | Claude Code | 已安装、在 `PATH` 上，并且已认证。所有工作者都是 Claude Code 智能体。 |
 | Orca Runtime | `orca` CLI，加上已安装的全局 `orchestration`、`orca-cli` 和 `orca-per-workspace-env` Skill。它们拥有 Run / Task / Dispatch / Worker 生命周期；本包从不替代它们。 |
-| 专业 Skill | **随包附带** — 全部 46 个专业 Skill 位于本包 `skills/<skill-id>/SKILL.md`。无需单独安装。原有十六个追溯到 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills)；原有十六个的上游基线及后续原创方法的公开参考见 `skills/README.md`。 |
+| 专业 Skill | **随包附带** — 全部 69 个专业 Skill 位于本包 `skills/<skill-id>/SKILL.md`。无需单独安装。原有十六个追溯到 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills)；原有十六个的上游基线及后续原创方法的公开参考见 `skills/README.md`。 |
 
-`routing/skill-catalog.json` 引用的 Skill 是原有十六个加上 2.3.0 新增的二十二个和 2.4.0 新增的八个。原有十六个是：codebase-reconnaissance、technical-research、product-discovery、product-design、requirements-analysis、solution-architecture、api-design、database-design、implementation-planning、test-driven-development、systematic-debugging、code-review、security-review、performance-review、integration-verification 和 merge-conflict-resolution。新增的 Skill 及其证据标签列在[专业能力](professional-capabilities.md)。
+`routing/skill-catalog.json` 引用的 Skill 是原有十六个加上 2.3.0 新增的二十二个、2.4.0 新增的八个和 3.1.0 新增的二十三个游戏方法。原有十六个是：codebase-reconnaissance、technical-research、product-discovery、product-design、requirements-analysis、solution-architecture、api-design、database-design、implementation-planning、test-driven-development、systematic-debugging、code-review、security-review、performance-review、integration-verification 和 merge-conflict-resolution。新增的 Skill 及其证据标签列在[专业能力](professional-capabilities.md)。
 
 选定能力工具还需要本地依赖；安装本 Skill 不会替你安装它们，应在实际执行主机核验。
 
@@ -78,7 +78,7 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 健康安装的输出大致是：
 
 - 许多 `PASS <check>` 行（解析、编码、路由、元数据、运行时夹具等）；
-- 一行 `skills: N/N resolved (... package-bundled)` 汇总，其中 N 是你安装的修订的 Skill 数（3.0.0 版本为 46）；
+- 一行 `skills: N/N resolved (... package-bundled)` 汇总，其中 N 是你安装的修订的 Skill 数（3.1.0 版本为 69）；
 - 最后一行形如 `SUMMARY PASS=<n> FAIL=0`；
 - 进程退出码为 0。
 
@@ -88,11 +88,11 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 
 ## 扩展与本地执行配置
 
-新增方法或职责时，按[扩展指南](extending.md)使用原生目录，包括清单数量与模型路由。原有十六个是维护中的 MIT 改编版，其后三十个为原创方法；本项目的原创部分是 MIT，第三方 Skill 保留自己的许可证，有意修改须先审阅再合并。`verify-package.ps1 -MetadataOnly` 是快速结构检查，不能替代完整套件。上面的汇总描述你安装的修订；成功要求没有失败，不是永远固定数量。
+新增方法或职责时，按[扩展指南](extending.md)使用原生目录，包括清单数量与模型路由。原有十六个是维护中的 MIT 改编版，其后五十三个为原创方法；本项目的原创部分是 MIT，第三方 Skill 保留自己的许可证，有意修改须先审阅再合并。`verify-package.ps1 -MetadataOnly` 是快速结构检查，不能替代完整套件。上面的汇总描述你安装的修订；成功要求没有失败，不是永远固定数量。
 
 能力版本为软件、本地资产、图像和音视频、文档新增了方法。安装它并不会运行其中任何一个。[能力教程](professional-capability-tutorial.md)检查安装并运行有界本地工具和依赖辅助脚本；它不调用提供方，包套件通过也不是关于生成产出的证据。
 
-引导仅在缺失时创建 `.env.example` 与 `project-config.example.json`，已有文件保持不变。它把 `/.env` 加入本地 Git `info/exclude`，同一克隆的工作树共享此文件。实际执行主机上填有值的 `.env` 保持不跟踪。工作者必须显式提供自己的 `ProjectRoot`；辅助脚本不复制协调者配置，也不创建工作者 `.dev-work/` 状态。原有十六个不声明凭据依赖。一个 3.0.0 的 Skill 只在它点名时才声明凭据，文档中提到的在线连接器是示例，不是你已经选定的提供方。真实密钥不属于仓库。
+引导仅在缺失时创建 `.env.example` 与 `project-config.example.json`，已有文件保持不变。它把 `/.env` 加入本地 Git `info/exclude`，同一克隆的工作树共享此文件。实际执行主机上填有值的 `.env` 保持不跟踪。工作者必须显式提供自己的 `ProjectRoot`；辅助脚本不复制协调者配置，也不创建工作者 `.dev-work/` 状态。原有十六个不声明凭据依赖。一个 3.1.0 的 Skill 只在它点名时才声明凭据，文档中提到的在线连接器是示例，不是你已经选定的提供方。真实密钥不属于仓库。
 
 ## 升级
 

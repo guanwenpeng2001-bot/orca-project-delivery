@@ -43,6 +43,27 @@ function assemble(data, extra = {}, config = null, sourceRoot = packageRoot) {
   return { code: result.status, diagnostics: result.stdout + result.stderr, brief: result.status === 0 ? readFileSync(outputPath, 'utf8') : '' };
 }
 
+test('game roles assemble their registered methods in both delivery modes', (context) => {
+  const data = fixture(context);
+  for (const [role, skills] of Object.entries({
+    'game-designer': ['game-design', 'game-economy-design', 'game-level-design'],
+    'game-test-engineer': ['game-testing-ladders'],
+  })) {
+    for (const mode of ['explicit-path', 'inline-extract']) {
+      const result = assemble(data, { role, skills: { required: skills, conditional: [] }, skillDeliveryMode: mode });
+      assert.equal(result.code, 0, result.diagnostics);
+      assert.ok(result.brief.includes(role));
+      for (const skill of skills) {
+        assert.ok(result.brief.includes(skill));
+        if (mode === 'inline-extract') {
+          const body = readFileSync(path.join(packageRoot, 'skills', skill, 'SKILL.md'), 'utf8').trim();
+          assert.ok(result.brief.includes(body), skill);
+        }
+      }
+    }
+  }
+});
+
 test('legacy bundled briefs retain their exact normalized bytes in both modes', (context) => {
   const data = fixture(context);
   for (const [mode, expected] of Object.entries({ 'explicit-path': '22c80922843a30168d379bbffcd68e9e21c8d733beb88eebf8a426d014417bdf', 'inline-extract': '6d20df6c988a6607493390d958cb2b1afb2a7c5837b02423750f1c9b520a2904' })) {

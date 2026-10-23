@@ -18,7 +18,7 @@ Extend the package's native catalogs when a reusable method or a distinct delive
 
 ## Native registration
 
-Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 3.0.0 package ships 46 Skills and 16 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
+Work in a separate development checkout or a disposable copy, preserve existing entries, and save text as UTF-8 without BOM with LF line endings. The following `export-contract-check` Skill and `export-reviewer` Role are **illustrative additions**, not bundled production entries. The 3.1.0 package ships 69 Skills and 18 Roles; validation compares catalogs to the manifest rather than fixing those numbers forever.
 
 | File | What to add or update |
 | --- | --- |
@@ -79,7 +79,7 @@ Append this object to `routing/skill-catalog.json`'s existing `skills` array:
 }
 ```
 
-Keep essential method content in `SKILL.md`: required Skills work with both path delivery and full-body inline delivery. The original sixteen bundled Skills are maintained MIT adaptations of their pinned baseline; the later thirty are original methods with public references. Preserve the original upstream notice in `skills/LICENSE` and any notices required for future imports; no current Skill ships a `LICENSE.txt`. Examples demonstrate reasoning, not measured production outcomes. See [Professional Skills](professional-skills.md).
+Keep essential method content in `SKILL.md`: required Skills work with both path delivery and full-body inline delivery. The original sixteen bundled Skills are maintained MIT adaptations of their pinned baseline; the later fifty-three are original methods with public references. Preserve the original upstream notice in `skills/LICENSE` and any notices required for future imports; no current Skill ships a `LICENSE.txt`. Examples demonstrate reasoning, not measured production outcomes. See [Professional Skills](professional-skills.md).
 
 ## Author a Role
 
@@ -173,7 +173,7 @@ Duplicate declarations within an entry fail. Across selected entries, identical 
 
 ## Validate the extension
 
-After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 3.0.0 package starts at 16 Roles / 46 Skills, so these illustrative additions yield 17 / 47. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 3.0.0. Keep workflow counts correct.
+After adding the example, derive the manifest counts from the edited catalogs. Set `deliverables.roles` and `deliverables.professionalSkills` to the corresponding values printed below; do not copy counts from another revision. A complete 3.1.0 package starts at 18 Roles / 69 Skills, so these illustrative additions yield 19 / 70. Preserve the existing `VERSION` and matching manifest `version`; extending an older checkout does not upgrade it to 3.1.0. Keep workflow counts correct.
 
 ```powershell
 (Get-Content -Raw ./roles/catalog.json | ConvertFrom-Json).roles.Count
@@ -181,7 +181,7 @@ After adding the example, derive the manifest counts from the edited catalogs. S
 (Get-Content -Raw ./VERSION).Trim()
 ```
 
-Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 3.0.0 capabilities. When maintaining a real extension, also update the introductory counts in `skills/README.md`.
+Run these commands from the edited package copy. An older 12-Role / 16-Skill checkout would instead yield 13 / 17 and retain its existing version; it still lacks the 3.1.0 capabilities. When maintaining a real extension, also update the introductory counts in `skills/README.md`.
 
 In a PowerShell 7 session, set `$package` to your edited package copy:
 
@@ -196,7 +196,7 @@ $metadataExit = $LASTEXITCODE
 $packageExit = $LASTEXITCODE
 ```
 
-Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs and manifest counts/version; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. Documentation tests run the official 3.0.0 count assertions and the capability tutorial's release guard against a fixed release fixture; acceptance of the edited package compares its actual catalogs, files and manifest without requiring 16 / 46. A mismatched count, missing route or invalid path must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
+Both must exit 0 with `FAIL=0`. `-MetadataOnly` checks parsing, encoding, routing, entry outline, catalogs and manifest counts/version; it skips runtime fixtures and is not the full acceptance gate. The full suite runs synthetic runtime and extension fixtures offline. Documentation tests run the official 3.1.0 count assertions and the capability tutorial's release guard against a fixed release fixture; acceptance of the edited package compares its actual catalogs, files and manifest without requiring 18 / 69. A mismatched count, missing route or invalid path must fail. Run the full suite again after correcting anything, inspect Git diff and `git diff --check`, then seek independent review through the normal delivery workflow.
 
 ## Select and deliver methods
 

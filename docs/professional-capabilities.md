@@ -2,20 +2,28 @@
 
 **English** | [简体中文](zh-CN/professional-capabilities.md)
 
-Version 2.4.0 deepens the methods added in 2.3.0 and adds eight more:
-engineering methods, a design system, subtitles, and bounded document blocks.
-Together with the original sixteen and the twenty-two from 2.3.0, the package
-carries **46 professional Skills**, **16 Roles**, and **4 workflows**. This
-guide explains what each new or deepened capability is for, what it does not
-do, and how far its claims have actually been checked.
+Version 3.1.0 adds game development to the existing delivery, engineering and media methods. The package carries **69 professional Skills**, **18 Roles**, and **5 workflows**. This guide explains each capability's scope and verification limits.
 
-This guide describes the 3.0.0 package: 46 Skills, 16 Roles, and 4
-workflows. Install the complete matching release. Confirm `VERSION` is `3.0.0`,
-`routing/skill-catalog.json` contains 46 Skills, `roles/catalog.json`
-contains 16 Roles, `workflows/` holds 4 definitions, and
+This guide describes the 3.1.0 package: 69 Skills, 18 Roles, and 5
+workflows. Install the complete matching release. Confirm `VERSION` is `3.1.0`,
+`routing/skill-catalog.json` contains 69 Skills, `roles/catalog.json`
+contains 18 Roles, `workflows/` holds 5 definitions, and
 `PACKAGE-MANIFEST.json` agrees before running the
 [tutorial](professional-capability-tutorial.md). A version that does not match
 is not this release. The tutorial rejects a mismatched installation.
+
+## Game-development methods
+
+Version 3.1.0 adds 23 methods: four design Skills (`game-design`, `game-economy-design`, `game-level-design`, `game-3c-design`); five engineering Skills (`gameplay-programming`, `game-physics`, `game-content-pipeline`, `game-performance`, `game-multiplayer`); six engine Skills (`engine-urhox`, `engine-cocos-creator`, `engine-unity`, `engine-godot`, `engine-unreal`, `engine-web-canvas`); three production/test Skills (`game-asset-pipeline`, `game-audio`, `game-testing-ladders`); and five release/operation Skills (`game-publishing`, `game-build-release`, `game-live-ops`, `game-monetization-iaa`, `game-monetization-iap`).
+
+| Role | Default Skills | Optional Skills |
+| --- | --- | --- |
+| `game-designer` | `game-design`, `game-economy-design`, `game-level-design` | `game-3c-design`, `game-monetization-iaa`, `game-monetization-iap`, `game-live-ops` |
+| `game-test-engineer` | `game-testing-ladders` | `game-performance`, `game-publishing` |
+
+The [game-development workflow](../workflows/game-development.md) selects methods by platform, engine, genre, monetization and user familiarity. It requires design before parallel gameplay/asset production, economy design before monetization implementation, layered game tests and per-release publishing/compliance readiness before final verification, then a live-ops handoff. The existing software-implementer and media-producer roles retain implementation and production ownership.
+
+These are method documents, with beginner navigation and veteran decision criteria. They ship no engine or store automation and claim no successful real-game, purchase, advertisement or publication test. API/SDK/CLI operations belong to project-side guidance. See [all 23 purposes](professional-skills.md#the-twenty-three-added-in-310) and [per-Skill provenance](../skills/README.md#game-family-provenance-310); dated engine and policy snapshots require current-policy rechecks.
 
 ## How to read a capability
 
@@ -224,7 +232,7 @@ methods. A reference does not mean upstream Skill text was copied.
   PNG specification, WebVTT, the MCP specification, PostgreSQL, OpenTelemetry,
   React's public API guidance — and copy none of that text into a Skill. No
   Skill directory ships a `LICENSE.txt`, and `skills/README.md` records each of
-  them as `Original`. They are not upstream adaptations.
+  them as `Original`. The 23 game methods added in 3.1.0 also use original prose, with method references from pinned collections and dated official engine/platform sources recorded separately in the game-family provenance table.
 - **Two upstreams are deliberately not copied.** The Anthropic docx, pptx, pdf,
   and xlsx Skills are proprietary and are not included; `document-production`
   is written independently against libraries whose licenses allow it.

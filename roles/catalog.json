@@ -2,6 +2,22 @@
   "schemaVersion": 1,
   "roles": [
     {
+      "id": "game-designer",
+      "name": "Game Designer",
+      "category": "product",
+      "path": "roles/product/game-designer.md",
+      "defaultSkills": ["game-design", "game-economy-design", "game-level-design"],
+      "optionalSkills": ["game-3c-design", "game-monetization-iaa", "game-monetization-iap", "game-live-ops"]
+    },
+    {
+      "id": "game-test-engineer",
+      "name": "Game Test Engineer",
+      "category": "quality",
+      "path": "roles/quality/game-test-engineer.md",
+      "defaultSkills": ["game-testing-ladders"],
+      "optionalSkills": ["game-performance", "game-publishing"]
+    },
+    {
       "id": "codebase-scout",
       "name": "Codebase Scout",
       "category": "research",

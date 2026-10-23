@@ -2,9 +2,22 @@
 
 [English](../professional-capabilities.md) | **简体中文**
 
-2.4.0 深化 2.3.0 的能力，新增工程方法、设计系统与字幕等八个 Skill，并扩展有界文档块。加上原有十六个及 2.3.0 的二十二个，本包共有 **46 个专业 Skill**、**16 个角色**和 **4 个工作流**。本指南说明新增或增强的能力做什么、不做什么，以及实际验证到哪一步。
+3.1.0 在现有交付、工程和媒体方法上新增游戏开发能力。本包共有 **69 个专业 Skill**、**18 个角色**和 **5 个工作流**。本指南说明各项能力的范围与验证限制。
 
-本指南描述3.0.0 包：46 个 Skill、16 个角色、4 个工作流。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `3.0.0`、`routing/skill-catalog.json` 有 46 个 Skill、`roles/catalog.json` 有 16 个角色、`workflows/` 有 4 份定义，且 `PACKAGE-MANIFEST.json` 与之相符。教程会拒绝版本不匹配的安装。
+本指南描述3.1.0 包：69 个 Skill、18 个角色、5 个工作流。安装完整且匹配的版本。运行[教程](professional-capability-tutorial.md)前，确认 `VERSION` 为 `3.1.0`、`routing/skill-catalog.json` 有 69 个 Skill、`roles/catalog.json` 有 18 个角色、`workflows/` 有 5 份定义，且 `PACKAGE-MANIFEST.json` 与之相符。教程会拒绝版本不匹配的安装。
+
+## 游戏开发方法
+
+3.1.0 新增 23 个方法：四个设计 Skill（`game-design`、`game-economy-design`、`game-level-design`、`game-3c-design`）；五个工程 Skill（`gameplay-programming`、`game-physics`、`game-content-pipeline`、`game-performance`、`game-multiplayer`）；六个引擎 Skill（`engine-urhox`、`engine-cocos-creator`、`engine-unity`、`engine-godot`、`engine-unreal`、`engine-web-canvas`）；三个制作/测试 Skill（`game-asset-pipeline`、`game-audio`、`game-testing-ladders`）；五个发行/运营 Skill（`game-publishing`、`game-build-release`、`game-live-ops`、`game-monetization-iaa`、`game-monetization-iap`）。
+
+| 角色 | 默认 Skill | 可选 Skill |
+| --- | --- | --- |
+| `game-designer` | `game-design`、`game-economy-design`、`game-level-design` | `game-3c-design`、`game-monetization-iaa`、`game-monetization-iap`、`game-live-ops` |
+| `game-test-engineer` | `game-testing-ladders` | `game-performance`、`game-publishing` |
+
+[game-development 工作流](../../workflows/game-development.md) 按平台、引擎、品类、变现方式和熟悉度选择方法。设计先于玩法/素材并行制作，经济设计先于变现实施，分层测试与每次发布的就绪/合规复核先于最终验证，之后提供运营交接。现有 software-implementer 与 media-producer 仍负责实施和素材制作。
+
+这些是方法文档，包含新手导航与资深决策判据，不附带引擎或商店自动化，也不声称实际游戏、购买、广告或发布已测试成功。API/SDK/CLI 操作归项目侧资料。参阅[23 项用途](professional-skills.md#310-新增的二十三个-skill)及[逐项溯源](../../skills/README.md#game-family-provenance-310)；引擎与政策日期快照必须复核当前政策。
 
 ## 如何阅读一项能力
 
@@ -149,7 +162,7 @@
 - **本项目保留自己的 MIT 许可证**，位于仓库根目录。MIT 覆盖本项目的原创文本：协调者 Skill、脚本、路由和公开文档。
 - **第三方材料保留它带来的许可证。** 一个 Apache-2.0 的 Skill 仍是 Apache-2.0，声明原样保留在旁边。项目的 MIT 许可证不把它重新许可。
 - **原有的十六个**是 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills) 在提交 `d9a174c7143bfb4c76ed042f457fb7785c35cea3` 上的包内维护 MIT 改编版，并在本包内做了补充。它们的上游 MIT 声明留在 `skills/LICENSE`。
-- **其余三十个均为原创方法。** 2.3.0 的二十二个和 2.4.0 的八个均在本项目编写，引用 WCAG 2.2、PNG、WebVTT、MCP、PostgreSQL、OpenTelemetry、React 等公开资料，不复制上游 Skill 文本。没有 Skill 目录附带 `LICENSE.txt`，来源表标记为 `Original`。
+- **2.3.0 与 2.4.0 的三十个均为原创方法。** 2.3.0 的二十二个和 2.4.0 的八个均在本项目编写，引用 WCAG 2.2、PNG、WebVTT、MCP、PostgreSQL、OpenTelemetry、React 等公开资料，不复制上游 Skill 文本。没有 Skill 目录附带 `LICENSE.txt`，来源表标记为 `Original`。3.1.0 新增的 23 个游戏方法也采用原创文字，固定提交的方法集合引用与带日期的官方引擎/平台来源单列于游戏族溯源表。
 - **有两个上游有意不复制。** Anthropic 的 docx、pptx、pdf 和 xlsx Skill 是专有的，不包含在内；`document-production` 针对许可允许的库独立编写。OpenMontage 是 AGPL-3.0，不包含在内；`media-transcoding` 依据 FFmpeg 自身文档编写，所装 FFmpeg 构建及其编码器的许可另行核查。
 - **资产自带许可。** 图标集、字体和素材图片不由获取它们的工具的许可覆盖。`icon-assets` 要求每个图标集都有来源和许可。
 

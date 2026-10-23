@@ -23,6 +23,10 @@
       ]
     },
     {
+      "workflow": "game-development",
+      "when": ["the objective is developing a game or game feature"]
+    },
+    {
       "workflow": "feature-development",
       "when": [
         "new or changed product/system behavior is the target"

@@ -8,8 +8,8 @@ Orca Project Delivery coordinates workers that load **professional Skills** —
 method instruction packs (`SKILL.md`) for reconnaissance, product work,
 architecture, implementation, review, and verification, plus methods for
 software delivery, local assets, images, and audio, video, and documents.
-All forty-six Skills ship **inside this package** under
-`skills/<skill-id>/SKILL.md` in the 3.0.0 release. Some methods also
+All sixty-nine Skills ship **inside this package** under
+`skills/<skill-id>/SKILL.md` in the 3.1.0 release. Some methods also
 ship local scripts or provider connectors; execution evidence is separate from
 loading their instructions. Install the complete matching release, and check
 its version and catalogs using the [tutorial](professional-capability-tutorial.md).
@@ -109,6 +109,38 @@ deepens Skills already listed above. Scope and limits are in
 | `technical-diagrams` | Hand-written SVG and Mermaid figures with real text, readable sizes, and a description. |
 | `localization` | Glossary, ICU placeholder protection, expansion, and right-to-left text. No translation service is called. |
 | `subtitle-production` | SRT and WebVTT conversion with timing checks. Text cues only; nothing is burned into video. |
+
+## The twenty-three added in 3.1.0
+
+These are methods, not engine runtimes or publishing tools. Each includes beginner navigation, core decisions, failure criteria and project-side platform boundaries. Per-Skill source revisions, licenses and verification limits are in [the provenance record](../skills/README.md#game-family-provenance-310).
+
+| Skill | Purpose |
+| --- | --- |
+| `game-design` | Core loop, choices, rules, feedback and progression hypotheses. |
+| `game-economy-design` | Sources, sinks, stocks and reward/purchase balance. |
+| `game-level-design` | Movement metrics, reachability and challenge sequencing. |
+| `game-3c-design` | Coupled Character, Controller and Camera behavior. |
+| `gameplay-programming` | Testable rules, behavior, input and versioned saves. |
+| `game-physics` | Timing, collision and contact diagnosis. |
+| `game-content-pipeline` | Stable content identity and reproducible conversion. |
+| `game-performance` | Measured bottlenecks and device budgets. |
+| `game-multiplayer` | Authority, synchronization, prediction and recovery. |
+| `engine-urhox` | Maker project documentation and preview/build boundaries. |
+| `engine-cocos-creator` | Cocos platform, tooling and editor-license decisions. |
+| `engine-unity` | Separate global Unity and Tuanjie delivery paths. |
+| `engine-godot` | Version-matched docs, export and tooling limits. |
+| `engine-unreal` | Packaging, Blueprint/C++ boundaries and royalty snapshots. |
+| `engine-web-canvas` | Browser-first delivery with wrapper/cloud qualifications. |
+| `game-asset-pipeline` | Asset production, stable identity and engine intake. |
+| `game-audio` | Mixing graph, adaptive music, gain and timing. |
+| `game-testing-ladders` | Smoke through real-device and certification evidence. |
+| `game-publishing` | Platform readiness and per-release policy checks. |
+| `game-build-release` | Reproducibility, candidates, patches and rollback. |
+| `game-live-ops` | Seasons, events, cohorts, economy and recovery. |
+| `game-monetization-iaa` | Intent-based ads and economy-sized rewards. |
+| `game-monetization-iap` | Catalogs, purchases, revenue, entitlements and refunds. |
+
+Use [game-development](../workflows/game-development.md) for game or game-feature objectives; `game-designer` owns design and `game-test-engineer` owns layered test evidence and publishing readiness. Implementation and asset production remain with their existing roles. Source review is not a successful game run or policy approval.
 
 ## Installation
 

@@ -29,7 +29,7 @@
 
 在任何编排动词之前，协调者加载已安装的全局 `orchestration` Skill，并用当前 `--help` 确认语法；本包把业务动作映射到运行时概念；命令示例必须对照已安装的合同检查。只有协调者编辑全局过程状态；工作者只写分配给自己的报告路径。
 
-## 16 个角色
+## 18 个角色
 
 每个任务一个主角色，按交付物经 `routing/role-selection.json` 选择。身份来自角色，方法来自专业 Skill，目标来自任务。
 
@@ -51,18 +51,21 @@
 | browser-test-engineer | quality | browser-e2e, integration-verification | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
 | media-producer | media | （无；由任务选择） | sonnet medium → **sonnet high** → opus medium → opus high |
 | document-specialist | product | document-production | sonnet medium → **sonnet high** → opus medium → opus high |
+| game-designer | product | game-design, game-economy-design, game-level-design | sonnet medium → **sonnet high** → opus medium → opus high |
+| game-test-engineer | quality | game-testing-ladders | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
 
-底部四条路由是 2.3.0 新增角色的当前路由。它们不是 `routing/model-routing.json` 的副本，该文件仍是权威；两者不一致时以路由文件为准，并需要更新本表。
+本表包含 2.3.0 新增的四个角色与 3.1.0 新增的两个游戏角色。它们不是 `routing/model-routing.json` 的副本，该文件仍是权威；两者不一致时以路由文件为准，并需要更新本表。
 
 互相冲突的身份 — 设计、实施、独立审查 — 拆成不同的任务。升档沿链向右一步（先提推理档，再提档位）；降档需要明确的速率限制、配额或模型不可用证据，且绝不低于角色的最低档。
 
-## 4 个工作流
+## 5 个工作流
 
 经 `routing/workflow-selection.json` 选择；每个在 `workflows/` 下有完整定义。深度随证据自适应 — light、standard 或 high-risk — 选择以及任何规模缩减都会被记录。
 
 | 工作流 | 何时 | 阶段形状 |
 | --- | --- | --- |
 | feature-development（默认） | 目标是新增或改变的产品 / 系统行为 | intake → reconnaissance → design（条件阶段；无论执行或跳过都记录判断）→ plan → task graph → implementation → review → final verification |
+| game-development | 开发游戏或游戏功能 | intake → reconnaissance → 强制 design → planning → 玩法/素材并行任务图 → implementation → review → 发布就绪 → final verification；运营交接 |
 | bug-fix | 目标是缺陷修正；复现或回归是核心 | intake → reproduction → investigation → fix planning → implementation → review → integration and verification |
 | refactor | 外部行为保持稳定；内部结构是目标 | define invariants → reconnaissance → refactor plan → implementation → review → integration |
 | audit | 目标是评估 / 发现项；实施不是初始目标 | intake → dynamic audit fan-out → finding contract → validation and deduplication → optional remediation |
@@ -71,7 +74,9 @@ high-risk 深度依次为：并行侦察 / 审计 → 设计（条件阶段；�
 
 设计触发规则位于 `routing/design-triggers.json`。
 
-## 46 个专业 Skill
+## 69 个专业 Skill
+
+3.1.0 新增的 23 个游戏方法见[专业 Skill](professional-skills.md#310-新增的二十三个-skill)，逐项溯源在 `skills/README.md`。五个工作流包含 [game-development](../../workflows/game-development.md)，保留全局阶段链，并新增强制玩法设计、并行制作、每次发布的就绪复核与运营交接。
 
 Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `SKILL.md` 绝对路径）交付给工作者；作为回退，也可以用 `inline-extract`，并记录来源路径。单独一个 Skill 名称不能证明已交付，Skill 只提供方法 — 它不能扩大任务范围，也不能授予编排控制。
 
@@ -124,11 +129,11 @@ Skill 随包位于 `skills/` 目录，以 `explicit-path`（任务中写明的 `
 | localization | 术语表、ICU 占位符、文本膨胀与从右到左布局 |
 | subtitle-production | SRT 与 WebVTT 纯文本字幕离线互转 |
 
-新增的三十个 Skill 在[专业能力](professional-capabilities.md)中说明，包括哪些是方法、哪些依赖本地工具、哪些是本版本尚未验证的真实在线调用。
+新增的五十三个 Skill 在[专业能力](professional-capabilities.md)中说明，包括哪些是方法、哪些依赖本地工具、哪些是本版本尚未验证的真实在线调用。
 
 ## 原生扩展与执行配置
 
-Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由和清单数量。数量由目录驱动。原有十六个 Skill 是 MIT 改编版，其后三十个为引用公开资料的原创方法。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。显式版本 2 项目配置另支持已安装外部 Skill 和混合 Role 绑定，无需编辑这些目录，见[外部 Skill](external-skills.md)。不支持目录可执行 hook 或通用路由覆盖。
+Role 和 Skill 扩展既有 `roles/catalog.json` 与 `routing/skill-catalog.json`，需要精确包内路径、匹配的 Role 模型路由和清单数量。数量由目录驱动。原有十六个 Skill 是 MIT 改编版，其后五十三个为引用公开资料的原创方法。本项目的原创部分是 MIT；第三方 Skill 保留它带来的许可证，按 Skill 记录在 `skills/README.md`。显式版本 2 项目配置另支持已安装外部 Skill 和混合 Role 绑定，无需编辑这些目录，见[外部 Skill](external-skills.md)。不支持目录可执行 hook 或通用路由覆盖。
 
 可选 `requires` 元数据声明 CLI、env 和 API 依赖名称。组装标出必需与条件集合，不新增顶层合同段。在实际执行主机上，辅助脚本使用显式选择器和 ProjectRoot。配置优先级为继承进程值（包括空值）、根 `.env`、显式非秘密 JSON。只有所选声明的文件变量补入子进程；已有变量继承，父进程不变。API 检查仅判断存在性。配置路径留在根内，授权可执行文件可以在外；直接批处理启动不保证兼容。注册与可运行示例见[扩展](extending.md)。
 

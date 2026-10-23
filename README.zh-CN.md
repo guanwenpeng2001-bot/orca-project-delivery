@@ -4,14 +4,14 @@
 
 面向 Orca 与 Claude Code 用户的**仅协调者** Skill，把软件目标变成隔离、独立审查、集成并验证过的变更。
 
-![Version](https://img.shields.io/badge/version-3.0.0-blue)
+![Version](https://img.shields.io/badge/version-3.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-这些指南描述**3.0.0 包：46 个 Skill、16 个角色、4 个工作流**。安装完整且匹配的版本，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。版本不匹配就不是本版本。
+这些指南描述**3.1.0 包：69 个 Skill、18 个角色、5 个工作流**。安装完整且匹配的版本，并在运行[能力教程](docs/zh-CN/professional-capability-tutorial.md)前核对 `VERSION`、两个目录和清单。版本不匹配就不是本版本。
 
-3.0.0 新增：交付流程收敛为真正承重的环节。六阶段 Git 证据校验器及其 schema 与模板、dispatch-wave 台账、brief 摘要哈希、包内 Skill 哈希表全部移除；集成安全回到它真正的来源——任务隔离、单分支单写者、不同于实施者的独立审查者、协调者在合并前直接执行的干净树/已批准提交核对，以及在集成后 HEAD 与最新交付上各跑一遍的完整验证套件。机器可读 assignment、模型路由回执、协调者锁与写者更换门禁保留。包内计数仍为 46 个 Skill、16 个角色、4 个工作流；继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
+3.1.0 新增：23 个游戏开发 Skill、游戏设计师与游戏测试工程师两个角色，以及 game-development 工作流，总计 69 个 Skill、18 个角色、5 个工作流。强制玩法设计、玩法与素材并行实施、分层测试及发布就绪检查贯穿交付；每次发布重新核验适用合规要求，引擎 API 和平台操作仍由项目侧资料承载。继续支持通过显式项目配置[使用已安装的外部 Skill](docs/zh-CN/external-skills.md)。
 
 Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 工作者智能体跑完整条软件交付流水线。它解决的问题是：在同一个仓库里监督许多自主智能体，同时不丢掉分支纪律、独立审查和可核验的结果。它写给担任协调者的人：你已经有 Orca（多代理 IDE）和 Claude Code，希望由隔离的工作者在明确合同下产出、审查、集成并做最终验证大型变更。
 
@@ -51,20 +51,20 @@ Orca Project Delivery 是一个仅供协调者使用的 Skill，用 Claude Code 
 
 | 能力 | 说明 | 来源 |
 | --- | --- | --- |
-| 角色 | 16 个（研究、产品、架构、工程、质量、媒体） | `roles/catalog.json` |
-| 专业 Skill | 46 个，随包位于 `skills/` | `routing/skill-catalog.json` |
-| 工作流 | 4 个：feature-development、bug-fix、refactor、audit | `workflows/` |
+| 角色 | 18 个（研究、产品、架构、工程、质量、媒体） | `roles/catalog.json` |
+| 专业 Skill | 69 个，随包位于 `skills/` | `routing/skill-catalog.json` |
+| 工作流 | 5 个：feature-development、bug-fix、refactor、audit、game-development | `workflows/` |
 | 自适应深度 | light / standard / high-risk 阶段链 | `routing/workflow-selection.json` |
 | 模型路由 | 按角色在 haiku / sonnet / opus / fable 上排链，含推理档、默认档与最低档 | `routing/model-routing.json` |
 | 必守不变量 | 12 条关于隔离、审查、证据与集成的约束 | `SKILL.md` |
 | 辅助脚本 | PowerShell 引导、组装、依赖检查、限定子进程执行、校验和释放 | `scripts/` |
 | 离线验收 | 完整合成包套件；要求退出 0 且 `FAIL=0` | `scripts/verify-package.ps1` |
 | 原生扩展 | 注册 Role 和 Skill，声明可选 CLI/env/API 依赖 | [扩展指南](docs/zh-CN/extending.md) |
-| 专业能力 | 2.4.0 新增 8 个 Skill、增强 6 组能力，保持 16 个角色与 4 个工作流 | [能力指南](docs/zh-CN/professional-capabilities.md) |
+| 专业能力 | 3.1.0 新增 23 个游戏 Skill、2 个游戏角色与 game-development 工作流 | [能力指南](docs/zh-CN/professional-capabilities.md) |
 
 ## 快速开始
 
-要求：Windows、PowerShell 7+、Git、Claude Code、Orca Runtime，以及本包（专业 Skill 已包含在 `skills/` 下）。原有十六个追溯到 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills)；其后三十个是引用公开资料的原创 MIT 方法，见 [docs/zh-CN/professional-capabilities.md](docs/zh-CN/professional-capabilities.md)。完整说明与排障见 [docs/zh-CN/installation.md](docs/zh-CN/installation.md)。
+要求：Windows、PowerShell 7+、Git、Claude Code、Orca Runtime，以及本包（专业 Skill 已包含在 `skills/` 下）。原有十六个追溯到 [orca-professional-skills](https://github.com/guanwenpeng2001-bot/orca-professional-skills)；其后五十三个是引用公开资料的原创 MIT 方法，见 [docs/zh-CN/professional-capabilities.md](docs/zh-CN/professional-capabilities.md)。完整说明与排障见 [docs/zh-CN/installation.md](docs/zh-CN/installation.md)。
 
 ```powershell
 # 1. 把包克隆到技能根目录
@@ -82,7 +82,7 @@ pwsh -NoProfile -File "$env:USERPROFILE\.agents\skills\orca-project-delivery\scr
 orca-project-delivery/
 ├── SKILL.md                  # 协调者入口（17 节，不超过 250 行）
 ├── LICENSE                   # MIT
-├── VERSION                   # 3.0.0
+├── VERSION                   # 3.1.0
 ├── PACKAGE-MANIFEST.json     # 包元数据与交付物计数
 ├── CHANGELOG.md
 ├── README.md                 # 英文（默认）
@@ -98,10 +98,10 @@ orca-project-delivery/
 │   ├── faq.md                # 常见问题与排障（英文）
 │   └── zh-CN/                # 上述指南的简体中文译本
 ├── references/               # 11 篇深入参考（运行时、分支模型、交接等）
-├── roles/                    # 16 份角色合同 + catalog.json
+├── roles/                    # 18 份角色合同 + catalog.json
 ├── routing/                  # 模型、角色、Skill、工作流路由表
-├── skills/                   # 46 个随包专业 Skill + LICENSE + README
-├── workflows/                # 4 个工作流定义
+├── skills/                   # 69 个随包专业 Skill + LICENSE + README
+├── workflows/                # 5 个工作流定义
 ├── schemas/                  # 状态、依赖与配置的 JSON schema
 ├── scripts/                  # 交付与配置的 PowerShell 辅助脚本
 └── templates/                # AGENTS.md、任务/审查/报告模板、.dev-work 种子
@@ -112,8 +112,8 @@ orca-project-delivery/
 | 文档 | 内容 |
 | --- | --- |
 | [安装](docs/zh-CN/installation.md) | 前置条件、目录约定、安装步骤、校验、升级、卸载、常见安装失败 |
-| [专业 Skill](docs/zh-CN/professional-skills.md) | 全部 46 个工作者 Skill、逐个来源、安装布局与排障 |
-| [专业能力](docs/zh-CN/professional-capabilities.md) | 后续 30 个方法与 6 组增强：范围、证据标签、许可证 |
+| [专业 Skill](docs/zh-CN/professional-skills.md) | 全部 69 个工作者 Skill、逐个来源、安装布局与排障 |
+| [专业能力](docs/zh-CN/professional-capabilities.md) | 后续 53 个方法（含 23 个游戏方法）与 6 组增强：范围、证据标签、许可证 |
 | [能力教程](docs/zh-CN/professional-capability-tutorial.md) | 离线检查、本地工具实例与依赖辅助脚本；不调用提供方 |
 | [扩展与配置](docs/zh-CN/extending.md) | 原生 Role/Skill 编写、依赖声明、字面配置及离线子进程执行走读 |
 | [使用](docs/zh-CN/usage.md) | 从协调者入口开始一次交付、完整阶段顺序、角色/模型路由、分支与工作树规则、记录与报告、工作者回执、问答 |

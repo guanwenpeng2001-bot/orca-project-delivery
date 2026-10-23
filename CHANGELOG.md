@@ -4,6 +4,13 @@ All notable changes to `orca-project-delivery`. The package is deployed in place
 `%USERPROFILE%\.agents\skills\orca-project-delivery`; `orca skills update` does not overwrite it
 (`sourceKind: home`, absent from `~/.agents/.skill-lock.json`).
 
+## 3.1.0 — 2026-10-23
+
+- Added 23 game-development Skills covering gameplay/economy/level/3C design, engineering, six engine families, assets/audio/testing, publishing/build/live operations and IAA/IAP monetization; package totals are 69 Skills, 18 Roles and 5 workflows.
+- Added Game Designer and Game Test Engineer roles, model routes, eleven deliverable routes and the game-development design trigger and workflow selector.
+- Added the game-development workflow with platform/engine/genre/monetization/familiarity intake, mandatory gameplay design, parallel gameplay and asset tracks, economy-dependent monetization, layered verification, per-release publishing/compliance readiness and a live-ops handoff.
+- Consolidated all 23 provenance records, including pinned method repositories and explicitly dated engine/policy snapshots; updated English/Chinese inventories, release guards and metadata, and added workflow-target validation.
+
 ## 3.0.0 — 2026-10-23
 
 - Breaking process simplification: the six-phase Git-evidence validator (`scripts/validate-git-evidence.ps1`), `schemas/evidence.schema.json`, the evidence templates and `references/evidence-binding.md` are removed, together with the dispatch-wave ledger (`schemas/dispatch-wave.schema.json` and the `dispatch-waves/` run directory), the per-brief SHA256 digest in dispatch records, and the bundled-Skill SHA256 table with its offline integrity check. Bundled counts remain 46 Skills, 16 Roles and 4 workflows.

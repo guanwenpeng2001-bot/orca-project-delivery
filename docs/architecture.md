@@ -43,7 +43,7 @@ against the installed contract.
 Only the coordinator edits global process state; workers write only their
 assigned report paths.
 
-## The 16 roles
+## The 18 roles
 
 One Primary Role per Task, selected by deliverable via
 `routing/role-selection.json`. Identity comes from the role, method from the
@@ -67,8 +67,10 @@ professional Skills, and the objective from the Task.
 | browser-test-engineer | quality | browser-e2e, integration-verification | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
 | media-producer | media | (none; the task selects) | sonnet medium → **sonnet high** → opus medium → opus high |
 | document-specialist | product | document-production | sonnet medium → **sonnet high** → opus medium → opus high |
+| game-designer | product | game-design, game-economy-design, game-level-design | sonnet medium → **sonnet high** → opus medium → opus high |
+| game-test-engineer | quality | game-testing-ladders | sonnet medium → **sonnet high** → sonnet xhigh → opus medium |
 
-The four routes at the bottom are current routes for the Roles added in 2.3.0.
+The table includes the four Roles added in 2.3.0 and the two game Roles added in 3.1.0.
 They are not a copy of `routing/model-routing.json`, which remains the
 authority; where the two differ, the routing file wins and this table needs
 updating.
@@ -78,7 +80,7 @@ split into separate Tasks. Escalation moves one step right along the chain
 (effort first, then tier); downgrades require explicit rate-limit, quota, or
 model-unavailability evidence and never go below the role's floor.
 
-## The 4 workflows
+## The 5 workflows
 
 Selected via `routing/workflow-selection.json`; each has a full definition
 under `workflows/`. Depth adapts to evidence — light, standard, or high-risk —
@@ -87,6 +89,7 @@ and the choice plus any scale reduction is recorded.
 | Workflow | When | Stage shape |
 | --- | --- | --- |
 | feature-development (default) | New or changed product/system behavior is the target | intake → reconnaissance → design (conditional; verdict recorded either way) → plan → task graph → implementation → review → final verification |
+| game-development | Developing a game or game feature | intake → reconnaissance → mandatory design → planning → parallel gameplay/assets task graph → implementation → review → publishing readiness → final verification; live-ops handoff |
 | bug-fix | Objective is defect correction; reproduction or regression is central | intake → reproduction → investigation → fix planning → implementation → review → integration and verification |
 | refactor | External behavior stays stable; internal structure is the target | define invariants → reconnaissance → refactor plan → implementation → review → integration |
 | audit | Objective is assessment/findings; implementation is not the initial goal | intake → dynamic audit fan-out → finding contract → validation and deduplication → optional remediation |
@@ -97,7 +100,9 @@ staged implementation and review loops → final verification.
 
 Design trigger rules live in `routing/design-triggers.json`.
 
-## The 46 professional Skills
+## The 69 professional Skills
+
+The 23 game methods added in 3.1.0 are listed in [Professional Skills](professional-skills.md#the-twenty-three-added-in-310), with per-Skill provenance in `skills/README.md`. The five workflow definitions include [game-development](../workflows/game-development.md); it retains the global chain and adds mandatory gameplay design, parallel production, per-release publishing readiness and an operations handoff.
 
 Skills are bundled under the package `skills/` directory and are delivered to
 workers by `explicit-path` (the absolute `SKILL.md` path named in the Task)
@@ -154,14 +159,14 @@ method — it cannot expand Task scope or grant orchestration control.
 | localization | Glossaries, ICU placeholders, expansion, and right-to-left layout |
 | subtitle-production | Offline text-cue conversion between SRT and WebVTT |
 
-The thirty added Skills are specified in
+The fifty-three added Skills are specified in
 [Professional capabilities](professional-capabilities.md), including which are
 methods, which depend on a local tool, and which are real online calls that
 this release has not verified.
 
 ## Native extension and execution configuration
 
-Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes and manifest counts. Counts are catalog-driven. The original sixteen Skill bodies are maintained MIT adaptations; the other thirty are original methods with public references. This project's original work is MIT; third-party Skills keep the license they arrived with, recorded per Skill in `skills/README.md`. Explicit version 2 project configuration additionally registers installed external Skills and mixed Role bindings without editing these catalogs; see [external Skills](external-skills.md). No executable catalog hooks or generic routing overlays are supported.
+Roles and Skills extend the existing `roles/catalog.json` and `routing/skill-catalog.json`, with exact package-local paths, matching Role model routes and manifest counts. Counts are catalog-driven. The original sixteen Skill bodies are maintained MIT adaptations; the other fifty-three are original methods with public references. This project's original work is MIT; third-party Skills keep the license they arrived with, recorded per Skill in `skills/README.md`. Explicit version 2 project configuration additionally registers installed external Skills and mixed Role bindings without editing these catalogs; see [external Skills](external-skills.md). No executable catalog hooks or generic routing overlays are supported.
 
 Optional `requires` metadata names CLI, env and API dependencies. Assembly labels required and conditional sets without adding a new top-level contract section. On the actual execution host, helpers use explicit selectors and ProjectRoot. Configuration precedence is inherited process values (even empty), root `.env`, then explicit non-secret JSON. Only selected declared file variables are added to the child; inherited variables remain and the parent is unchanged. API checks are presence-only. Config paths stay inside the root, while an authorized executable may be outside; direct batch-launch compatibility is not guaranteed. See [Extending](extending.md) for registration and runnable examples.
 
