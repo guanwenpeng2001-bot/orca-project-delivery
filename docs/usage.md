@@ -287,7 +287,7 @@ high-risk) follows evidence; record reasons when reducing scale.
 **How do I know a Task is ready to dispatch?**
 Its real dependencies settled successfully through their gates (a source
 dependency needs review *and* integration, not just `worker_done`), its write
-scope is disjoint from in-flight Tasks, and its baseline and route are
+scope is disjoint from in-flight Tasks, and its baseline and Agent are
 usable. Dispatch ready Tasks as they become ready.
 
 **What must I record on every dispatch?**

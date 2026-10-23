@@ -178,7 +178,7 @@ not get Roles of their own.
 `roles/catalog.json` is the authority for optional-Skill attachments in the
 installed revision.
 
-Model routes, deliverable routes, and risk routes are package data in
+Deliverable routes and risk routes are package data in
 `routing/`. This guide does not duplicate them, because a copied table goes
 stale the moment the package changes.
 

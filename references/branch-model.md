@@ -11,6 +11,8 @@ The coordinator control worktree exists only to host:
 
 Its branch is a parking/control branch. It may remain at an old commit. It is not a source-development branch, task base, integration target, review target, or final-verification source. Read current source facts from the actual delivery or Task worktree.
 
+The coordinator may use native read-only helpers for its own analysis, planning and synthesis without creating separate Orca Tasks or worktrees. Helpers do not develop source, edit global process state, become another coordinator or replace formal implementation Tasks and independent review; the coordinator retains decisions, dispatch, state ownership and helper cleanup.
+
 ## Delivery plane
 
 `delivery_branch` is resolved at intake by `scripts/bootstrap-project.ps1` in this order:
@@ -38,7 +40,7 @@ Every top-level Orca Task gets an isolated branch/worktree, including read-only 
 
 One task branch has one writer at a time; before replacement or retry, pass the [writer-replacement gate](recovery-and-idempotency.md#writer-replacement-hardened-gate) and follow [Writing Task handoff](worker-handoff.md#writing-task-handoff).
 
-Native helpers remain inside their parent Task. Read-only helpers may share context; concurrent writers require isolated branches and worktrees. The parent owns the combined result and cleanup, and internal checks do not replace the separate review Task.
+Worker-native helpers remain inside their parent Task. Read-only helpers may share context; concurrent writers require isolated branches and worktrees. The parent owns the combined result and cleanup, and internal checks do not replace the separate review Task.
 
 ## Integration
 

@@ -16,6 +16,7 @@ For installation or upgrade, read `references/installation.md`; for configuratio
 
 A worker carrying a dispatch preamble must not run this Skill unless its Task explicitly authorizes nested coordination.
 Normal workers execute only their assigned Task, Role, professional Skills, branch/report contracts, and injected Worker Contract.
+The coordinator may use native read-only helpers for goal analysis, workflow selection, solution comparison, Task decomposition, Agent/Role/Skill selection, dependency and parallel-wave planning, and result synthesis. These helpers stay within coordinator responsibilities: they do not develop source, replace formal implementation Tasks or independent review, edit global process state, or become a second coordinator. They may share the coordinator's context without separate Orca Task/worktree lifecycles; the coordinator retains user communication, decisions, dispatch, state ownership and helper cleanup.
 
 ## System boundaries
 
