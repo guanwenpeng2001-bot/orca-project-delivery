@@ -63,7 +63,7 @@ Use `scripts/verify-package.ps1` for offline package acceptance and `scripts/rel
 
 ## Workflow selection
 
-Select `feature-development`, `bug-fix`, `refactor`, or `audit` using `routing/workflow-selection.json` and the corresponding file in `workflows/`.
+Select `feature-development`, `bug-fix`, `refactor`, `audit`, or `game-development` using `routing/workflow-selection.json` and the corresponding file in `workflows/`.
 - Lightweight: intake → implementation → independent review → final verification.
 - Standard: intake → reconnaissance → design (conditional; verdict recorded either way) → plan → task graph → implementation → review → final verification.
 - High risk: parallel reconnaissance/audit → design (conditional; verdict recorded either way) → independent plans → adjudication → staged implementation and review loops → final verification.
